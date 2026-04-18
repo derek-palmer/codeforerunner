@@ -37,9 +37,9 @@ Codeforerunner works against single-stack or polyglot repositories and can docum
 
 ## Installation
 
-> Note: This is a placeholder until packaging is finalized.
-
 ### Install from PyPI
+
+After the first tagged release is published to PyPI:
 
 ```bash
 pip install codeforerunner
@@ -48,9 +48,40 @@ pip install codeforerunner
 ### From source
 
 ```bash
-git clone https://github.com/<you>/codeforerunner.git
+git clone https://github.com/derek-palmer/codeforerunner.git
 cd codeforerunner
+uv sync --dev
+uv run forerunner --help
 ```
+
+### Run with Docker
+
+```bash
+docker build -t codeforerunner .
+docker run --rm -it -v "$PWD:/workspace" -w /workspace codeforerunner --help
+docker run --rm -it -v "$PWD:/workspace" -w /workspace codeforerunner init
+```
+
+### Run with Docker Compose
+
+The compose setup mounts the current repository into `/workspace`, so the CLI runs against your checked-out repo instead of the image filesystem.
+
+```bash
+UID=$(id -u) GID=$(id -g) docker compose run --rm forerunner --help
+UID=$(id -u) GID=$(id -g) docker compose run --rm forerunner init
+```
+
+### Make targets for container workflows
+
+```bash
+make docker-build
+make docker-help
+make docker-init
+make docker-run ARGS="check"
+make compose-config
+```
+
+`make docker-up` is also available, but because `codeforerunner` is a CLI-first container, it is mostly useful as a quick smoke test for the default `forerunner --help` command.
 
 ## Quick start
 
@@ -85,7 +116,7 @@ pre-commit install
 
 ```yaml
 repos:
-  - repo: https://github.com/<you>/codeforerunner
+  - repo: https://github.com/derek-palmer/codeforerunner
     rev: v0.1.0
     hooks:
       - id: codeforerunner-doc-check
@@ -111,7 +142,7 @@ Fail the build if:
 
 ## Configuration
 
-Add a `forerunner.config.(yml|json|toml)` file at the repo root.
+Add a `forerunner.config.yaml` file at the repo root.
 
 ```yaml
 include:
@@ -133,6 +164,22 @@ docs:
 enforcement:
   strict: true
 ```
+
+## Maintainer release flow
+
+Before the first public release, create the `codeforerunner` project on PyPI and configure a Trusted Publisher for:
+
+- Owner: `derek-palmer`
+- Repository: `codeforerunner`
+- Workflow: `.github/workflows/publish.yml`
+
+To publish a release:
+
+1. Bump `version` in `pyproject.toml`.
+2. Merge the release commit to the main branch.
+3. Create and push a tag such as `v0.1.0`.
+4. Let GitHub Actions build, verify, and publish the distributions to PyPI.
+5. Verify `pip install codeforerunner` and `forerunner --help` from a clean virtual environment.
 
 ## Status
 

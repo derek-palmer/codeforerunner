@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69"]
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,8 +8,13 @@ version = "0.1.0"
 description = "Model-agnostic repository documentation tooling."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { file = "LICENSE.md" }
+license = "LicenseRef-Codeforerunner-SAL-0.1"
+license-files = ["LICENSE.md"]
 dependencies = []
+
+[project.urls]
+Repository = "https://github.com/derek-palmer/codeforerunner"
+Issues = "https://github.com/derek-palmer/codeforerunner/issues"
 
 [project.scripts]
 forerunner = "codeforerunner.cli:main"
