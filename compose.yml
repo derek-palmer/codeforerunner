@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        BUILD_UID: "${UID:-1000}"
+        BUILD_GID: "${GID:-1000}"
     image: codeforerunner:dev
     working_dir: /workspace
     volumes:

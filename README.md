@@ -67,8 +67,15 @@ docker run --rm -it -v "$PWD:/workspace" -w /workspace codeforerunner init
 The compose setup mounts the current repository into `/workspace`, so the CLI runs against your checked-out repo instead of the image filesystem.
 
 ```bash
-UID=$(id -u) GID=$(id -g) docker compose run --rm forerunner --help
-UID=$(id -u) GID=$(id -g) docker compose run --rm forerunner init
+docker compose run --rm --user "$(id -u):$(id -g)" forerunner --help
+docker compose run --rm --user "$(id -u):$(id -g)" forerunner init
+```
+
+Alternatively, use the Makefile targets which handle UID/GID automatically:
+
+```bash
+make docker-help
+make docker-init
 ```
 
 ### Make targets for container workflows
