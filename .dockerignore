@@ -1,0 +1,11 @@
+.agent/
+.git
+.venv
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.py[cod]
+.DS_Store
+codeforerunner_spec.md
+docs/
+tests/

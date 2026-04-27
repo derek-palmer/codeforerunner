@@ -1,0 +1,19 @@
+services:
+  forerunner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_UID: "${UID:-1000}"
+        BUILD_GID: "${GID:-1000}"
+    image: codeforerunner:dev
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    command: ["--help"]
+    environment:
+      HOME: /tmp/codeforerunner
+    user: "${UID:-1000}:${GID:-1000}"
+    init: true
+    stdin_open: true
+    tty: true

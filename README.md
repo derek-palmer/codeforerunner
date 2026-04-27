@@ -37,9 +37,9 @@ Codeforerunner works against single-stack or polyglot repositories and can docum
 
 ## Installation
 
-> Note: This is a placeholder until packaging is finalized.
-
 ### Install from PyPI
+
+After the first tagged release is published to PyPI:
 
 ```bash
 pip install codeforerunner
@@ -48,8 +48,68 @@ pip install codeforerunner
 ### From source
 
 ```bash
-git clone https://github.com/<you>/codeforerunner.git
+git clone https://github.com/derek-palmer/codeforerunner.git
 cd codeforerunner
+make uv-sync
+make help
+```
+
+`uv-sync` runs inside the project container and invokes containerized `uv`, while `help` also runs in the container but calls the `forerunner` entrypoint (`--help`) instead of invoking `uv`.
+
+### Run with Docker
+
+```bash
+docker build -t codeforerunner .
+docker run --rm -it -v "$PWD:/workspace" -w /workspace codeforerunner --help
+docker run --rm -it -v "$PWD:/workspace" -w /workspace codeforerunner init
+```
+
+### Run with Docker Compose
+
+The compose setup mounts the current repository into `/workspace`, so the CLI runs against your checked-out repo instead of the image filesystem.
+
+```bash
+docker compose run --rm --user "$(id -u):$(id -g)" forerunner --help
+docker compose run --rm --user "$(id -u):$(id -g)" forerunner init
+```
+
+Alternatively, use the Makefile targets which handle UID/GID automatically:
+
+```bash
+make help
+make init
+```
+
+### Make targets for container workflows
+
+```bash
+make build
+make help
+make init
+make run ARGS="check"
+make compose-config
+```
+
+`make up` is also available, but because `codeforerunner` is a CLI-first container, it is mostly useful as a quick smoke test for the default `forerunner --help` command.
+
+### Make targets for uv workflows
+
+The container image includes `uv` and `uvx`, so these targets do not require a local uv installation:
+
+```bash
+make uv-sync
+make uv-test
+make uv-lint
+make uv-format-check
+make uv-run ARGS="--version"
+```
+
+Package build and validation targets mirror the release workflow:
+
+```bash
+make package-build
+make package-check
+make package-verify
 ```
 
 ## Quick start
@@ -85,7 +145,7 @@ pre-commit install
 
 ```yaml
 repos:
-  - repo: https://github.com/<you>/codeforerunner
+  - repo: https://github.com/derek-palmer/codeforerunner
     rev: v0.1.0
     hooks:
       - id: codeforerunner-doc-check
@@ -111,7 +171,7 @@ Fail the build if:
 
 ## Configuration
 
-Add a `forerunner.config.(yml|json|toml)` file at the repo root.
+Add a `forerunner.config.yaml` file at the repo root.
 
 ```yaml
 include:
@@ -133,6 +193,23 @@ docs:
 enforcement:
   strict: true
 ```
+
+## Maintainer release flow
+
+Before the first public release, create the `codeforerunner` project on PyPI and configure a Trusted Publisher for:
+
+- Owner: `derek-palmer`
+- Repository: `codeforerunner`
+- Workflow: `.github/workflows/publish.yml`
+
+To publish a release:
+
+1. Bump `version` in `pyproject.toml`.
+2. Run `make package-verify` to test, build, and validate the distributions.
+3. Merge the release commit to the main branch.
+4. Create and push a tag such as `v0.1.0`.
+5. Let GitHub Actions build, verify, and publish the distributions to PyPI.
+6. Verify `pip install codeforerunner` and `forerunner --help` from a clean virtual environment.
 
 ## Status
 
