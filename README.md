@@ -54,7 +54,7 @@ make uv-sync
 make help
 ```
 
-`uv-sync` and `help` run inside the project container and invoke containerized `uv`, so you do not need `uv` installed locally to use these targets.
+`uv-sync` runs inside the project container and invokes containerized `uv`, while `help` also runs in the container but calls the `forerunner` entrypoint (`--help`) instead of invoking `uv`.
 
 ### Run with Docker
 
