@@ -72,7 +72,7 @@ enforcement:
 def test_invalid_yaml_reports_parse_error(tmp_path) -> None:
     (tmp_path / "forerunner.config.yaml").write_text("include: [src/", encoding="utf-8")
 
-    with pytest.raises(ConfigError, match="could not parse YAML"):
+    with pytest.raises(ConfigError, match="could not read/parse config"):
         load_config(tmp_path)
 
 
@@ -106,5 +106,5 @@ docs:
         encoding="utf-8",
     )
 
-    with pytest.raises(ConfigError, match="'docs.api_dir': expected a string"):
+    with pytest.raises(ConfigError, match=r"'docs\.api_dir': expected a string"):
         load_config(tmp_path)

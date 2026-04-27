@@ -50,6 +50,12 @@ def configure_logging(
     """Configure and return the package logger."""
 
     logger = logging.getLogger(LOGGER_NAMESPACE)
+    for handler in logger.handlers:
+        try:
+            handler.flush()
+            handler.close()
+        except Exception:
+            pass
     logger.handlers.clear()
     logger.setLevel(level)
     logger.propagate = False
@@ -86,7 +92,11 @@ def _json_safe(value: Any) -> Any:
     if isinstance(value, Mapping):
         return {str(key): _json_safe(item) for key, item in value.items()}
 
-    if isinstance(value, list | tuple | set | frozenset):
+    if isinstance(value, list | tuple):
         return [_json_safe(item) for item in value]
+
+    if isinstance(value, set | frozenset):
+        ordered = sorted(value, key=repr)
+        return [_json_safe(item) for item in ordered]
 
     return repr(value)

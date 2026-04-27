@@ -59,9 +59,10 @@ def load_config(repo_root: str | Path) -> ForerunnerConfig:
         return ForerunnerConfig()
 
     try:
-        raw_config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as exc:
-        raise ConfigError(f"could not parse YAML: {exc}") from exc
+        raw_text = config_path.read_text(encoding="utf-8")
+        raw_config = yaml.safe_load(raw_text)
+    except (OSError, yaml.YAMLError) as exc:
+        raise ConfigError(f"could not read/parse config: {exc}") from exc
 
     if raw_config is None:
         return ForerunnerConfig()

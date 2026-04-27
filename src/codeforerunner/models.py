@@ -14,8 +14,11 @@ class SourceLocation:
 
     def __post_init__(self) -> None:
         _require_non_empty_string(self.path, field_name="path")
-        if self.line is not None and self.line < 1:
-            raise ValueError("line must be a positive integer")
+        if self.line is not None:
+            if not isinstance(self.line, int):
+                raise TypeError("line must be an integer")
+            if self.line < 1:
+                raise ValueError("line must be a positive integer")
 
     def to_dict(self) -> dict[str, Any]:
         return _to_serializable_dict(self)

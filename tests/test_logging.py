@@ -30,12 +30,16 @@ def test_get_logger_scopes_names_to_package_namespace() -> None:
 
 
 def test_log_context_serializes_non_json_values() -> None:
+    class Sentinel:
+        def __repr__(self) -> str:
+            return "<Sentinel>"
+
     stream = io.StringIO()
     logger = configure_logging(stream=stream)
 
-    logger.info("loaded config", extra=log_context(paths={"include": ("src/",)}, marker=object()))
+    logger.info("loaded config", extra=log_context(paths={"include": ("src/",)}, marker=Sentinel()))
 
     payload = json.loads(stream.getvalue())
 
     assert payload["context"]["paths"] == {"include": ["src/"]}
-    assert payload["context"]["marker"].startswith("<object object at ")
+    assert payload["context"]["marker"] == "<Sentinel>"
