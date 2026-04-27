@@ -10,7 +10,9 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "LicenseRef-Codeforerunner-SAL-0.1"
 license-files = ["LICENSE.md"]
-dependencies = []
+dependencies = [
+    "PyYAML>=6.0,<7.0",
+]
 
 [project.urls]
 Repository = "https://github.com/derek-palmer/codeforerunner"
