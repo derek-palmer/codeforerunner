@@ -50,9 +50,11 @@ pip install codeforerunner
 ```bash
 git clone https://github.com/derek-palmer/codeforerunner.git
 cd codeforerunner
-uv sync --dev
-uv run forerunner --help
+make uv-sync
+make help
 ```
+
+`uv-sync` and `help` run inside the project container and invoke containerized `uv`, so you do not need `uv` installed locally to use these targets.
 
 ### Run with Docker
 
@@ -74,21 +76,41 @@ docker compose run --rm --user "$(id -u):$(id -g)" forerunner init
 Alternatively, use the Makefile targets which handle UID/GID automatically:
 
 ```bash
-make docker-help
-make docker-init
+make help
+make init
 ```
 
 ### Make targets for container workflows
 
 ```bash
-make docker-build
-make docker-help
-make docker-init
-make docker-run ARGS="check"
+make build
+make help
+make init
+make run ARGS="check"
 make compose-config
 ```
 
-`make docker-up` is also available, but because `codeforerunner` is a CLI-first container, it is mostly useful as a quick smoke test for the default `forerunner --help` command.
+`make up` is also available, but because `codeforerunner` is a CLI-first container, it is mostly useful as a quick smoke test for the default `forerunner --help` command.
+
+### Make targets for uv workflows
+
+The container image includes `uv` and `uvx`, so these targets do not require a local uv installation:
+
+```bash
+make uv-sync
+make uv-test
+make uv-lint
+make uv-format-check
+make uv-run ARGS="--version"
+```
+
+Package build and validation targets mirror the release workflow:
+
+```bash
+make package-build
+make package-check
+make package-verify
+```
 
 ## Quick start
 
@@ -183,10 +205,11 @@ Before the first public release, create the `codeforerunner` project on PyPI and
 To publish a release:
 
 1. Bump `version` in `pyproject.toml`.
-2. Merge the release commit to the main branch.
-3. Create and push a tag such as `v0.1.0`.
-4. Let GitHub Actions build, verify, and publish the distributions to PyPI.
-5. Verify `pip install codeforerunner` and `forerunner --help` from a clean virtual environment.
+2. Run `make package-verify` to test, build, and validate the distributions.
+3. Merge the release commit to the main branch.
+4. Create and push a tag such as `v0.1.0`.
+5. Let GitHub Actions build, verify, and publish the distributions to PyPI.
+6. Verify `pip install codeforerunner` and `forerunner --help` from a clean virtual environment.
 
 ## Status
 

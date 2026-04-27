@@ -26,11 +26,15 @@ RUN if [ "$INSTALL_DEV_DEPS" = "true" ]; then \
     fi
 
 # Create non-root user and HOME directory with appropriate permissions
-RUN groupadd -g ${BUILD_GID} forerunner && \
-    useradd -u ${BUILD_UID} -g ${BUILD_GID} -s /bin/bash -m forerunner && \
+RUN group_name="$(getent group "${BUILD_GID}" | cut -d: -f1 || true)" && \
+    if [ -z "$group_name" ]; then \
+        groupadd -g "${BUILD_GID}" forerunner; \
+        group_name=forerunner; \
+    fi && \
+    useradd -u "${BUILD_UID}" -g "$group_name" -s /bin/bash -m forerunner && \
     mkdir -p /tmp/codeforerunner && \
     chmod 1777 /tmp/codeforerunner && \
-    chown -R forerunner:forerunner /app
+    chown -R forerunner:"$group_name" /app
 
 USER forerunner
 
