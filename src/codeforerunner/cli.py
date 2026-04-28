@@ -7,8 +7,7 @@ import sys
 from collections.abc import Sequence
 
 from codeforerunner import __version__
-
-CONFIG_FILENAME = "forerunner.config.yaml"
+from codeforerunner.config import CONFIG_FILENAME
 
 
 def _placeholder_command(args: argparse.Namespace) -> int:

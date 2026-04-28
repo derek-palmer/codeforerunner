@@ -4,15 +4,15 @@ This checklist is organized into small phases so an agent can complete one bound
 
 ## Phase 0: Foundations
 
-- [ ] T0.1 Create `pyproject.toml` with package metadata and a console entry point for `forerunner`. (Plan: P0.1, Requirement: 1) 
-- [ ] T0.2 Create `src/codeforerunner/` with `__init__.py` and `cli.py`. (Plan: P0.1, Requirement: 1)
-- [ ] T0.3 Implement a `forerunner --help` command path that exits cleanly. (Plan: P0.1, Requirement: 1)
-- [ ] T0.4 Add config model and loader support for `forerunner.config.yaml`. (Plan: P0.2, Requirement: 2)
-- [ ] T0.5 Add config validation errors with clear field-level messages. (Plan: P0.2, Requirement: 2)
-- [ ] T0.6 Define initial shared models for repository, stack area, entity, integration hint, and generation result. (Plan: P0.3, Requirement: 4)
-- [ ] T0.7 Add structured logging utilities. (Plan: P0.3, Requirement: 1)
-- [ ] T0.8 Add unit tests for CLI bootstrapping and config loading. (Plan: P0.1, P0.2, Requirements: 1, 2)
-- [ ] T0.9 Define the base model adapter interface (protocol, core types, and how orchestration supplies an adapter to pipelines). Any AI-assisted path SHALL call through this interface only. (Plan: P0.4, Requirement: 12)
+- [x] T0.1 Create `pyproject.toml` with package metadata and a console entry point for `forerunner`. (Plan: P0.1, Requirement: 1) 
+- [x] T0.2 Create `src/codeforerunner/` with `__init__.py` and `cli.py`. (Plan: P0.1, Requirement: 1)
+- [x] T0.3 Implement a `forerunner --help` command path that exits cleanly. (Plan: P0.1, Requirement: 1)
+- [x] T0.4 Add config model and loader support for `forerunner.config.yaml`. (Plan: P0.2, Requirement: 2)
+- [x] T0.5 Add config validation errors with clear field-level messages. (Plan: P0.2, Requirement: 2)
+- [x] T0.6 Define initial shared models for repository, stack area, entity, integration hint, and generation result. (Plan: P0.3, Requirement: 4)
+- [x] T0.7 Add structured logging utilities. (Plan: P0.3, Requirement: 1)
+- [x] T0.8 Add unit tests for CLI bootstrapping and config loading. (Plan: P0.1, P0.2, Requirements: 1, 2)
+- [x] T0.9 Define the base model adapter interface (protocol, core types, and how orchestration supplies an adapter to pipelines). Any AI-assisted path SHALL call through this interface only. (Plan: P0.4, Requirement: 12)
 
 ## Phase 1: Repository understanding
 
@@ -80,7 +80,7 @@ Prerequisite: **T0.9** is complete so AI-assisted generation in this phase uses 
 
 - [ ] T8.1 Add fixture repos for single-stack, polyglot, and integration-heavy test coverage. (Plan: P8.1, Requirements: 3 through 12) 
 - [ ] T8.2 Add regression tests over generated Markdown and Mermaid outputs, exercising scanning and the shared repository model (Requirements 3–4) through end-to-end runs on the Phase 8 fixtures. (Plan: P8.1, Requirements: 3 through 12)
-- [ ] T8.3 Add the custom source-available license file to the repo. (Plan: P8.2, Requirement: 13) 
+- [x] T8.3 Add the custom source-available license file to the repo. (Plan: P8.2, Requirement: 13) 
 - [ ] T8.4 Add the human-readable license summary to `README.md`. (Plan: P8.2, Requirement: 13)
 - [ ] T8.5 Improve performance and partial-failure handling. (Plan: P8.3, Requirements: 1 through 12)
 - [ ] T8.6 Improve logs, help text, and error messages for unsupported stacks or incomplete analysis. (Plan: P8.3, Requirements: 1 through 12)
