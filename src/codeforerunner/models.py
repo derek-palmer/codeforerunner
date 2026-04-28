@@ -15,7 +15,7 @@ class SourceLocation:
     def __post_init__(self) -> None:
         _require_non_empty_string(self.path, field_name="path")
         if self.line is not None:
-            if not isinstance(self.line, int):
+            if type(self.line) is not int:
                 raise TypeError("line must be an integer")
             if self.line < 1:
                 raise ValueError("line must be a positive integer")
@@ -124,6 +124,7 @@ class GenerationResult:
 
     def __post_init__(self) -> None:
         _require_non_empty_string(self.artifact_path, field_name="artifact_path")
+        _require_string(self.content, field_name="content")
         _normalize_tuple(self, "sources")
         _normalize_tuple(self, "limitations")
 
@@ -163,6 +164,11 @@ def _normalize_tuple(instance: object, field_name: str) -> None:
         return
 
     raise TypeError(f"{field_name} must be a tuple or list")
+
+
+def _require_string(value: object, *, field_name: str) -> None:
+    if not isinstance(value, str):
+        raise ValueError(f"{field_name} must be a string")
 
 
 def _require_non_empty_string(value: str, *, field_name: str) -> None:

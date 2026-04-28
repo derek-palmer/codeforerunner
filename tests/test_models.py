@@ -120,6 +120,13 @@ def test_generation_result_records_artifact_content_sources_and_limitations() ->
             lambda: RepositoryModel(root_path=".", stacks="python"),
             "stacks must be a tuple or list",
         ),
+        (
+            lambda: GenerationResult(
+                artifact_path="docs/out.md",
+                content=123,  # type: ignore[arg-type]
+            ),
+            "content must be a string",
+        ),
     ],
 )
 def test_models_reject_invalid_required_fields(model_factory, expected_error) -> None:
