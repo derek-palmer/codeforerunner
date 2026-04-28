@@ -60,6 +60,8 @@ class Entity:
     def __post_init__(self) -> None:
         _require_non_empty_string(self.name, field_name="name")
         _require_non_empty_string(self.kind, field_name="kind")
+        if not isinstance(self.is_public, bool):
+            raise ValueError(f"is_public must be a boolean, got {type(self.is_public).__name__}")
         if self.stack_id is not None:
             _require_non_empty_string(self.stack_id, field_name="stack_id")
         if self.signature is not None:
@@ -109,7 +111,13 @@ class RepositoryModel:
 
     @property
     def root_name(self) -> str:
-        return Path(self.root_path).name
+        p = Path(self.root_path).resolve()
+        name = p.name
+        if name and name != ".":
+            return name
+        if p.parts:
+            return p.parts[-1]
+        return str(p)
 
     def to_dict(self) -> dict[str, Any]:
         return _to_serializable_dict(self)
@@ -156,14 +164,17 @@ def _to_serializable_value(value: Any) -> Any:
 
 def _normalize_tuple(instance: object, field_name: str) -> None:
     value = getattr(instance, field_name)
-    if isinstance(value, tuple):
-        return
+    if not isinstance(value, (list, tuple)):
+        raise TypeError(f"{field_name} must be a tuple or list")
+
+    for item in value:
+        if item is None:
+            raise TypeError(f"{field_name} contains None value")
+        if isinstance(item, (list, tuple, dict)):
+            raise TypeError(f"{field_name} contains nested container: {type(item).__name__}")
 
     if isinstance(value, list):
         object.__setattr__(instance, field_name, tuple(value))
-        return
-
-    raise TypeError(f"{field_name} must be a tuple or list")
 
 
 def _require_string(value: object, *, field_name: str) -> None:

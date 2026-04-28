@@ -54,15 +54,16 @@ def configure_logging(
     for handler in logger.handlers:
         try:
             handler.flush()
-            handler.close()
         except (OSError, IOError) as exc:
             _LOGGER.warning(
-                "failed flushing/closing logging handler %r (%s.%s): %s",
+                "failed flushing logging handler %r (%s.%s): %s",
                 handler,
                 type(handler).__module__,
                 type(handler).__qualname__,
                 exc,
             )
+        finally:
+            handler.close()
     logger.handlers.clear()
     logger.setLevel(level)
     logger.propagate = False
