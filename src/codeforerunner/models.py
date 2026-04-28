@@ -60,6 +60,9 @@ class Entity:
     def __post_init__(self) -> None:
         _require_non_empty_string(self.name, field_name="name")
         _require_non_empty_string(self.kind, field_name="kind")
+        if self.location is not None:
+            if not isinstance(self.location, SourceLocation):
+                raise TypeError(f"location must be a SourceLocation instance, got {type(self.location).__name__}")
         if not isinstance(self.is_public, bool):
             raise ValueError(f"is_public must be a boolean, got {type(self.is_public).__name__}")
         if self.stack_id is not None:
