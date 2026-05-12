@@ -1,8 +1,7 @@
 # Task: Generate Review Summary
 
-Produces a human-readable summary of pending documentation changes for committer review.
-Used by the pre-commit hook to present a clear summary of what changed and what needs attention.
-Blocks the commit until the committer runs forerunner review --accept.
+Produces a human-readable summary of pending documentation impact for reviewer approval.
+Designed for manual agent use now and future hook/CLI wrappers later.
 
 ## Input
 - Check report from .forerunner/check-report.md
@@ -20,7 +19,7 @@ Blocks the commit until the committer runs forerunner review --accept.
 <!-- output: .forerunner/review-summary.md -->
 
 # codeforerunner -- Review Required
-Commit blocked. Documentation is out of sync with staged changes.
+Documentation may be out of sync with staged changes.
 
 ## What Changed
 - src/api/users.py -- new endpoint POST /api/users/bulk added
@@ -36,14 +35,11 @@ Commit blocked. Documentation is out of sync with staged changes.
 
 ## Actions
 
-To update docs now:
+To update docs now, re-run these prompts:
 ```bash
-forerunner generate api-docs
-forerunner generate readme
-forerunner generate version-audit
+prompts/tasks/api-docs.md
+prompts/tasks/readme.md
+prompts/tasks/version-audit.md
 ```
 
-To acknowledge and commit without updating:
-```bash
-forerunner review --accept --reason "hotfix, will update docs in follow-up"
-```
+To acknowledge without updating, record reason in PR or commit notes.

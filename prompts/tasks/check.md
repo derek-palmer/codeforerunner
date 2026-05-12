@@ -1,7 +1,7 @@
 # Task: Check Documentation Staleness
 
 Evaluates whether existing documentation is stale relative to the current codebase.
-Used by the pre-commit hook and the CLI forerunner check command.
+Designed for manual agent use now and future hook/CLI wrappers later.
 
 ## Input
 - Scan result (run fresh)
@@ -53,6 +53,6 @@ Overall status: STALE
 - Removed endpoint: DELETE /api/v1/users/:id is documented but handler no longer exists
 
 ## Recommended Actions
-1. Run forerunner generate readme
-2. Run forerunner generate api-docs
-3. Run forerunner generate version-audit (audit is >30 days old)
+1. Re-run `prompts/tasks/readme.md`
+2. Re-run `prompts/tasks/api-docs.md`
+3. Re-run `prompts/tasks/version-audit.md` (audit is >30 days old)
