@@ -194,6 +194,14 @@ enforcement:
   strict: true
 ```
 
+## Project spec and roadmap
+
+- `SPEC.md` is the canonical product specification.
+- `docs/requirements.md` tracks user-facing requirements.
+- `docs/plan.md` maps requirements to implementation phases.
+- `docs/tasks.md` is the implementation checklist.
+- `docs/agent-distribution-design.md` covers the planned Claude/Codex skill and plugin packaging.
+
 ## Maintainer release flow
 
 Before the first public release, create the `codeforerunner` project on PyPI and configure a Trusted Publisher for:

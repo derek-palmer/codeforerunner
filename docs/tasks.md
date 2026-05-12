@@ -84,3 +84,14 @@ Prerequisite: **T0.9** is complete so AI-assisted generation in this phase uses 
 - [ ] T8.4 Add the human-readable license summary to `README.md`. (Plan: P8.2, Requirement: 13)
 - [ ] T8.5 Improve performance and partial-failure handling. (Plan: P8.3, Requirements: 1 through 12)
 - [ ] T8.6 Improve logs, help text, and error messages for unsupported stacks or incomplete analysis. (Plan: P8.3, Requirements: 1 through 12)
+
+## Phase 9: Agent skill and plugin distribution
+
+- [ ] T9.1 Create the canonical agent instruction source for codeforerunner usage. (Plan: P9.1, Requirement: 15)
+- [ ] T9.2 Add a generic `skills/codeforerunner/SKILL.md` artifact from the canonical instruction source. (Plan: P9.1, Requirement: 15)
+- [ ] T9.3 Add Codex plugin metadata and package layout under `plugins/codeforerunner/`. (Plan: P9.2, Requirement: 15)
+- [ ] T9.4 Add Claude-compatible skill or plugin metadata and package layout. (Plan: P9.3, Requirement: 15)
+- [ ] T9.5 Implement `forerunner agent install`, `forerunner agent uninstall`, and `forerunner agent doctor`. (Plan: P9.4, Requirement: 15)
+- [ ] T9.6 Add `--only <target>` support for scoped installs. (Plan: P9.4, Requirement: 15)
+- [ ] T9.7 Add thin `install.sh` and `install.ps1` wrappers around the unified installer. (Plan: P9.5, Requirement: 15)
+- [ ] T9.8 Add installer tests for metadata validity, idempotency, uninstall ownership, unsupported target reporting, and generic fallback output. (Plan: P9.6, Requirement: 15)

@@ -171,3 +171,18 @@ As a developer, I want a generated runtime and EOL matrix so that I can quickly 
 - WHEN `forerunner generate` runs, THEN the system SHALL query endoflife.date (or a compatible data source) for each detected runtime or platform and determine current support or EOL status.
 - WHEN runtimes are classified, THEN the system SHALL generate a `docs/versions.md` file containing tables for: currently EOL, approaching EOL, and in-support versions, including EOL or support end dates and links to where each version was found in the repo.
 
+## Requirement 15: Agent skill and plugin distribution
+
+**User Story**
+
+As a developer using AI coding agents, I want to install codeforerunner as a skill or plugin so that my agent can run the documentation workflow without me finding prompt files manually.
+
+**Acceptance Criteria**
+
+- WHEN the repo is packaged, THEN it SHALL include canonical agent instructions for running codeforerunner against a target repository.
+- WHEN Codex is supported, THEN the system SHALL provide Codex plugin metadata plus a skill directory that can be installed without manually copying prompts.
+- WHEN Claude Code is supported, THEN the system SHALL provide Claude-compatible skill or plugin metadata and instructions.
+- WHEN a user runs the installer, THEN it SHALL detect supported agent targets, install only relevant owned files, and report skipped targets clearly.
+- WHEN the installer is rerun, THEN it SHALL avoid duplicate files or duplicate injected instruction blocks.
+- WHEN uninstall runs, THEN it SHALL remove only codeforerunner-owned files or marker-fenced blocks.
+- WHEN an agent target is unsupported, THEN the system SHALL provide a generic Markdown skill artifact and setup guidance.

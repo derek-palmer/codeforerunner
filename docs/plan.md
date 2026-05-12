@@ -152,3 +152,35 @@ This plan breaks codeforerunner into small, independently shippable slices. Spec
 - **Priority:** Medium
 - **Covers:** Requirements 1 through 12
 - Improve speed, logs, error messages, and partial-failure handling.
+
+## Phase 9: Agent skill and plugin distribution
+
+### Plan Item P9.1: Canonical agent instruction source
+- **Priority:** High
+- **Covers:** Requirement 15
+- Create one shared agent instruction source that explains how an AI coding agent should inspect a target repo, run codeforerunner commands, respect config/excludes, and report generated doc changes.
+
+### Plan Item P9.2: Codex plugin package
+- **Priority:** High
+- **Covers:** Requirement 15
+- Add Codex plugin metadata and a `skills/codeforerunner/SKILL.md` package generated from or copied from the canonical agent instruction source.
+
+### Plan Item P9.3: Claude skill or plugin package
+- **Priority:** High
+- **Covers:** Requirement 15
+- Add Claude-compatible skill or plugin metadata and instructions, with hooks limited to activation or command routing if hooks are needed.
+
+### Plan Item P9.4: Unified agent installer
+- **Priority:** High
+- **Covers:** Requirement 15
+- Add an idempotent installer that detects supported agents, installs owned skill/plugin files, supports `--only`, uninstall, and doctor checks, and prints installed/skipped targets.
+
+### Plan Item P9.5: Thin shell and PowerShell launchers
+- **Priority:** Medium
+- **Covers:** Requirement 15
+- Add `install.sh` and `install.ps1` wrappers that validate runtime prerequisites and delegate to the unified installer.
+
+### Plan Item P9.6: Installer and package tests
+- **Priority:** Medium
+- **Covers:** Requirement 15
+- Add tests for metadata validity, installed file layout, idempotent reruns, uninstall ownership, unsupported target reporting, and generic skill fallback.

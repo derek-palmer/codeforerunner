@@ -56,6 +56,7 @@ Existing README guidance emphasizes clarity, concise structure, and keeping exam
 - Produce Mermaid diagrams that can live in version control alongside Markdown docs.
 - Document end-to-end integration and data flows across modules, services, jobs, queues, and external systems.
 - Let users plug codeforerunner into their preferred AI model stack instead of forcing one provider path or one API-key workflow.
+- Install codeforerunner as an agent skill or plugin so users can invoke the repository documentation workflow directly from Claude Code, Codex, Gemini, or similar coding agents without manually finding prompt files.
 
 ## Scope
 
@@ -234,6 +235,30 @@ The system should support at least these execution patterns:
 
 The project should avoid making user API key entry a core assumption of setup. If provider adapters support keys, they should be optional adapter details rather than the product's primary onboarding path.
 
+### FR12 Agent skill and plugin distribution
+
+The system shall provide first-class agent installation artifacts so codeforerunner can be installed as a skill, plugin, or equivalent agent extension instead of requiring users to copy prompts or discover internal files manually.
+
+The distribution should include:
+- canonical skill instructions that tell an agent how to run codeforerunner against a target repository,
+- Codex plugin metadata and skill packaging,
+- Claude plugin metadata and command or skill packaging where supported,
+- shared source files for the canonical instructions so each agent package does not drift,
+- an installer that detects supported agents and installs only the relevant artifacts,
+- idempotent install and uninstall behavior,
+- a clear fallback for unsupported agents that writes a portable Markdown skill file and setup instructions.
+
+The installer should be modeled after repos that ship a thin shell or PowerShell wrapper around a unified Node installer. The wrapper should be small, while the Node installer owns detection, file copying, marker-block updates, validation, and uninstall behavior.
+
+Initial supported agent targets should include:
+- Codex skill/plugin package,
+- Claude Code skill/plugin package,
+- generic Markdown skill package for agents that support project or user-level instruction files.
+
+Future targets may include Gemini, Cursor, Windsurf, Cline, Copilot, OpenCode, or other agent hosts if their skill or rule-file conventions become stable enough to support.
+
+The agent-facing instructions should route work through the real CLI and repo-local config. They should not duplicate codeforerunner's full product spec. The skill should tell the agent how to inspect the target repo, choose safe commands, call `forerunner init`, `forerunner generate`, or `forerunner check`, and report changed docs back to the user.
+
 ## Non-functional requirements
 
 ### NFR1 Developer experience
@@ -268,6 +293,14 @@ The project should avoid making user API key entry a core assumption of setup. I
 - The system must clearly define whether source code is processed locally, remotely, or both.
 - Secret files, environment files, and excluded paths must never be sent to an external model provider unless explicitly configured.
 - Local-first and provider-agnostic workflows should be treated as first-class design goals.
+
+### NFR6 Agent package maintainability
+
+- Agent packages must derive from shared source instructions where practical.
+- Generated package artifacts must be testable for file presence, metadata validity, and idempotent install behavior.
+- Installers must avoid overwriting unrelated user content.
+- Any injected global instruction blocks must use stable begin/end markers so uninstall can remove only codeforerunner-owned content.
+- Agent-specific packages should stay thin and point back to the CLI, config, and docs rather than duplicating product behavior.
 
 
 ## Licensing direction
@@ -304,6 +337,8 @@ The final license text should be reviewed by counsel before public release, espe
 - Enforcement layer
 - Model adapter interface
 - CLI and config layer
+- Agent skill/plugin packaging layer
+- Cross-agent installer layer
 
 ### Architectural principle
 
@@ -322,6 +357,71 @@ The same separation should apply to repository analysis. Technology-specific ana
 7. Render Markdown and Mermaid outputs for both stack-specific and cross-stack docs.
 8. Compare outputs against current files for drift detection.
 9. Enforce review and update rules in hook or CI contexts.
+
+### Agent distribution architecture
+
+The agent distribution should have one canonical source of truth and generated or copied package outputs:
+
+```text
+agent/
+  codeforerunner.skill.md
+  templates/
+    codex-plugin.json
+    claude-plugin.json
+    generic-skill.md
+bin/
+  install-agent.js
+install.sh
+install.ps1
+plugins/
+  codeforerunner/
+    .codex-plugin/
+      plugin.json
+    skills/
+      codeforerunner/
+        SKILL.md
+.claude-plugin/
+  plugin.json
+skills/
+  codeforerunner/
+    SKILL.md
+```
+
+The exact paths may change once Codex and Claude package conventions are validated, but the ownership model should stay stable:
+- `agent/codeforerunner.skill.md` is the canonical agent instruction source.
+- `skills/codeforerunner/SKILL.md` is the generic skill artifact.
+- `plugins/codeforerunner/.codex-plugin/plugin.json` is Codex plugin metadata.
+- `.claude-plugin/plugin.json` is Claude plugin metadata if Claude plugin hooks are needed.
+- `bin/install-agent.js` owns target detection, install, uninstall, and validation.
+- `install.sh` and `install.ps1` are thin launchers only.
+
+Supported installer commands should include:
+
+```bash
+forerunner agent install
+forerunner agent install --only codex
+forerunner agent install --only claude
+forerunner agent uninstall
+forerunner agent doctor
+```
+
+The direct shell install path may also be supported after packaging:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/derek-palmer/codeforerunner/main/install.sh | bash
+```
+
+The installer should:
+- detect known agent config roots,
+- copy codeforerunner-owned skill/plugin files,
+- append marker-fenced instruction blocks only when an agent requires global injected context,
+- avoid duplicate blocks on rerun,
+- remove only marker-fenced or owned files on uninstall,
+- print exact installed targets and skipped targets.
+
+The Codex package should prefer a plugin with a `skills/` directory and `plugin.json` interface metadata. The skill should trigger on repository documentation generation, README/API/diagram/flow documentation, stale-doc checks, and pre-commit or CI documentation enforcement setup.
+
+The Claude package should support either Claude's skill directory convention, Claude plugin metadata, or both, depending on current Claude Code capabilities. Any hooks should be limited to activation or command routing and must not silently run code generation against user repos.
 
 ## Proposed outputs
 
@@ -354,6 +454,10 @@ forerunner.config.yaml
 - `docs/flows/overview.md`
 - `docs/flows/<integration-name>.md`
 - `.codeforerunner/state.json` or similar metadata for generation checks
+- `skills/codeforerunner/SKILL.md`
+- `plugins/codeforerunner/.codex-plugin/plugin.json`
+- `.claude-plugin/plugin.json`
+- `install.sh`, `install.ps1`, and `bin/install-agent.js`
 
 ## CLI concept
 
@@ -365,6 +469,9 @@ forerunner generate
 forerunner check
 forerunner review
 forerunner hook install
+forerunner agent install
+forerunner agent uninstall
+forerunner agent doctor
 forerunner config init
 forerunner adapters list
 ```
@@ -471,6 +578,7 @@ An AI agent implementing this specification should work in this order:
 10. Implement pre-commit hook installation and enforcement behavior.
 11. Add tests using small fixture repositories, including at least one integration-heavy and one polyglot fixture.
 12. Document analyzer limitations and unsupported constructs explicitly.
+13. Add agent skill/plugin packaging after the core CLI contract is stable enough for agent instructions to call it without churn.
 
 This order matches `docs/plan.md`: the adapter **interface** belongs in Phase 0 foundations; a first **concrete adapter** and deeper fallback behavior land in a later phase after generators are exercising the interface.
 

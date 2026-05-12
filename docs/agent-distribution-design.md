@@ -1,0 +1,155 @@
+# Agent Skill and Plugin Distribution Design
+
+## Goal
+
+Make codeforerunner installable as an agent skill or plugin so users can ask Claude Code, Codex, or another coding agent to run the documentation workflow without manually locating prompts or copying files.
+
+This is packaging and workflow glue around the real CLI. The agent package should not become a second implementation of codeforerunner.
+
+## Upstream Pattern
+
+The `caveman` repo uses three ideas worth mirroring:
+
+- one-line install entrypoints for macOS/Linux and Windows,
+- thin shell/PowerShell wrappers around a unified Node installer,
+- per-agent package folders such as Codex plugin metadata, Claude plugin metadata, generic skills, and command files.
+
+That shape keeps install UX simple while leaving agent-specific differences isolated.
+
+## Proposed Layout
+
+```text
+agent/
+  codeforerunner.skill.md
+  templates/
+    codex-plugin.json
+    claude-plugin.json
+    generic-skill.md
+bin/
+  install-agent.js
+install.sh
+install.ps1
+plugins/
+  codeforerunner/
+    .codex-plugin/
+      plugin.json
+    skills/
+      codeforerunner/
+        SKILL.md
+.claude-plugin/
+  plugin.json
+skills/
+  codeforerunner/
+    SKILL.md
+```
+
+## Ownership Rules
+
+- `agent/codeforerunner.skill.md` is canonical.
+- Generated or copied skill files must preserve canonical instruction content.
+- Agent metadata files stay small and agent-specific.
+- Installer owns only files below known codeforerunner package paths and marker-fenced blocks it creates.
+- Uninstall removes only owned files/blocks.
+
+## Agent Instructions
+
+The skill should tell agents to:
+
+- inspect the target repo first,
+- respect `forerunner.config.yaml`, include/exclude rules, and existing docs,
+- prefer `forerunner check` for validation,
+- use `forerunner init` for first setup,
+- use `forerunner generate` for doc creation or refresh,
+- report generated file changes and stale-doc failures clearly,
+- avoid sending excluded or secret paths to external model providers,
+- stop before destructive overwrites unless the CLI has an explicit managed-section strategy.
+
+The skill should avoid duplicating full product requirements. It should route to CLI behavior and repo-local config.
+
+## Installer Interface
+
+CLI commands:
+
+```bash
+forerunner agent install
+forerunner agent install --only codex
+forerunner agent install --only claude
+forerunner agent uninstall
+forerunner agent doctor
+```
+
+One-line install after release:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/derek-palmer/codeforerunner/main/install.sh | bash
+```
+
+PowerShell equivalent:
+
+```powershell
+irm https://raw.githubusercontent.com/derek-palmer/codeforerunner/main/install.ps1 | iex
+```
+
+## Installer Behavior
+
+Install:
+
+- detect known agent roots,
+- copy owned skill/plugin artifacts,
+- create parent directories as needed,
+- append marker-fenced global instruction blocks only when required by a target agent,
+- avoid duplicate blocks on rerun,
+- print installed/skipped/failed targets.
+
+Uninstall:
+
+- remove owned skill/plugin files,
+- remove marker-fenced blocks,
+- leave unrelated user files untouched,
+- print removed/skipped targets.
+
+Doctor:
+
+- check expected files exist,
+- validate JSON metadata,
+- verify canonical instruction hash or content match where practical,
+- report stale copied artifacts.
+
+## Target Packages
+
+Codex:
+
+- package as `plugins/codeforerunner/`,
+- include `.codex-plugin/plugin.json`,
+- include `skills/codeforerunner/SKILL.md`,
+- set plugin interface metadata for repository documentation, generated docs, diagrams, flow docs, and stale-doc checks.
+
+Claude Code:
+
+- support skill directory or `.claude-plugin/plugin.json`, depending on validated current convention,
+- hooks may activate or expose commands,
+- hooks must not silently generate docs against user repos.
+
+Generic:
+
+- ship `skills/codeforerunner/SKILL.md`,
+- include manual setup notes for agents that support Markdown instructions but not package metadata.
+
+## Validation
+
+Tests should cover:
+
+- package file presence,
+- plugin metadata parses as JSON,
+- install creates expected files in temp agent roots,
+- rerun is idempotent,
+- uninstall removes only owned files and marker blocks,
+- unsupported targets produce generic fallback guidance,
+- `--only` limits touched targets.
+
+## Open Decisions
+
+- Whether `bin/install-agent.js` lives beside the Python CLI or is invoked only by shell wrappers.
+- Whether `forerunner agent install` shells out to Node or uses Python for local installs.
+- Which Claude package convention is current enough to support as first-class.
+- Whether copied skill files are generated at build time or checked in as committed artifacts.
