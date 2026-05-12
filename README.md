@@ -1,8 +1,6 @@
 ![codeForerunner — your codebase gets a Forerunner; your docs finally see the light](images/readme_banner.png)
 
-> Your codebase gets a Forerunner; your docs finally see the light.
-
-# codeforerunner
+# codeForerunner
 
 CodeForerunner is a model-agnostic documentation agent that acts as a guardian for your repository, automatically analyzing code and maintaining docs, diagrams, and architecture knowledge as your codebase evolves over time.
 
