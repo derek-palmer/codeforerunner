@@ -2,7 +2,7 @@
 
 # codeForerunner
 
-CodeForerunner is a model-agnostic documentation agent that acts as a guardian for your repository, automatically analyzing code and maintaining docs, diagrams, and architecture knowledge as your codebase evolves over time.
+CodeForerunner is a model-agnostic documentation agent that acts as overwatch for your repository, automatically analyzing code and maintaining docs, diagrams, and architecture knowledge as your codebase evolves over time.
 
 The current repo is the prompt-first foundation for that agent: it ships prompt assets for understanding a codebase and generating developer docs. Thin delivery surfaces such as a CLI, MCP server, hooks, and CI checks are roadmap items, not implemented runtime features yet.
 
