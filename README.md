@@ -1,4 +1,4 @@
-# codeforerunner
+![codeForerunner — your codebase gets a Forerunner; your docs finally see the light](images/readme_banner.png)
 
 > Your codebase gets a Forerunner; your docs finally see the light.
 
