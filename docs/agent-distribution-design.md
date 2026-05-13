@@ -60,10 +60,12 @@ The skill should tell agents to:
 - assemble repo context using `prompts/partials/context-format.md`,
 - run `prompts/tasks/scan.md` before downstream task prompts,
 - use task prompts from `prompts/tasks/` for README, API docs, stack docs, diagrams, flows, version audits, checks, and reviews,
-- respect `forerunner.config.yaml.example` as proposed config shape only until a real loader exists,
+- respect `forerunner.config.yaml` as the canonical config name, using the tracked example shape only until a real loader exists,
 - report generated file changes and stale-doc failures clearly,
 - avoid sending excluded or secret paths to external model providers,
 - stop before destructive overwrites unless the prompt output gives an explicit managed-section strategy.
+
+Naming convention: repo/product `codeforerunner`; CLI/config `forerunner`; canonical config filename `forerunner.config.yaml`.
 
 The skill should avoid duplicating full product requirements. It should route to the prompt pack and repo-local docs.
 
