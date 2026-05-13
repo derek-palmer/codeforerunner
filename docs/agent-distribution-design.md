@@ -79,20 +79,20 @@ forerunner agent uninstall
 forerunner agent doctor
 ```
 
-Before a CLI exists, install can be exposed through standalone wrappers:
+Design example; standalone wrappers are planned and not currently runnable:
 
 ```bash
 bash install.sh --only codex
 pwsh ./install.ps1 --only claude
 ```
 
-One-line install after release:
+Design example; one-line shell install is planned and not currently runnable:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/derek-palmer/codeforerunner/main/install.sh | bash
 ```
 
-PowerShell equivalent:
+Design example; one-line PowerShell install is planned and not currently runnable:
 
 ```powershell
 irm https://raw.githubusercontent.com/derek-palmer/codeforerunner/main/install.ps1 | iex

@@ -4,7 +4,7 @@ Roadmap order follows `SPEC.md`.
 
 ## P0: Repo Truth Cleanup
 
-Status: in progress.
+Status: complete.
 
 - Replace stale v1 README claims.
 - Add compact spec for phased work.
@@ -22,7 +22,7 @@ Status: planned.
 
 ## P2: Agent Config Exports
 
-Status: in progress.
+Status: complete.
 
 - Provide copyable instructions for common local agents.
 - Keep configs thin and prompt-referencing.
@@ -30,7 +30,7 @@ Status: in progress.
 
 ## P3: Human Docs
 
-Status: in progress.
+Status: complete.
 
 - Explain manual prompt use.
 - Document prompt composition.
@@ -50,7 +50,7 @@ Status: planned.
 
 ## P5: Thin Runtime Wrappers
 
-Status: future.
+Status: planned.
 
 Potential surfaces:
 
