@@ -60,11 +60,12 @@ prompts/
 
 ## Docs And Spec
 
-- `codeforerunner_spec.md` tracks phases, invariants, and tasks so future PRs can make small status updates instead of broad rewrites.
+- `SPEC.md` tracks phases, invariants, and tasks so future PRs can make small status updates instead of broad rewrites.
 - `docs/getting-started.md` explains manual prompt use.
 - `docs/prompt-guide.md` explains how system, partial, and task prompts compose.
 - `docs/editor-agent-setup.md` explains how to adapt prompts to local agents.
 - `docs/roadmap.md` separates current prompt assets from future wrappers.
+- `docs/agent-distribution-design.md` designs future Claude/Codex skill and plugin packaging.
 
 ## Configuration
 
@@ -80,6 +81,7 @@ Near-term work should keep the repo lightweight:
 | Todo | P1 | Prompt pack hardening: make task prompts consistent, composable, and evidence-first. |
 | Done | P2 | Agent config exports: Claude, Cursor, Copilot, Cline/Roo, and Windsurf scaffolds. |
 | Done | P3 | Human docs: getting started, prompt guide, editor setup, and roadmap. |
-| Later | P4 | Thin wrappers: CLI, MCP, hooks, and CI only after prompt contracts stabilize. |
+| Todo | P4 | Skill/plugin distribution: package prompt workflow for Claude/Codex setup. |
+| Later | P5 | Thin wrappers: CLI, MCP, hooks, and CI only after prompt contracts stabilize. |
 
-See `codeforerunner_spec.md` and `docs/roadmap.md` for the current phase plan.
+See `SPEC.md` and `docs/roadmap.md` for the current phase plan.

@@ -30,5 +30,5 @@ Use `agent-configs/` as copyable starting points for editor-agent instructions.
 
 When prompt contracts change, update both:
 
-- `codeforerunner_spec.md`
+- `SPEC.md`
 - affected files in `agent-configs/`

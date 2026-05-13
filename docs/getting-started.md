@@ -37,4 +37,4 @@ base.md + context-format.md + target repo context + scan.md
 
 - Prompt composition: `docs/prompt-guide.md`
 - Editor setup: `docs/editor-agent-setup.md`
-- Phase tracker: `codeforerunner_spec.md`
+- Phase tracker: `SPEC.md`

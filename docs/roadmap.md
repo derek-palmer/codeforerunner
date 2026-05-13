@@ -1,10 +1,10 @@
 # Roadmap
 
-Roadmap order follows `codeforerunner_spec.md`.
+Roadmap order follows `SPEC.md`.
 
 ## P0: Repo Truth Cleanup
 
-Status: in progress.
+Status: complete.
 
 - Replace stale v1 README claims.
 - Add compact spec for phased work.
@@ -22,7 +22,7 @@ Status: planned.
 
 ## P2: Agent Config Exports
 
-Status: in progress.
+Status: complete.
 
 - Provide copyable instructions for common local agents.
 - Keep configs thin and prompt-referencing.
@@ -30,16 +30,27 @@ Status: in progress.
 
 ## P3: Human Docs
 
-Status: in progress.
+Status: complete.
 
 - Explain manual prompt use.
 - Document prompt composition.
 - Document editor-agent setup.
 - Keep roadmap honest about current vs future surfaces.
 
-## P4: Thin Runtime Wrappers
+## P4: Skill/Plugin Distribution
 
-Status: future.
+Status: planned.
+
+- Add a canonical skill source derived from the prompt pack.
+- Add Codex plugin packaging for the prompt workflow.
+- Add Claude skill/plugin packaging for the prompt workflow.
+- Add an idempotent installer for owned agent artifacts.
+- Keep packages thin: they should route agents to tracked prompts and docs, not duplicate product logic.
+- Do not claim package install support until files exist.
+
+## P5: Thin Runtime Wrappers
+
+Status: planned.
 
 Potential surfaces:
 
