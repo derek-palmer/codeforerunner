@@ -4,7 +4,7 @@
 
 Make codeforerunner installable as an agent skill or plugin so users can ask Claude Code, Codex, or another coding agent to run the documentation workflow without manually locating prompts or copying files.
 
-This is packaging and workflow glue around the real CLI. The agent package should not become a second implementation of codeforerunner.
+This is packaging and workflow glue around the tracked prompt pack. The agent package should not become a second implementation of codeforerunner.
 
 ## Upstream Pattern
 
@@ -56,19 +56,20 @@ skills/
 The skill should tell agents to:
 
 - inspect the target repo first,
-- respect `forerunner.config.yaml`, include/exclude rules, and existing docs,
-- prefer `forerunner check` for validation,
-- use `forerunner init` for first setup,
-- use `forerunner generate` for doc creation or refresh,
+- use `prompts/system/base.md` as the governing instruction source,
+- assemble repo context using `prompts/partials/context-format.md`,
+- run `prompts/tasks/scan.md` before downstream task prompts,
+- use task prompts from `prompts/tasks/` for README, API docs, stack docs, diagrams, flows, version audits, checks, and reviews,
+- respect `forerunner.config.yaml.example` as proposed config shape only until a real loader exists,
 - report generated file changes and stale-doc failures clearly,
 - avoid sending excluded or secret paths to external model providers,
-- stop before destructive overwrites unless the CLI has an explicit managed-section strategy.
+- stop before destructive overwrites unless the prompt output gives an explicit managed-section strategy.
 
-The skill should avoid duplicating full product requirements. It should route to CLI behavior and repo-local config.
+The skill should avoid duplicating full product requirements. It should route to the prompt pack and repo-local docs.
 
 ## Installer Interface
 
-CLI commands:
+Future CLI commands, once thin wrappers exist:
 
 ```bash
 forerunner agent install
@@ -76,6 +77,13 @@ forerunner agent install --only codex
 forerunner agent install --only claude
 forerunner agent uninstall
 forerunner agent doctor
+```
+
+Before a CLI exists, install can be exposed through standalone wrappers:
+
+```bash
+bash install.sh --only codex
+pwsh ./install.ps1 --only claude
 ```
 
 One-line install after release:
@@ -149,7 +157,7 @@ Tests should cover:
 
 ## Open Decisions
 
-- Whether `bin/install-agent.js` lives beside the Python CLI or is invoked only by shell wrappers.
-- Whether `forerunner agent install` shells out to Node or uses Python for local installs.
+- Whether `bin/install-agent.js` is the first implementation or waits until package layout stabilizes.
+- Whether future `forerunner agent install` shells out to Node or uses Python for local installs.
 - Which Claude package convention is current enough to support as first-class.
 - Whether copied skill files are generated at build time or checked in as committed artifacts.
