@@ -9,9 +9,10 @@ The current repo is the prompt-first foundation for that agent: it ships prompt 
 ## Current State
 
 - Core product: Markdown prompts in `prompts/`.
+- Agent package artifacts: Codex plugin files under `plugins/codeforerunner/` and Claude Code plugin files under `.claude-plugin/` plus `skills/codeforerunner/`.
 - Current config: `forerunner.config.yaml.example` documents intended options only.
 - Current execution model: paste or attach prompts to your local agent/editor workflow.
-- Not currently present: Python package, CLI, Docker image, Makefile, pre-commit hook, CI workflow, MCP server, or published package.
+- Not currently present: Python package, CLI, Docker image, Makefile, pre-commit hook, CI workflow, MCP server, installer, or published package.
 
 ## Prompt Layout
 
@@ -68,7 +69,7 @@ prompts/
 - `docs/prompt-guide.md` explains how system, partial, and task prompts compose.
 - `docs/editor-agent-setup.md` explains how to adapt prompts to local agents.
 - `docs/roadmap.md` separates current prompt assets from future wrappers.
-- `docs/agent-distribution-design.md` designs future Claude/Codex skill and plugin packaging.
+- `docs/agent-distribution-design.md` explains current Codex/Claude package artifacts and future installer work.
 
 ## Configuration
 
@@ -84,7 +85,7 @@ Near-term work should keep the repo lightweight:
 | Todo | P1 | Prompt pack hardening: make task prompts consistent, composable, and evidence-first. |
 | Done | P2 | Agent config exports: Claude, Cursor, Copilot, Cline/Roo, and Windsurf scaffolds. |
 | Done | P3 | Human docs: getting started, prompt guide, editor setup, and roadmap. |
-| Todo | P4 | Skill/plugin distribution: package prompt workflow for Claude/Codex setup. |
+| In progress | P4 | Skill/plugin distribution: package prompt workflow for Codex/Claude setup; installer work remains. |
 | Later | P5 | Thin wrappers: CLI, MCP, hooks, and CI only after prompt contracts stabilize. |
 
 See `SPEC.md` and `docs/roadmap.md` for the current phase plan.

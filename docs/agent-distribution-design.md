@@ -18,7 +18,7 @@ That shape keeps install UX simple while leaving agent-specific differences isol
 
 ## Package Layout
 
-Codex slice (`plugins/codeforerunner/.codex-plugin/plugin.json` + `plugins/codeforerunner/skills/codeforerunner/SKILL.md`) is implemented (SPEC §T13). Claude (`.claude-plugin/`, `skills/`) and generic (`skills/`) slices remain proposed (SPEC §T14, §T15).
+Codex slice (`plugins/codeforerunner/.codex-plugin/plugin.json` + `plugins/codeforerunner/skills/codeforerunner/SKILL.md`) is implemented (SPEC T13). Claude slice (`.claude-plugin/plugin.json` + `skills/codeforerunner/SKILL.md`) is implemented (SPEC T14). Generic installer-driven distribution remains proposed (SPEC T15).
 
 ```text
 agent/
@@ -38,11 +38,11 @@ plugins/
     skills/
       codeforerunner/
         SKILL.md              # implemented (T13)
-.claude-plugin/               # planned (T14)
-  plugin.json                 # planned (T14)
-skills/                       # planned (T14)
-  codeforerunner/             # planned (T14)
-    SKILL.md                  # planned (T14)
+.claude-plugin/               # implemented (T14)
+  plugin.json                 # implemented (T14)
+skills/                       # implemented (T14)
+  codeforerunner/             # implemented (T14)
+    SKILL.md                  # implemented (T14)
 ```
 
 ## Ownership Rules
@@ -108,6 +108,8 @@ Install:
 
 - detect known agent roots,
 - copy owned skill/plugin artifacts,
+- create or update a repo-local marketplace entry when Codex UI discovery is in scope,
+- install or register Claude package artifacts through Claude-specific discovery paths when Claude support is in scope,
 - create parent directories as needed,
 - append marker-fenced global instruction blocks only when required by a target agent,
 - avoid duplicate blocks on rerun,
@@ -138,9 +140,10 @@ Codex:
 
 Claude Code:
 
-- support skill directory or `.claude-plugin/plugin.json`, depending on validated current convention,
-- hooks may activate or expose commands,
-- hooks must not silently generate docs against user repos.
+- package as repo-root Claude Code plugin metadata plus skill directory,
+- include `.claude-plugin/plugin.json`,
+- include `skills/codeforerunner/SKILL.md`,
+- do not ship hooks that silently generate docs against user repos.
 
 Generic:
 
@@ -158,9 +161,11 @@ Tests should cover:
 - uninstall removes only owned files and marker blocks,
 - unsupported targets produce generic fallback guidance,
 - `--only` limits touched targets.
+- Codex marketplace generation writes `policy.installation`, `policy.authentication`, and `category`.
+- Claude install support places `.claude-plugin/plugin.json` and `skills/codeforerunner/SKILL.md` where Claude expects them without using the Codex marketplace format.
 
 ## Open Decisions
 
 - Whether `bin/install-agent.js` is the first implementation or waits until package layout stabilizes.
 - Whether future `forerunner agent install` shells out to Node or uses Python for local installs.
-- Which Claude package convention is current enough to support as first-class.
+- Whether generic distribution should reuse the root `skills/` tree or copy from the canonical source during install.

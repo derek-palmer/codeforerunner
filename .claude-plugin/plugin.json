@@ -1,0 +1,18 @@
+{
+  "name": "codeforerunner",
+  "description": "Routes Claude Code through the tracked codeforerunner prompt pack to keep repository documentation in sync with code.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Derek Palmer",
+    "url": "https://github.com/derek-palmer"
+  },
+  "homepage": "https://github.com/derek-palmer/codeforerunner",
+  "repository": "https://github.com/derek-palmer/codeforerunner",
+  "license": "LicenseRef-Codeforerunner-SAL-0.1",
+  "keywords": [
+    "documentation",
+    "prompts",
+    "agents",
+    "claude-code"
+  ]
+}
