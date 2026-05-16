@@ -74,9 +74,9 @@ T12|x|P4|add canonical skill source from prompt pack|I.prompts,I.agent-skill,I.s
 T13|x|P4|add Codex plugin package for prompt workflow|I.skill-plugin,I.agent-skill,V8,V10
 T14|x|P4|add Claude skill/plugin package for prompt workflow|I.skill-plugin,I.agent-skill,I.validation,V8,V10
 T15|x|P4|design installer + Codex marketplace + Claude install (§D.installer); implementation deferred|I.skill-plugin,I.agent-skill,I.future-installer,V8,V10,V11,V12
-T17|.|P5|implement minimal `forerunner` CLI under `src/` (D.cli: init, scan, doc, check stubs routing to prompt pack)|I.future-cli,D.cli,C1,V4,V11
-T18|.|P4|implement idempotent installer `forerunner install <agent>` (D.installer: body-parity check, managed-region markers, --check dry-run)|I.future-installer,D.installer,V8,V10,V11,V12
-T19|.|P5|wire pre-commit + CI hooks calling `forerunner check` (D.hooks: skip when no forerunner.config.yaml)|I.future-hooks,D.hooks,V11
+T17|x|P5|implement minimal `forerunner` CLI under `src/` (D.cli: init, scan, doc, check stubs routing to prompt pack)|I.future-cli,D.cli,C1,V4,V11
+T18|x|P4|implement idempotent installer `forerunner install <agent>` (D.installer: body-parity check, managed-region markers, --check dry-run)|I.future-installer,D.installer,V8,V10,V11,V12
+T19|x|P5|wire pre-commit + CI hooks calling `forerunner check` (D.hooks: skip when no forerunner.config.yaml)|I.future-hooks,D.hooks,V11
 
 ## Init-Onboarding
 

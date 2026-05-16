@@ -1,0 +1,22 @@
+# SPEC.md §D.hooks — CI mirror of pre-commit `forerunner check`.
+# Skip when forerunner.config.yaml absent (matches D.hooks shape).
+name: forerunner check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('forerunner.config.yaml') != '' }}
+    env:
+      # Reserved (D.hooks env): optional model override; not consumed yet.
+      FORERUNNER_MODEL: ${{ vars.FORERUNNER_MODEL || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e .
+      - run: forerunner check

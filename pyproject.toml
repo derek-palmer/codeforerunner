@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codeforerunner"
+version = "0.2.0"
+description = "Model-agnostic repository documentation tooling (prompt-first; thin CLI)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "LicenseRef-Codeforerunner-SAL-0.1"
+license-files = ["LICENSE.md"]
+authors = [{ name = "Derek Palmer" }]
+
+[project.urls]
+Repository = "https://github.com/derek-palmer/codeforerunner"
+Issues = "https://github.com/derek-palmer/codeforerunner/issues"
+
+[project.scripts]
+forerunner = "codeforerunner.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+codeforerunner = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

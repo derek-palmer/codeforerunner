@@ -1,0 +1,9 @@
+# codeforerunner pre-commit hook. See SPEC.md §D.hooks (cites V11).
+# Skip is implicit: `forerunner check` exits 0 silently when no forerunner.config.yaml is present.
+- id: forerunner-check
+  name: forerunner check
+  description: Run codeforerunner check on the repo (no-op without forerunner.config.yaml).
+  entry: forerunner check
+  language: system
+  pass_filenames: false
+  always_run: true
