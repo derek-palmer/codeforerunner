@@ -17,6 +17,7 @@ C7: skill/plugin packages ! route to prompt pack/current files until runtime wra
 ## §I Interfaces
 
 I.prompts: `prompts/system/base.md` + `prompts/partials/*.md` + `prompts/tasks/*.md` → reusable prompt pack.
+I.init-onboarding: `prompts/tasks/init-agent-onboarding.md` → onboarding task for creating/updating `AGENTS.md` from repo evidence.
 I.config: `forerunner.config.yaml.example` → example config only; no loader yet.
 I.agent-configs: `agent-configs/*.md` → copyable editor-agent instructions.
 I.docs: `docs/*.md` → human setup, prompt guide, editor setup, roadmap.
@@ -36,6 +37,7 @@ V5: no doc says Docker/Makefile/PyPI/CI/pre-commit exists until corresponding fi
 V6: spec ! updated when phases/tasks shift.
 V7: agent configs ! reference prompt files, not imaginary package install.
 V8: skill/plugin design ! avoid manual prompt discovery but must not claim installed package support before files exist.
+V9: init onboarding docs must not claim runnable `forerunner init` until wrapper files exist.
 
 ## §P Phases
 
@@ -58,6 +60,7 @@ T5|x|P3|add `docs/prompt-guide.md`|I.prompts,V2
 T6|x|P3|add `docs/editor-agent-setup.md`|I.agent-configs,V7
 T7|x|P3|add `docs/roadmap.md`|V3,I.future-cli,I.future-mcp,I.future-hooks
 T8|.|P1|review task prompts for shared input/output contracts|I.prompts,V2
+T16|x|P1|add prompt-first init onboarding task for AGENTS generation/update|I.init-onboarding,V9
 T9|.|P5|design CLI only after prompt workflow stabilizes|I.future-cli,C1
 T10|.|P5|design hooks/CI only after check/review prompts stabilize|I.future-hooks,C1
 T11|x|P4|write skill/plugin distribution design|I.future-skill-plugin,V8

@@ -25,6 +25,7 @@ Use it for every run.
 | Task | Input | Output |
 | --- | --- | --- |
 | `scan.md` | File tree, manifests, entrypoints, config | YAML repo scan |
+| `init-agent-onboarding.md` | File tree, key configs/docs, existing instruction files, optional scan result | `AGENTS.md` update |
 | `readme.md` | Scan result, README, key files | `README.md` |
 | `api-docs.md` | Scan result, route/interface files | API docs |
 | `stack-docs.md` | Scan result, stack files | Stack docs |
