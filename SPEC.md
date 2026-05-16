@@ -1,10 +1,10 @@
 # codeforerunner Spec
 
-## §G Goal
+## G Goal
 
 G1: `codeforerunner` → model-agnostic doc guardian; analyze repo, maintain docs/diagrams/architecture knowledge as code evolves.
 
-## §C Constraints
+## C Constraints
 
 C1: prompts = core product; wrappers thin.
 C2: no analyzer-heavy v1 rebuild unless explicit.
@@ -14,7 +14,7 @@ C5: docs must distinguish current state vs roadmap.
 C6: future legacy-style files (`src/`, `tests/`, `Dockerfile`, `Makefile`, `pyproject.toml`, `uv.lock`) must support prompt-first strategy directly.
 C7: skill/plugin packages ! route to prompt pack/current files until runtime wrappers exist.
 
-## §I Interfaces
+## I Interfaces
 
 I.prompts: `prompts/system/base.md` + `prompts/partials/*.md` + `prompts/tasks/*.md` → reusable prompt pack.
 I.init-onboarding: `prompts/tasks/init-agent-onboarding.md` → onboarding task for creating/updating `AGENTS.md` from repo evidence.
@@ -23,12 +23,13 @@ I.agent-configs: `agent-configs/*.md` → copyable editor-agent instructions.
 I.docs: `docs/*.md` → human setup, prompt guide, editor setup, roadmap.
 I.spec: `SPEC.md` → canonical phase/task tracker.
 I.agent-skill: `agent/codeforerunner.skill.md` → canonical skill instruction source; its post-frontmatter Markdown content is consumed verbatim by future Codex/Claude packages and installer (per-agent frontmatter may differ; body cannot). See V10.
-I.future-skill-plugin: skill/plugin packages ? future surface; not implemented.
+I.skill-plugin: skill/plugin packages ? Codex and Claude package artifacts exist; installer/generic distribution remains future.
+I.validation: `scripts/validate_skill_copies.py` → local SPEC V10 body parity check for canonical and distributed skill files.
 I.future-cli: `forerunner` CLI ? future surface; not implemented.
 I.future-mcp: MCP server ? future surface; not implemented.
 I.future-hooks: pre-commit/CI checks ? future surface; not implemented.
 
-## §V Invariants
+## V Invariants
 
 V1: README current-state claims ! match tracked files.
 V2: doc-gen/check workflows ! run `prompts/tasks/scan.md` first; `init-agent-onboarding` exempt (derives from repo evidence directly).
@@ -41,7 +42,7 @@ V8: skill/plugin design ! avoid manual prompt discovery but must not claim insta
 V9: init onboarding docs must not claim runnable `forerunner init` until wrapper files exist.
 V10: `agent/codeforerunner.skill.md` = canonical skill source; downstream Codex/Claude/generic skill files ! preserve its post-frontmatter Markdown content verbatim (per-agent YAML frontmatter may differ, but body content cannot diverge).
 
-## §P Phases
+## P Phases
 
 id|status|phase|exit
 P0|x|repo truth cleanup|README/spec/AGENTS align with v2 state
@@ -51,7 +52,7 @@ P3|x|human docs|setup, prompt guide, editor setup, roadmap present
 P4|.|skill/plugin distribution design|simple agent setup planned without runtime claims
 P5|.|thin wrappers|CLI/MCP/hooks only after prompt contract stable
 
-## §T Tasks
+## T Tasks
 
 id|status|phase|task|cites
 T1|x|P0|replace stale `README.md` with prompt-first current state|V1,V3,V4,V5
@@ -65,13 +66,13 @@ T8|x|P1|add evidence rules and gaps convention to all task prompts|I.prompts,V2
 T16|x|P1|add prompt-first init onboarding task for AGENTS generation/update|I.init-onboarding,V9
 T9|.|P5|design CLI only after prompt workflow stabilizes|I.future-cli,C1
 T10|.|P5|design hooks/CI only after check/review prompts stabilize|I.future-hooks,C1
-T11|x|P4|write skill/plugin distribution design|I.future-skill-plugin,I.agent-skill,V8,V10
-T12|x|P4|add canonical skill source from prompt pack|I.prompts,I.agent-skill,I.future-skill-plugin,C7,V10
-T13|x|P4|add Codex plugin package for prompt workflow|I.future-skill-plugin,I.agent-skill,V8,V10
-T14|.|P4|add Claude skill/plugin package for prompt workflow|I.future-skill-plugin,I.agent-skill,V8,V10
-T15|.|P4|add idempotent installer for owned agent artifacts|I.future-skill-plugin,I.agent-skill,V8,V10
+T11|x|P4|write skill/plugin distribution design|I.skill-plugin,I.agent-skill,V8,V10
+T12|x|P4|add canonical skill source from prompt pack|I.prompts,I.agent-skill,I.skill-plugin,C7,V10
+T13|x|P4|add Codex plugin package for prompt workflow|I.skill-plugin,I.agent-skill,V8,V10
+T14|x|P4|add Claude skill/plugin package for prompt workflow|I.skill-plugin,I.agent-skill,I.validation,V8,V10
+T15|.|P4|add idempotent installer, Codex marketplace entry, and Claude install support for owned agent artifacts|I.skill-plugin,I.agent-skill,V8,V10
 
-## §Init Init-Onboarding
+## Init-Onboarding
 
 Goal: prompt-first, wrapper-agnostic repo onboarding → `AGENTS.md` + optional per-agent overlays.
 
@@ -112,6 +113,6 @@ Acceptance:
 - `AGENTS.md` compact, specific, materially useful.
 - Prompt-first remains source of truth; wrapper behavior documented as future.
 
-## §B Bugs
+## Bugs
 
 id|date|cause|fix

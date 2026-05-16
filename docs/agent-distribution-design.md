@@ -18,7 +18,7 @@ That shape keeps install UX simple while leaving agent-specific differences isol
 
 ## Package Layout
 
-Codex slice (`plugins/codeforerunner/.codex-plugin/plugin.json` + `plugins/codeforerunner/skills/codeforerunner/SKILL.md`) is implemented (SPEC §T13). Claude (`.claude-plugin/`, `skills/`) and generic (`skills/`) slices remain proposed (SPEC §T14, §T15).
+Codex slice (`plugins/codeforerunner/.codex-plugin/plugin.json` + `plugins/codeforerunner/skills/codeforerunner/SKILL.md`) is implemented (SPEC T13). Claude slice (`.claude-plugin/plugin.json` + `skills/codeforerunner/SKILL.md`) is implemented (SPEC T14). Generic installer-driven distribution remains proposed (SPEC T15) and reuses the same root `skills/codeforerunner/SKILL.md` file rather than a separate generic-only skill file.
 
 ```text
 agent/
@@ -38,17 +38,18 @@ plugins/
     skills/
       codeforerunner/
         SKILL.md              # implemented (T13)
-.claude-plugin/               # planned (T14)
-  plugin.json                 # planned (T14)
-skills/                       # planned (T14)
-  codeforerunner/             # planned (T14)
-    SKILL.md                  # planned (T14)
+.claude-plugin/               # implemented (T14)
+  plugin.json                 # implemented (T14)
+skills/                       # implemented for Claude (T14), reused by generic distribution (T15)
+  codeforerunner/             # implemented (T14)
+    SKILL.md                  # implemented (T14)
 ```
 
 ## Ownership Rules
 
 - `agent/codeforerunner.skill.md` is canonical.
 - Generated or copied skill files must preserve canonical instruction content.
+- Run `scripts/validate_skill_copies.py` after skill edits to check SPEC V10 body parity.
 - Agent metadata files stay small and agent-specific.
 - Installer owns only files below known codeforerunner package paths and marker-fenced blocks it creates.
 - Uninstall removes only owned files/blocks.
@@ -108,6 +109,8 @@ Install:
 
 - detect known agent roots,
 - copy owned skill/plugin artifacts,
+- create or update a repo-local marketplace entry when Codex UI discovery is in scope,
+- install or register Claude package artifacts through Claude-specific discovery paths when Claude support is in scope,
 - create parent directories as needed,
 - append marker-fenced global instruction blocks only when required by a target agent,
 - avoid duplicate blocks on rerun,
@@ -138,13 +141,14 @@ Codex:
 
 Claude Code:
 
-- support skill directory or `.claude-plugin/plugin.json`, depending on validated current convention,
-- hooks may activate or expose commands,
-- hooks must not silently generate docs against user repos.
+- package as repo-root Claude Code plugin metadata plus skill directory,
+- include `.claude-plugin/plugin.json`,
+- include `skills/codeforerunner/SKILL.md`,
+- do not ship hooks that silently generate docs against user repos.
 
 Generic:
 
-- ship `skills/codeforerunner/SKILL.md`,
+- reuse the root `skills/codeforerunner/SKILL.md` file shipped for Claude,
 - include manual setup notes for agents that support Markdown instructions but not package metadata.
 
 ## Validation
@@ -153,14 +157,17 @@ Tests should cover:
 
 - package file presence,
 - plugin metadata parses as JSON,
+- skill copy body parity with `scripts/validate_skill_copies.py`,
 - install creates expected files in temp agent roots,
 - rerun is idempotent,
 - uninstall removes only owned files and marker blocks,
 - unsupported targets produce generic fallback guidance,
 - `--only` limits touched targets.
+- Codex marketplace generation writes `policy.installation`, `policy.authentication`, and `category`.
+- Claude install support places `.claude-plugin/plugin.json` and `skills/codeforerunner/SKILL.md` where Claude expects them without using the Codex marketplace format.
 
 ## Open Decisions
 
 - Whether `bin/install-agent.js` is the first implementation or waits until package layout stabilizes.
 - Whether future `forerunner agent install` shells out to Node or uses Python for local installs.
-- Which Claude package convention is current enough to support as first-class.
+- Whether installer templates should copy from `agent/codeforerunner.skill.md` every run or fail fast when `scripts/validate_skill_copies.py` reports drift.

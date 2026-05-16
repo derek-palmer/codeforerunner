@@ -3,9 +3,9 @@ name: codeforerunner
 description: Routes a coding agent through the tracked codeforerunner prompt pack to keep repository documentation in sync with code. Use when the user asks to generate, refresh, audit, or review README, API docs, stack docs, diagrams, flow docs, version audits, stale-doc checks, or AGENTS onboarding files.
 ---
 
-# codeforerunner Skill — Canonical Source
+# codeforerunner Skill
 
-This file is the **canonical instruction source** for any codeforerunner agent package (Codex plugin, Claude skill/plugin, or generic Markdown skill). Downstream packages must preserve this file's post-frontmatter Markdown content verbatim (`SPEC.md` §V10); per-agent YAML frontmatter may differ, but the body cannot.
+The authoritative canonical source for this skill body is `agent/codeforerunner.skill.md` (see the `SPEC.md` I.agent-skill entry). Distribution copies are not independent sources; maintainers should edit the canonical file, then sync the post-frontmatter body into Codex and Claude copies. Downstream packages must preserve this post-frontmatter Markdown content verbatim (`SPEC.md` V10); per-agent YAML frontmatter may differ, but the body cannot.
 
 This skill does not bundle a runtime. It routes the host agent into the codeforerunner prompt pack tracked in the repository (`prompts/system/`, `prompts/partials/`, `prompts/tasks/`). No `forerunner` CLI, MCP server, hook, Docker image, Makefile target, or PyPI package is shipped yet — do not claim or assume any of them exist.
 
@@ -50,7 +50,7 @@ These compose once into the prompt sent to the host model. They are not per-task
 Per-run, in this order:
 
 1. **Scan first.** Run `prompts/tasks/scan.md` and capture its YAML output. All documentation-generation and check workflows depend on the scan result. **Exception:** `prompts/tasks/init-agent-onboarding.md` may run without a prior scan because it derives onboarding guidance directly from repo evidence and existing instruction files.
-2. **Run the matching task prompt.** See `docs/prompt-guide.md` §3 for the authoritative task → input → output table. Pick the task that matches the user's request and pass the scan result plus any task-specific inputs.
+2. **Run the matching task prompt.** See `docs/prompt-guide.md` section 3 for the authoritative task → input → output table. Pick the task that matches the user's request and pass the scan result plus any task-specific inputs.
 3. **Honor task output contracts.** When a task prompt specifies `<!-- output: path/to/file.md -->`, write the artifact to that path. When it does not, return Markdown for the user to place. Append a `## Gaps` section whenever evidence was insufficient — never silently invent content.
 
 ## Safety And Scope Rules
@@ -73,10 +73,10 @@ Use these names consistently across any generated documentation, agent metadata,
 
 ## Ownership Boundary
 
-This file owns the skill's instruction content. Generated or copied skill files (Codex `plugins/codeforerunner/.codex-plugin/plugin.json` + `plugins/codeforerunner/skills/codeforerunner/SKILL.md`, Claude `.claude-plugin/plugin.json` + `skills/codeforerunner/SKILL.md`, generic `skills/codeforerunner/SKILL.md` — see `docs/agent-distribution-design.md` §"Package Layout") downstream of T13, T14, and T15 must:
+The canonical file owns the skill's instruction content. Generated or copied skill files include the Codex distribution (`plugins/codeforerunner/.codex-plugin/plugin.json` + `plugins/codeforerunner/skills/codeforerunner/SKILL.md`) and the implemented Claude distribution (`.claude-plugin/plugin.json` + `skills/codeforerunner/SKILL.md`). The proposed generic distribution in T15 reuses that same root `skills/codeforerunner/SKILL.md` path rather than a separate generic-only skill file. See the `docs/agent-distribution-design.md` Package Layout section.
 
 - Preserve this file's post-frontmatter Markdown content verbatim (frontmatter may differ per agent).
 - Add only agent-specific metadata around it.
 - Stay routed to the tracked prompt pack — never embed a second copy of product logic.
 
-See `docs/agent-distribution-design.md` for the full packaging and installer design, `SPEC.md` §I.agent-skill for the spec entry that pins this file as canonical, and §V10 for the verbatim-preservation rule.
+See `docs/agent-distribution-design.md` for the full packaging and installer design, the `SPEC.md` I.agent-skill entry that pins this file as canonical and the V10 verbatim-preservation rule.
