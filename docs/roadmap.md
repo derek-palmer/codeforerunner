@@ -40,9 +40,9 @@ Status: complete.
 
 ## P4: Skill/Plugin Distribution
 
-Status: planned.
+Status: in progress.
 
-- Add a canonical skill source derived from the prompt pack.
+- Done: add a canonical skill source derived from the prompt pack.
 - Add Codex plugin packaging for the prompt workflow.
 - Add Claude skill/plugin packaging for the prompt workflow.
 - Add an idempotent installer for owned agent artifacts.
