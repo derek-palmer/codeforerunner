@@ -1,0 +1,35 @@
+{
+  "name": "codeforerunner",
+  "version": "0.1.0",
+  "description": "Routes a Codex agent through the tracked codeforerunner prompt pack to keep repository documentation in sync with code.",
+  "author": {
+    "name": "Derek Palmer",
+    "url": "https://github.com/derek-palmer"
+  },
+  "homepage": "https://github.com/derek-palmer/codeforerunner",
+  "repository": "https://github.com/derek-palmer/codeforerunner",
+  "license": "LicenseRef-Codeforerunner-SAL-0.1",
+  "keywords": [
+    "documentation",
+    "prompts",
+    "agents",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "codeforerunner",
+    "shortDescription": "Doc-guardian skill. Route Codex into the codeforerunner prompt pack.",
+    "longDescription": "Routes the Codex agent through the tracked codeforerunner prompt pack to keep repository documentation in sync with code. Does not bundle a runtime; uses prompts/system, prompts/partials, prompts/tasks from the host repo.",
+    "developerName": "Derek Palmer",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/derek-palmer/codeforerunner",
+    "defaultPrompt": [
+      "Use codeforerunner to refresh repository documentation from current code."
+    ],
+    "brandColor": "#0891b2"
+  }
+}

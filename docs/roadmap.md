@@ -43,7 +43,7 @@ Status: complete.
 Status: in progress.
 
 - Done: add a canonical skill source derived from the prompt pack.
-- Add Codex plugin packaging for the prompt workflow.
+- Done: add Codex plugin packaging for the prompt workflow.
 - Add Claude skill/plugin packaging for the prompt workflow.
 - Add an idempotent installer for owned agent artifacts.
 - Keep packages thin: they should route agents to tracked prompts and docs, not duplicate product logic.
