@@ -25,6 +25,7 @@ prompts/
 │   └── stack-hints.md
 └── tasks/
     ├── scan.md
+    ├── init-agent-onboarding.md
     ├── readme.md
     ├── api-docs.md
     ├── stack-docs.md
@@ -39,9 +40,10 @@ prompts/
 
 1. Open `prompts/system/base.md` and use it as the agent system or project instruction.
 2. Assemble repo context using the shape in `prompts/partials/context-format.md`.
-3. Run `prompts/tasks/scan.md` first.
-4. Pass the scan result into one downstream task prompt, such as `prompts/tasks/readme.md` or `prompts/tasks/stack-docs.md`.
-5. Apply generated docs only after checking that every claim is grounded in provided files.
+3. For documentation generation, run `prompts/tasks/scan.md` first.
+4. For agent onboarding only, run `prompts/tasks/init-agent-onboarding.md` directly.
+5. Pass the scan result into one downstream documentation prompt, such as `prompts/tasks/readme.md` or `prompts/tasks/stack-docs.md`.
+6. Apply generated docs only after checking that every claim is grounded in provided files.
 
 ## What The Prompts Do
 
@@ -49,6 +51,7 @@ prompts/
 | --- | --- |
 | `prompts/system/base.md` | Defines the codeforerunner role, quality bar, Markdown rules, and accuracy constraints. |
 | `prompts/tasks/scan.md` | Produces the first structured repo scan used by downstream tasks. |
+| `prompts/tasks/init-agent-onboarding.md` | Generates or updates `AGENTS.md` from repo evidence plus files such as `CLAUDE.md`, `.cursor/rules/*`, `.cursorrules`, `.github/copilot-instructions.md`, and `opencode.json`. |
 | `prompts/tasks/readme.md` | Generates or rewrites a top-level README from scan output and selected files. |
 | `prompts/tasks/api-docs.md` | Documents public APIs when endpoints/interfaces are evident. |
 | `prompts/tasks/stack-docs.md` | Documents stack-specific areas of a repo. |
