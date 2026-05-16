@@ -35,7 +35,7 @@ I.future-installer: idempotent installer + Codex marketplace entry + Claude inst
 V1: README current-state claims ! match tracked files.
 V2: doc-gen/check workflows ! run `prompts/tasks/scan.md` first; `init-agent-onboarding` exempt (derives from repo evidence directly).
 V3: roadmap surfaces ! labeled future until executable/scaffold files exist.
-V4: no doc says install/run `forerunner` until CLI exists.
+V4: no doc says install/run `forerunner` until CLI runnable end-to-end (stubs ≠ runnable; ! `--help` exits 0 AND ≥1 cmd executes prompt path).
 V5: no doc says Docker/Makefile/PyPI/CI/pre-commit exists until corresponding files exist.
 V6: spec ! updated when phases/tasks shift.
 V7: agent configs ! reference prompt files, not imaginary package install.
@@ -53,7 +53,7 @@ P1|x|prompt pack hardening|task prompts consistent, composable, evidence-first
 P2|x|agent config exports|editor-agent configs usable from tracked prompts
 P3|x|human docs|setup, prompt guide, editor setup, roadmap present
 P4|x|skill/plugin distribution design|simple agent setup planned without runtime claims
-P5|x|thin wrappers|CLI/MCP/hooks design recorded (§D.*); implementation gated on prompt-contract stability
+P5|~|thin wrappers|CLI/MCP/hooks design recorded (§D.*); implementation gated on prompt-contract stability
 
 ## T Tasks
 
@@ -74,6 +74,9 @@ T12|x|P4|add canonical skill source from prompt pack|I.prompts,I.agent-skill,I.s
 T13|x|P4|add Codex plugin package for prompt workflow|I.skill-plugin,I.agent-skill,V8,V10
 T14|x|P4|add Claude skill/plugin package for prompt workflow|I.skill-plugin,I.agent-skill,I.validation,V8,V10
 T15|x|P4|design installer + Codex marketplace + Claude install (§D.installer); implementation deferred|I.skill-plugin,I.agent-skill,I.future-installer,V8,V10,V11,V12
+T17|.|P5|implement minimal `forerunner` CLI under `src/` (D.cli: init, scan, doc, check stubs routing to prompt pack)|I.future-cli,D.cli,C1,V4,V11
+T18|.|P4|implement idempotent installer `forerunner install <agent>` (D.installer: body-parity check, managed-region markers, --check dry-run)|I.future-installer,D.installer,V8,V10,V11,V12
+T19|.|P5|wire pre-commit + CI hooks calling `forerunner check` (D.hooks: skip when no forerunner.config.yaml)|I.future-hooks,D.hooks,V11
 
 ## Init-Onboarding
 
