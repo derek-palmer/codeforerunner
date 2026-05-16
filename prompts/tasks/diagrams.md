@@ -33,7 +33,8 @@ One focused diagram per meaningful subsystem. Each must be independently readabl
 
 Max ~20 nodes per section diagram.
 
-## Mermaid Rules
+## Rules
+- Claims must derive from provided files. If evidence is absent, omit or document in `## Gaps`.
 - Node IDs: no spaces, no special characters except _ and -
 - External services use double brackets: DB[(PostgreSQL)]
 - User/actor nodes: Actor([User])

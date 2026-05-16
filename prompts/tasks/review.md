@@ -14,6 +14,9 @@ Designed for manual agent use now and future hook/CLI wrappers later.
 - LOW: version/config change that should be tracked but isn't breaking
 - Never block on LOW severity alone -- only HIGH and MEDIUM require resolution or acknowledgement
 
+## Rules
+- Claims must derive from provided files. If evidence is absent, omit or document in `## Gaps`.
+
 ## Output Format
 
 <!-- output: .forerunner/review-summary.md -->

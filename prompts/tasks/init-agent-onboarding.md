@@ -10,7 +10,7 @@ Prompt-first workflow for manual use today; future wrappers may orchestrate it.
 - Existing instruction files if present:
   - `AGENTS.md`
   - `CLAUDE.md`, `.cursor/rules/*`, `.cursorrules`, `.github/copilot-instructions.md`, `opencode.json`
-- Key docs describing current state (`README.md`, `SPEC.md`, handoff/roadmap docs)
+- Key docs describing current state (`README.md`, `SPEC.md`, roadmap docs)
 - Optional prior scan result from `prompts/tasks/scan.md`
 
 ## Objectives
@@ -39,6 +39,7 @@ Prompt-first workflow for manual use today; future wrappers may orchestrate it.
 
 - Never invent runnable surfaces (CLI, CI, hooks, Docker, package publish) if files do not exist.
 - Never copy broad best-practice text that is not repo-specific.
+- Claims must derive from provided files. If evidence is absent, omit or document in `## Gaps`.
 - If uncertain, omit.
 - Keep naming consistent with repo conventions.
 

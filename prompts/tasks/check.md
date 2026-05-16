@@ -25,6 +25,9 @@ Designed for manual agent use now and future hook/CLI wrappers later.
 | MISSING      | No documentation exists for a detected component      |
 | UNVERIFIABLE | Insufficient context to determine staleness           |
 
+## Rules
+- Claims must derive from provided files. If evidence is insufficient, classify as UNVERIFIABLE and cite missing evidence.
+
 ## Output Format
 
 <!-- output: .forerunner/check-report.md -->

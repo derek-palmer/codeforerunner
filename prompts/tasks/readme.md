@@ -28,6 +28,7 @@ Requires scan result as input.
 - Never use placeholder text
 - All code examples use actual filenames and real commands from the codebase
 - Project structure uses a file tree snippet, not a bulleted list
+- Claims must derive from provided files. If evidence is absent, omit or document in `## Gaps`.
 
 ## Output
 <!-- output: README.md -->

@@ -59,7 +59,7 @@ T4|x|P3|add `docs/getting-started.md`|I.docs,V1
 T5|x|P3|add `docs/prompt-guide.md`|I.prompts,V2
 T6|x|P3|add `docs/editor-agent-setup.md`|I.agent-configs,V7
 T7|x|P3|add `docs/roadmap.md`|V3,I.future-cli,I.future-mcp,I.future-hooks
-T8|.|P1|review task prompts for shared input/output contracts|I.prompts,V2
+T8|x|P1|add evidence rules and gaps convention to all task prompts|I.prompts,V2
 T16|x|P1|add prompt-first init onboarding task for AGENTS generation/update|I.init-onboarding,V9
 T9|.|P5|design CLI only after prompt workflow stabilizes|I.future-cli,C1
 T10|.|P5|design hooks/CI only after check/review prompts stabilize|I.future-hooks,C1

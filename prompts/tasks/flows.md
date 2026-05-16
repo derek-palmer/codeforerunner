@@ -2,6 +2,7 @@
 
 Generates narrative documentation for key system flows and integration paths.
 Complements diagrams with prose explanation of how data and control move through the system.
+Requires scan result as input.
 
 ## Input
 - Scan result
@@ -48,6 +49,7 @@ Non-obvious behavior, edge cases, or important constraints.
 - Every step must reference the actual module or file that handles it
 - Only describe what the code demonstrably does
 - Explicitly call out process/service boundary crossings
+- Claims must derive from provided files. If evidence is absent, omit or document in `## Gaps`.
 
 ## Output
 <!-- output: docs/flows.md -->
