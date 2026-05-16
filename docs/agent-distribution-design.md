@@ -16,31 +16,33 @@ The `caveman` repo uses three ideas worth mirroring:
 
 That shape keeps install UX simple while leaving agent-specific differences isolated.
 
-## Proposed Layout
+## Package Layout
+
+Codex slice (`plugins/codeforerunner/.codex-plugin/plugin.json` + `plugins/codeforerunner/skills/codeforerunner/SKILL.md`) is implemented (SPEC §T13). Claude (`.claude-plugin/`, `skills/`) and generic (`skills/`) slices remain proposed (SPEC §T14, §T15).
 
 ```text
 agent/
   codeforerunner.skill.md
-  templates/
-    codex-plugin.json
-    claude-plugin.json
-    generic-skill.md
-bin/
-  install-agent.js
-install.sh
-install.ps1
+  templates/                  # planned (T15)
+    codex-plugin.json         # planned (T15)
+    claude-plugin.json        # planned (T15)
+    generic-skill.md          # planned (T15)
+bin/                          # planned (T15)
+  install-agent.js            # planned (T15)
+install.sh                    # planned (T15)
+install.ps1                   # planned (T15)
 plugins/
   codeforerunner/
     .codex-plugin/
-      plugin.json
+      plugin.json             # implemented (T13)
     skills/
       codeforerunner/
-        SKILL.md
-.claude-plugin/
-  plugin.json
-skills/
-  codeforerunner/
-    SKILL.md
+        SKILL.md              # implemented (T13)
+.claude-plugin/               # planned (T14)
+  plugin.json                 # planned (T14)
+skills/                       # planned (T14)
+  codeforerunner/             # planned (T14)
+    SKILL.md                  # planned (T14)
 ```
 
 ## Ownership Rules
@@ -162,4 +164,3 @@ Tests should cover:
 - Whether `bin/install-agent.js` is the first implementation or waits until package layout stabilizes.
 - Whether future `forerunner agent install` shells out to Node or uses Python for local installs.
 - Which Claude package convention is current enough to support as first-class.
-- Whether copied skill files are generated at build time or checked in as committed artifacts.

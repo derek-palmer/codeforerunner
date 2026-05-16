@@ -67,7 +67,7 @@ T9|.|P5|design CLI only after prompt workflow stabilizes|I.future-cli,C1
 T10|.|P5|design hooks/CI only after check/review prompts stabilize|I.future-hooks,C1
 T11|x|P4|write skill/plugin distribution design|I.future-skill-plugin,I.agent-skill,V8,V10
 T12|x|P4|add canonical skill source from prompt pack|I.prompts,I.agent-skill,I.future-skill-plugin,C7,V10
-T13|.|P4|add Codex plugin package for prompt workflow|I.future-skill-plugin,I.agent-skill,V8,V10
+T13|x|P4|add Codex plugin package for prompt workflow|I.future-skill-plugin,I.agent-skill,V8,V10
 T14|.|P4|add Claude skill/plugin package for prompt workflow|I.future-skill-plugin,I.agent-skill,V8,V10
 T15|.|P4|add idempotent installer for owned agent artifacts|I.future-skill-plugin,I.agent-skill,V8,V10
 
