@@ -25,9 +25,10 @@ I.spec: `SPEC.md` → canonical phase/task tracker.
 I.agent-skill: `agent/codeforerunner.skill.md` → canonical skill instruction source; its post-frontmatter Markdown content is consumed verbatim by future Codex/Claude packages and installer (per-agent frontmatter may differ; body cannot). See V10.
 I.skill-plugin: skill/plugin packages ? Codex and Claude package artifacts exist; installer/generic distribution remains future.
 I.validation: `scripts/validate_skill_copies.py` → local SPEC V10 body parity check for canonical and distributed skill files.
-I.future-cli: `forerunner` CLI ? future surface; not implemented.
+I.future-cli: `forerunner` CLI ? future surface; design only (§D.cli); not implemented.
 I.future-mcp: MCP server ? future surface; not implemented.
-I.future-hooks: pre-commit/CI checks ? future surface; not implemented.
+I.future-hooks: pre-commit/CI checks ? future surface; design only (§D.hooks); not implemented.
+I.future-installer: idempotent installer + Codex marketplace entry + Claude install ? future surface; design only (§D.installer); not implemented.
 
 ## V Invariants
 
@@ -41,16 +42,18 @@ V7: agent configs ! reference prompt files, not imaginary package install.
 V8: skill/plugin design ! avoid manual prompt discovery but must not claim installed package support before files exist.
 V9: init onboarding docs must not claim runnable `forerunner init` until wrapper files exist.
 V10: `agent/codeforerunner.skill.md` = canonical skill source; downstream Codex/Claude/generic skill files ! preserve its post-frontmatter Markdown content verbatim (per-agent YAML frontmatter may differ, but body content cannot diverge).
+V11: future-surface designs (§D.*) ! remain design-only until corresponding wrapper/script/manifest files exist; no doc may claim runnable behavior before then (extends V4, V5, V9).
+V12: installer ! idempotent: re-run = no diff when sources unchanged; ∀ writes overlay-safe (preserve user edits ∉ managed regions).
 
 ## P Phases
 
 id|status|phase|exit
 P0|x|repo truth cleanup|README/spec/AGENTS align with v2 state
-P1|.|prompt pack hardening|task prompts consistent, composable, evidence-first
+P1|x|prompt pack hardening|task prompts consistent, composable, evidence-first
 P2|x|agent config exports|editor-agent configs usable from tracked prompts
 P3|x|human docs|setup, prompt guide, editor setup, roadmap present
-P4|.|skill/plugin distribution design|simple agent setup planned without runtime claims
-P5|.|thin wrappers|CLI/MCP/hooks only after prompt contract stable
+P4|x|skill/plugin distribution design|simple agent setup planned without runtime claims
+P5|x|thin wrappers|CLI/MCP/hooks design recorded (§D.*); implementation gated on prompt-contract stability
 
 ## T Tasks
 
@@ -64,13 +67,13 @@ T6|x|P3|add `docs/editor-agent-setup.md`|I.agent-configs,V7
 T7|x|P3|add `docs/roadmap.md`|V3,I.future-cli,I.future-mcp,I.future-hooks
 T8|x|P1|add evidence rules and gaps convention to all task prompts|I.prompts,V2
 T16|x|P1|add prompt-first init onboarding task for AGENTS generation/update|I.init-onboarding,V9
-T9|.|P5|design CLI only after prompt workflow stabilizes|I.future-cli,C1
-T10|.|P5|design hooks/CI only after check/review prompts stabilize|I.future-hooks,C1
+T9|x|P5|design CLI surface (§D.cli); implementation deferred|I.future-cli,C1,V11
+T10|x|P5|design hooks/CI surface (§D.hooks); implementation deferred|I.future-hooks,C1,V11
 T11|x|P4|write skill/plugin distribution design|I.skill-plugin,I.agent-skill,V8,V10
 T12|x|P4|add canonical skill source from prompt pack|I.prompts,I.agent-skill,I.skill-plugin,C7,V10
 T13|x|P4|add Codex plugin package for prompt workflow|I.skill-plugin,I.agent-skill,V8,V10
 T14|x|P4|add Claude skill/plugin package for prompt workflow|I.skill-plugin,I.agent-skill,I.validation,V8,V10
-T15|.|P4|add idempotent installer, Codex marketplace entry, and Claude install support for owned agent artifacts|I.skill-plugin,I.agent-skill,V8,V10
+T15|x|P4|design installer + Codex marketplace + Claude install (§D.installer); implementation deferred|I.skill-plugin,I.agent-skill,I.future-installer,V8,V10,V11,V12
 
 ## Init-Onboarding
 
@@ -113,6 +116,52 @@ Acceptance:
 - `AGENTS.md` compact, specific, materially useful.
 - Prompt-first remains source of truth; wrapper behavior documented as future.
 
-## Bugs
+## D Future-Surface Designs
+
+Design-only; cites V11. No file claims runnable until wrapper exists.
+
+### D.cli — `forerunner` CLI
+
+cmd: `forerunner init [--full|--agents-only]` → onboarding orchestration; delegates to `I.init-onboarding`.
+cmd: `forerunner scan` → runs `prompts/tasks/scan.md` pipeline; emits repo-evidence JSON.
+cmd: `forerunner doc <task>` → resolves `prompts/tasks/<task>.md` + base + partials → prompt bundle on stdout.
+cmd: `forerunner check` → runs check/review prompts against tracked docs; exit ≠ 0 on drift.
+
+Shape:
+- Thin orchestration only; product logic stays in `prompts/`.
+- Model/provider agnostic (C4); provider plugin ? optional.
+- No network calls in `init`/`scan`/`doc`; `check` may call configured model.
+
+Gate: prompt contract stable (P1 `x`) + ≥1 wrapper file under `src/`.
+
+### D.hooks — pre-commit/CI
+
+hook: pre-commit → `forerunner check --staged` → block on V1/V3/V4/V5 violations.
+hook: CI → same; matrix over tracked agent configs.
+env: `FORERUNNER_MODEL` ? optional override.
+
+Shape:
+- Reuses `D.cli check` (single code path).
+- Skip when no `forerunner.config.yaml` present.
+
+Gate: `D.cli check` exists & stable.
+
+### D.installer — distribution
+
+cmd: `forerunner install <agent>` → idempotent copy of owned skill/plugin artifacts into agent-specific dirs.
+- Supported targets: Codex (`~/.codex/...`), Claude (`~/.claude/plugins/...`), generic (manual path).
+- Body-parity check (V10) before write; abort on mismatch.
+- Managed-region markers in destination files; user edits outside markers preserved (V12).
+
+api: Codex marketplace manifest → `plugins/codex/marketplace.json` (future path).
+api: Claude plugin index → existing `plugins/claude/` artifacts; install = symlink|copy.
+
+Shape:
+- Re-run safe (V12): hash sources; skip when dest matches.
+- Dry-run flag `--check` → print plan, write nothing.
+
+Gate: T11-T14 done (`x`) + canonical skill source frozen.
+
+## B Bugs
 
 id|date|cause|fix
