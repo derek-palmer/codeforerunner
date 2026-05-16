@@ -2,7 +2,7 @@
 
 ## Repo State
 
-- This repo is in the `v2-overhaul` prompt-first transition; read `codeforerunner_v2_handoff.md` before trusting README claims.
+- This repo is in a prompt-first transition; trust `SPEC.md`, `README.md`, and tracked prompt files over stale historical notes.
 - Treat prompts as the core product: `prompts/system/base.md`, `prompts/partials/`, and `prompts/tasks/`.
 - `README.md`, `SPEC.md`, `docs/`, and `agent-configs/` should stay aligned; update the spec when phase/task scope changes.
 - Do not reintroduce the old analyzer-heavy architecture unless explicitly requested.
@@ -26,4 +26,4 @@
 ## Verification
 
 - There are currently no repo-defined build, lint, typecheck, test, or format commands.
-- For doc/prompt changes, verify by reading affected Markdown for consistency with the handoff and checking that claims match tracked files.
+- For doc/prompt changes, verify by reading affected Markdown for consistency with `SPEC.md` and checking that claims match tracked files.

@@ -37,6 +37,14 @@ If a version is unpinned (latest, *, >=3.0), record as UNPINNED -- risk flag reg
 | UNPINNED        | Unpinned           | No specific version pinned             |
 | UNKNOWN         | Unknown            | EOL data not available                 |
 
+## Rules
+- Claims must derive from provided files. If EOL data is unavailable, mark as UNKNOWN.
+- Never fabricate EOL dates -- mark as Unknown if not confident
+- Always separate EOL Date (past) from Support Ends (future)
+- Unpinned versions are always flagged regardless of what they might resolve to
+- Upgrade recommendations must specify exact version targets, never say upgrade to latest
+- For major-version breaking upgrades, always note it is a breaking change
+
 ## Output Format
 
 <!-- output: docs/version-audit.md -->
@@ -104,10 +112,3 @@ _Re-run monthly or when versions change. Flagged as stale after 30 days._
 _EOL data sourced from https://endoflife.date_
 _EOL Date = past date for already-EOL versions. Support Ends = future date for in-support versions._
 _This audit reflects pinned versions only -- does not scan transitive dependencies._
-
-## Rules
-- Never fabricate EOL dates -- mark as Unknown if not confident
-- Always separate EOL Date (past) from Support Ends (future)
-- Unpinned versions are always flagged regardless of what they might resolve to
-- Upgrade recommendations must specify exact version targets, never say upgrade to latest
-- For major-version breaking upgrades, always note it is a breaking change

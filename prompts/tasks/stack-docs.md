@@ -43,5 +43,8 @@ Template selected based on detected stack from scan result.
 7. Running Locally: how to test a pipeline run
 8. Monitoring: how to observe pipeline health
 
+## Rules
+- Claims must derive from provided files. If evidence is absent, omit or document in `## Gaps`.
+
 ## Output
 <!-- output: docs/stack.md -->

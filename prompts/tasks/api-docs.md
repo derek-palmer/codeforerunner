@@ -41,6 +41,7 @@ Authorization: Bearer <token>
 - Document every endpoint, do not skip any
 - Group by resource/router
 - Include a summary table at the top: method, path, auth, one-line description
+- Claims must derive from provided files. Document every endpoint with available evidence; put unevidenced fields or unknown details in `## Gaps`.
 
 ## Output
 <!-- output: docs/api.md -->

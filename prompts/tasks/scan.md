@@ -23,6 +23,9 @@ Output is passed as input to all downstream tasks.
 10. Identify documentation presence
 11. Extract all pinned versions from Dockerfiles, manifests, lockfiles, workflow files, and IaC
 
+## Rules
+- Claims must derive from provided files. Unverifiable items go under `gaps:` in the output.
+
 ## Output Format
 
 ```yaml

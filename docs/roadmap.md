@@ -19,6 +19,7 @@ Status: planned.
 - Tighten output markers and gap handling.
 - Review prompt overlap and remove duplicated rules.
 - Add examples only when they improve prompt execution.
+- Add prompt-first init onboarding flow for generating/updating `AGENTS.md` from repo evidence.
 
 ## P2: Agent Config Exports
 
