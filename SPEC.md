@@ -24,6 +24,7 @@ I.docs: `docs/*.md` → human setup, prompt guide, editor setup, roadmap.
 I.spec: `SPEC.md` → canonical phase/task tracker.
 I.agent-skill: `agent/codeforerunner.skill.md` → canonical skill instruction source; its post-frontmatter Markdown content is consumed verbatim by future Codex/Claude packages and installer (per-agent frontmatter may differ; body cannot). See V10.
 I.skill-plugin: skill/plugin packages ? Codex and Claude package artifacts exist; installer/generic distribution remains future.
+I.validation: `scripts/validate_skill_copies.py` → local SPEC V10 body parity check for canonical and distributed skill files.
 I.future-cli: `forerunner` CLI ? future surface; not implemented.
 I.future-mcp: MCP server ? future surface; not implemented.
 I.future-hooks: pre-commit/CI checks ? future surface; not implemented.
@@ -68,7 +69,7 @@ T10|.|P5|design hooks/CI only after check/review prompts stabilize|I.future-hook
 T11|x|P4|write skill/plugin distribution design|I.skill-plugin,I.agent-skill,V8,V10
 T12|x|P4|add canonical skill source from prompt pack|I.prompts,I.agent-skill,I.skill-plugin,C7,V10
 T13|x|P4|add Codex plugin package for prompt workflow|I.skill-plugin,I.agent-skill,V8,V10
-T14|x|P4|add Claude skill/plugin package for prompt workflow|I.skill-plugin,I.agent-skill,V8,V10
+T14|x|P4|add Claude skill/plugin package for prompt workflow|I.skill-plugin,I.agent-skill,I.validation,V8,V10
 T15|.|P4|add idempotent installer, Codex marketplace entry, and Claude install support for owned agent artifacts|I.skill-plugin,I.agent-skill,V8,V10
 
 ## Init-Onboarding
