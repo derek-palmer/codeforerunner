@@ -22,6 +22,7 @@ I.config: `forerunner.config.yaml.example` → example config only; no loader ye
 I.agent-configs: `agent-configs/*.md` → copyable editor-agent instructions.
 I.docs: `docs/*.md` → human setup, prompt guide, editor setup, roadmap.
 I.spec: `SPEC.md` → canonical phase/task tracker.
+I.agent-skill: `agent/codeforerunner.skill.md` → canonical skill instruction source; its post-frontmatter Markdown content is consumed verbatim by future Codex/Claude packages and installer (per-agent frontmatter may differ; body cannot). See V10.
 I.future-skill-plugin: skill/plugin packages ? future surface; not implemented.
 I.future-cli: `forerunner` CLI ? future surface; not implemented.
 I.future-mcp: MCP server ? future surface; not implemented.
@@ -38,6 +39,7 @@ V6: spec ! updated when phases/tasks shift.
 V7: agent configs ! reference prompt files, not imaginary package install.
 V8: skill/plugin design ! avoid manual prompt discovery but must not claim installed package support before files exist.
 V9: init onboarding docs must not claim runnable `forerunner init` until wrapper files exist.
+V10: `agent/codeforerunner.skill.md` = canonical skill source; downstream Codex/Claude/generic skill files ! preserve its post-frontmatter Markdown content verbatim (per-agent YAML frontmatter may differ, but body content cannot diverge).
 
 ## §P Phases
 
@@ -63,11 +65,11 @@ T8|x|P1|add evidence rules and gaps convention to all task prompts|I.prompts,V2
 T16|x|P1|add prompt-first init onboarding task for AGENTS generation/update|I.init-onboarding,V9
 T9|.|P5|design CLI only after prompt workflow stabilizes|I.future-cli,C1
 T10|.|P5|design hooks/CI only after check/review prompts stabilize|I.future-hooks,C1
-T11|x|P4|write skill/plugin distribution design|I.future-skill-plugin,V8
-T12|.|P4|add canonical skill source from prompt pack|I.prompts,I.future-skill-plugin,C7
-T13|.|P4|add Codex plugin package for prompt workflow|I.future-skill-plugin,V8
-T14|.|P4|add Claude skill/plugin package for prompt workflow|I.future-skill-plugin,V8
-T15|.|P4|add idempotent installer for owned agent artifacts|I.future-skill-plugin,V8
+T11|x|P4|write skill/plugin distribution design|I.future-skill-plugin,I.agent-skill,V8,V10
+T12|x|P4|add canonical skill source from prompt pack|I.prompts,I.agent-skill,I.future-skill-plugin,C7,V10
+T13|.|P4|add Codex plugin package for prompt workflow|I.future-skill-plugin,I.agent-skill,V8,V10
+T14|.|P4|add Claude skill/plugin package for prompt workflow|I.future-skill-plugin,I.agent-skill,V8,V10
+T15|.|P4|add idempotent installer for owned agent artifacts|I.future-skill-plugin,I.agent-skill,V8,V10
 
 ## §Init Init-Onboarding
 
