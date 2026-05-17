@@ -8,12 +8,13 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Literal
 
 MARKER_BEGIN = "<!-- forerunner:begin managed=codeforerunner.skill -->"
 MARKER_END = "<!-- forerunner:end -->"
 
 CANONICAL_REL = Path("agent/codeforerunner.skill.md")
+MARKETPLACE_REL = Path("plugins/codex/marketplace.json")
 
 EXIT_OK = 0
 EXIT_USAGE = 2
@@ -46,6 +47,18 @@ def resolve_target(agent: str, override: Path | None) -> Target:
     raise ValueError(f"unknown agent '{agent}' (expected: codex, claude, generic)")
 
 
+def resolve_marketplace_target(agent: str, override: Path | None) -> Target:
+    if agent == "generic":
+        if override is None:
+            raise ValueError("generic marketplace target requires --path PATH")
+        return Target(agent, override.expanduser().resolve())
+    if override is not None:
+        return Target(agent, override.expanduser().resolve())
+    if agent == "codex":
+        return Target(agent, _home() / ".codex/marketplaces/codeforerunner.json")
+    raise ValueError(f"marketplace not supported for agent '{agent}' (expected: codex)")
+
+
 def strip_frontmatter(text: str) -> str:
     """Body extraction matching scripts/validate_skill_copies.py."""
     text = text.replace("\r\n", "\n").replace("\r", "\n")
@@ -70,6 +83,10 @@ def extract_frontmatter(text: str) -> str:
 
 def _hash(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
+
+
+def _hash_bytes(b: bytes) -> str:
+    return hashlib.sha256(b).hexdigest()
 
 
 def render(source_text: str, dest_existing: str | None, agent: str) -> str:
@@ -168,6 +185,37 @@ def plan_install(
     return Plan(action="create", reason="dest absent", target=target, new_content=new_text), EXIT_OK
 
 
+def plan_marketplace(*, source_path: Path, target: Target) -> tuple[Plan, int]:
+    """Idempotent JSON manifest install. Hash-equality on whole file (trimmed)."""
+    src_bytes = source_path.read_bytes()
+    src_trimmed = src_bytes.rstrip()
+    src_text = src_bytes.decode("utf-8")
+    dest = target.path
+    if dest.exists():
+        dest_bytes = dest.read_bytes()
+        dest_trimmed = dest_bytes.rstrip()
+        if _hash_bytes(src_trimmed) == _hash_bytes(dest_trimmed):
+            return (
+                Plan(action="skip", reason="dest matches source (V12 idempotent)", target=target),
+                EXIT_OK,
+            )
+        return (
+            Plan(
+                action="abort",
+                reason=(
+                    f"destination exists and differs from source ({dest}); refusing "
+                    "to overwrite user content"
+                ),
+                target=target,
+            ),
+            EXIT_UNMANAGED_DEST,
+        )
+    return (
+        Plan(action="create", reason="dest absent", target=target, new_content=src_text),
+        EXIT_OK,
+    )
+
+
 def install(
     *,
     agent: str,
@@ -175,11 +223,33 @@ def install(
     source: Path | None,
     dest_override: Path | None,
     check_only: bool,
+    kind: Literal["skill", "marketplace"] = "skill",
     out=None,
     err=None,
 ) -> int:
     out = out or sys.stdout
     err = err or sys.stderr
+
+    if kind == "marketplace":
+        try:
+            target = resolve_marketplace_target(agent, dest_override)
+        except ValueError as e:
+            print(f"error: {e}", file=err)
+            return EXIT_USAGE
+        src_path = source if source is not None else (repo_root / MARKETPLACE_REL)
+        if not src_path.is_file():
+            print(f"error: marketplace source not found: {src_path}", file=err)
+            return EXIT_USAGE
+        plan, code = plan_marketplace(source_path=src_path, target=target)
+        prefix = "would " if check_only else ""
+        stream = err if code != EXIT_OK else out
+        print(f"{prefix}{plan.action}: {target.path} ({plan.reason})", file=stream)
+        if code != EXIT_OK:
+            return code
+        if not check_only:
+            plan.write()
+        return EXIT_OK
+
     try:
         target = resolve_target(agent, dest_override)
     except ValueError as e:
@@ -212,6 +282,11 @@ def add_subparser(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--check", action="store_true", help="dry-run: print plan, write nothing")
     p.add_argument("--path", type=Path, help="dest path override (required for generic)")
     p.add_argument("--source", type=Path, help="source skill file (default: agent/codeforerunner.skill.md)")
+    p.add_argument(
+        "--marketplace",
+        action="store_true",
+        help="install a marketplace manifest (codex only) instead of the skill body",
+    )
     p.set_defaults(func=_cli_entry)
 
 
@@ -225,4 +300,5 @@ def _cli_entry(args: argparse.Namespace) -> int:
         source=args.source,
         dest_override=args.path,
         check_only=args.check,
+        kind="marketplace" if getattr(args, "marketplace", False) else "skill",
     )

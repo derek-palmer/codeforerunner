@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from textwrap import dedent
 
@@ -17,6 +18,7 @@ from codeforerunner.installer import (
 
 REPO = Path(__file__).resolve().parents[1]
 CANONICAL = REPO / "agent/codeforerunner.skill.md"
+MARKETPLACE = REPO / "plugins/codex/marketplace.json"
 
 
 def _write(path: Path, text: str) -> None:
@@ -36,6 +38,84 @@ def test_install_check_dry_run_no_writes(tmp_path, capsys):
     assert rc == EXIT_OK
     assert not dest.exists()
     assert "would create" in capsys.readouterr().out
+
+
+def test_marketplace_check_dry_run_no_writes(tmp_path, capsys):
+    dest = tmp_path / "marketplace.json"
+    rc = installer.install(
+        agent="codex",
+        repo_root=REPO,
+        source=None,
+        dest_override=dest,
+        check_only=True,
+        kind="marketplace",
+    )
+    assert rc == EXIT_OK
+    assert not dest.exists()
+    assert "would create" in capsys.readouterr().out
+
+
+def test_marketplace_creates_dest(tmp_path):
+    dest = tmp_path / "marketplace.json"
+    rc = installer.install(
+        agent="codex",
+        repo_root=REPO,
+        source=None,
+        dest_override=dest,
+        check_only=False,
+        kind="marketplace",
+    )
+    assert rc == EXIT_OK
+    assert dest.is_file()
+    data = json.loads(dest.read_text(encoding="utf-8"))
+    assert data["marketplace"]["id"] == "codeforerunner"
+
+
+def test_marketplace_idempotent_second_run(tmp_path, capsys):
+    dest = tmp_path / "marketplace.json"
+    installer.install(
+        agent="codex",
+        repo_root=REPO,
+        source=None,
+        dest_override=dest,
+        check_only=False,
+        kind="marketplace",
+    )
+    first = dest.read_bytes()
+    capsys.readouterr()
+    rc = installer.install(
+        agent="codex",
+        repo_root=REPO,
+        source=None,
+        dest_override=dest,
+        check_only=False,
+        kind="marketplace",
+    )
+    assert rc == EXIT_OK
+    assert dest.read_bytes() == first
+    assert "skip" in capsys.readouterr().out
+
+
+def test_marketplace_abort_on_user_edit(tmp_path):
+    dest = tmp_path / "marketplace.json"
+    dest.write_text('{"user": "edit"}\n', encoding="utf-8")
+    rc = installer.install(
+        agent="codex",
+        repo_root=REPO,
+        source=None,
+        dest_override=dest,
+        check_only=False,
+        kind="marketplace",
+    )
+    assert rc == EXIT_UNMANAGED_DEST
+    assert dest.read_text(encoding="utf-8") == '{"user": "edit"}\n'
+
+
+def test_marketplace_manifest_file_present_and_valid():
+    assert MARKETPLACE.is_file()
+    data = json.loads(MARKETPLACE.read_text(encoding="utf-8"))
+    assert data["marketplace"]["id"] == "codeforerunner"
+    assert len(data["plugins"]) >= 1
 
 
 def test_install_body_parity_mismatch_aborts(tmp_path, capsys):
