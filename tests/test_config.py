@@ -24,6 +24,7 @@ def test_load_minimal_defaults(tmp_path):
     assert cfg.check.block_on == ("HIGH", "MEDIUM")
     assert cfg.check.enabled_rules is None
     assert cfg.check.ignore_paths == ()
+    assert cfg.api_key_env == {}
 
 
 def test_load_full_example_shape(tmp_path):
@@ -86,6 +87,34 @@ def test_wrong_type_raises(tmp_path):
 def test_malformed_yaml_raises_config_error(tmp_path):
     _write(tmp_path / "forerunner.config.yaml", "provider: [unbalanced\n")
     with pytest.raises(config.ConfigError, match="invalid YAML"):
+        config.load_from_repo(tmp_path)
+
+
+def test_api_key_env_override_parses(tmp_path):
+    _write(
+        tmp_path / "forerunner.config.yaml",
+        "api_key_env:\n  anthropic: MY_KEY\n",
+    )
+    cfg = config.load_from_repo(tmp_path)
+    assert cfg is not None
+    assert cfg.api_key_env == {"anthropic": "MY_KEY"}
+
+
+def test_api_key_env_unknown_provider_raises(tmp_path):
+    _write(
+        tmp_path / "forerunner.config.yaml",
+        "api_key_env:\n  bogus: X\n",
+    )
+    with pytest.raises(config.ConfigError, match="bogus"):
+        config.load_from_repo(tmp_path)
+
+
+def test_api_key_env_non_string_value_raises(tmp_path):
+    _write(
+        tmp_path / "forerunner.config.yaml",
+        "api_key_env:\n  anthropic: 42\n",
+    )
+    with pytest.raises(config.ConfigError, match="api_key_env"):
         config.load_from_repo(tmp_path)
 
 

@@ -13,6 +13,8 @@ this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `forerunner doctor` subcommand — single-screen health report covering skill body parity, Codex marketplace validation, and installed-destination markers (T35).
 - Workflow-YAML parse test (`tests/test_workflows_yaml.py`) — catches typos in `.github/workflows/*.yml` without requiring `actionlint` locally (T36).
 - This changelog (T37).
+- PyPI publish workflow (`.github/workflows/pypi-publish.yml`) using OIDC trusted publishing on `v*.*.*` tags (T40).
+- `README.md` "Install" section documenting `pipx`/`pip` install once a release is cut (T40).
 
 ## [0.2.0]
 

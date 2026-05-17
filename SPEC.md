@@ -58,6 +58,9 @@ P6|x|polish|config schema + scan-first MCP gating + init flags + marketplace pub
 P7|x|surface parity|docs + AGENTS refresh, CLI scan-first parity, expanded check rules
 P8|x|doc backfill|sweep remaining stale "future"/"planned" docs against current SPEC phases
 P9|x|tool ergonomics|`--version`, `forerunner doctor`, workflow lint, initial CHANGELOG
+P10|~|model runtime|provider abstraction + `forerunner generate` + config + doctor wiring
+P11|~|release|PyPI publish workflow + install docs
+P12|~|MCP example|usable Claude Desktop / mcp-cli example wiring
 
 ## T Tasks
 
@@ -99,6 +102,10 @@ T34|x|P9|add `forerunner --version` flag (sources `codeforerunner.__version__`)|
 T35|x|P9|add `forerunner doctor` subcommand: runs skill body-parity + marketplace validation + flags unmanaged install destinations|I.cli,I.installer,I.validation,V10,V12
 T36|x|P9|add workflow-YAML parse test for `.github/workflows/*.yml` (catches typos without needing actionlint)|I.hooks
 T37|x|P9|seed `CHANGELOG.md` documenting v0.2.0 → release-ready surfaces|I.docs,V1
+T38|x|P10|provider abstraction (`src/codeforerunner/providers/`) + `forerunner generate <task>` subcommand calling configured provider|I.cli,C4,V2
+T39|~|P10|extend `forerunner.config.yaml` schema with per-provider `api_key_env` override; `forerunner doctor` reports missing key when provider configured|I.cli,I.installer,V12
+T40|~|P11|add `.github/workflows/pypi-publish.yml` (publish on `v*.*.*` tag via OIDC); document `pipx`/`pip` install in README + CHANGELOG|I.hooks,I.docs,V5
+T41|~|P12|add `examples/mcp/` with Claude Desktop config snippet + README showing how to wire `forerunner mcp-server`|I.mcp,I.docs
 
 ## Init-Onboarding
 

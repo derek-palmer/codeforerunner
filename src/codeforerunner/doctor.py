@@ -22,6 +22,13 @@ MARKETPLACE_REL = Path("plugins/codex/marketplace.json")
 MARKER_BEGIN = "<!-- forerunner:begin managed=codeforerunner.skill -->"
 MARKER_END = "<!-- forerunner:end -->"
 
+_DEFAULT_PROVIDER_ENV = {
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "google": "GOOGLE_API_KEY",
+    "ollama": "OLLAMA_HOST",
+}
+
 
 @dataclass(frozen=True)
 class Finding:
@@ -217,6 +224,56 @@ def _check_config_loadable(repo: Path) -> list[Finding]:
     return [Finding("ok", "config-loadable", f"{CONFIG_FILENAME} parses cleanly")]
 
 
+def _check_provider_api_key(repo: Path) -> list[Finding]:
+    cfg_path = repo / CONFIG_FILENAME
+    if not cfg_path.is_file():
+        return [
+            Finding(
+                "ok",
+                "provider-api-key",
+                f"no {CONFIG_FILENAME}; provider key not checked",
+            )
+        ]
+    try:
+        cfg = load_from_repo(repo)
+    except ConfigError:
+        # config-loadable check will surface this; skip here
+        return [
+            Finding(
+                "ok",
+                "provider-api-key",
+                "config unparseable; skipped (see config-loadable)",
+            )
+        ]
+    if cfg is None:  # pragma: no cover - defensive
+        return [
+            Finding(
+                "ok",
+                "provider-api-key",
+                f"no {CONFIG_FILENAME}; provider key not checked",
+            )
+        ]
+    provider = cfg.provider
+    if provider == "ollama":
+        return [
+            Finding(
+                "ok",
+                "provider-api-key",
+                "ollama needs no API key (OLLAMA_HOST optional)",
+            )
+        ]
+    env_var = cfg.api_key_env.get(provider) or _DEFAULT_PROVIDER_ENV.get(provider, "")
+    if os.environ.get(env_var):
+        return [Finding("ok", "provider-api-key", f"{provider}: {env_var} is set")]
+    return [
+        Finding(
+            "warn",
+            "provider-api-key",
+            f"{provider}: ${env_var} is not set; `forerunner generate` will refuse to run",
+        )
+    ]
+
+
 def run(repo: Path) -> list[Finding]:
     repo = repo.resolve()
     findings: list[Finding] = []
@@ -224,6 +281,7 @@ def run(repo: Path) -> list[Finding]:
     findings.extend(_check_codex_marketplace(repo))
     findings.extend(_check_installed_destinations(repo))
     findings.extend(_check_config_loadable(repo))
+    findings.extend(_check_provider_api_key(repo))
     return findings
 
 

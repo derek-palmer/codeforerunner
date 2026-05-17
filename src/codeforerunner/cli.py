@@ -116,6 +116,55 @@ def cmd_mcp_server(args: argparse.Namespace) -> int:
     return mcp_server.serve(root)
 
 
+def cmd_generate(args: argparse.Namespace) -> int:
+    """Resolve the bundle for <task> and send it to the configured provider."""
+    from codeforerunner import providers as _providers
+    from codeforerunner.config import load_from_repo
+
+    root = _repo_root(Path(args.repo) if args.repo else None)
+    cfg = load_from_repo(root)
+
+    provider_name = args.provider or (cfg.provider if cfg else "anthropic")
+    model = args.model or (cfg.model if cfg else None)
+    provider_cls = _providers.get(provider_name)
+    provider = provider_cls()
+    model = model or provider.default_model
+
+    import io as _io
+    buf = _io.StringIO()
+    ns = argparse.Namespace(repo=getattr(args, "repo", None), task=args.task)
+    # Temporarily redirect stdout to capture cmd_doc output.
+    real_stdout = sys.stdout
+    sys.stdout = buf
+    try:
+        rc = cmd_doc(ns)
+    finally:
+        sys.stdout = real_stdout
+    if rc != 0:
+        return rc
+
+    api_key = os.environ.get(provider.default_env_var)
+    if api_key is None and provider_name != "ollama":
+        print(
+            f"error: missing API key; set ${provider.default_env_var}",
+            file=sys.stderr,
+        )
+        return 3
+
+    try:
+        result = provider.complete(prompt=buf.getvalue(), model=model, api_key=api_key)
+    except _providers.ProviderError as e:
+        print(f"error: {provider_name} provider failed: {e}", file=sys.stderr)
+        return 4
+
+    sys.stdout.write(result.text.rstrip() + "\n")
+    print(
+        f"# {provider_name} {result.model} {result.usage or ''}".rstrip(),
+        file=sys.stderr,
+    )
+    return 0
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     from codeforerunner import doctor
     root = _repo_root(Path(args.repo) if args.repo else None)
@@ -163,6 +212,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     s_doctor = sub.add_parser("doctor", help="health report: skill parity + marketplace + installed dests")
     s_doctor.set_defaults(func=cmd_doctor)
+
+    s_gen = sub.add_parser("generate", help="resolve bundle for <task> and call the configured provider")
+    s_gen.add_argument("task", help="task basename under prompts/tasks/")
+    s_gen.add_argument("--provider", help="override config provider")
+    s_gen.add_argument("--model", help="override config model")
+    s_gen.set_defaults(func=cmd_generate)
 
     from codeforerunner import installer
     installer.add_subparser(sub)

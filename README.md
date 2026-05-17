@@ -15,6 +15,25 @@ The current repo is the prompt-first foundation for that agent: it ships prompt 
 - Current config: `forerunner.config.yaml.example` documents the schema now parsed by `src/codeforerunner/config.py`; see "Configuration" below.
 - Not currently present: Docker image, Makefile, published package.
 
+## Install
+
+Released versions:
+
+```bash
+pipx install codeforerunner   # recommended; isolated environment
+pip install codeforerunner    # alternative
+```
+
+From source:
+
+```bash
+git clone https://github.com/derek-palmer/codeForerunner
+cd codeForerunner
+python -m pip install -e .
+```
+
+Then `forerunner --help` should print the subcommand list.
+
 ## Prompt Layout
 
 ```text

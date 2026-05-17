@@ -80,6 +80,52 @@ def test_main_exits_zero_when_no_errors(capsys):
     assert rc == 0
 
 
+def test_provider_api_key_finding_present_with_config(tmp_path: Path, monkeypatch):
+    repo = _copy_repo_layout(tmp_path)
+    (repo / "forerunner.config.yaml").write_text("", encoding="utf-8")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    findings = run(repo)
+    matches = [f for f in findings if f.check == "provider-api-key"]
+    assert len(matches) == 1
+    assert matches[0].severity == "warn"
+
+
+def test_provider_api_key_ok_when_env_set(tmp_path: Path, monkeypatch):
+    repo = _copy_repo_layout(tmp_path)
+    (repo / "forerunner.config.yaml").write_text("", encoding="utf-8")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    findings = run(repo)
+    matches = [f for f in findings if f.check == "provider-api-key"]
+    assert len(matches) == 1
+    assert matches[0].severity == "ok"
+
+
+def test_provider_api_key_ollama_always_ok(tmp_path: Path, monkeypatch):
+    repo = _copy_repo_layout(tmp_path)
+    (repo / "forerunner.config.yaml").write_text(
+        "provider: ollama\nmodel: llama3\n", encoding="utf-8"
+    )
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OLLAMA_HOST", raising=False)
+    findings = run(repo)
+    matches = [f for f in findings if f.check == "provider-api-key"]
+    assert len(matches) == 1
+    assert matches[0].severity == "ok"
+
+
+def test_provider_api_key_uses_override(tmp_path: Path, monkeypatch):
+    repo = _copy_repo_layout(tmp_path)
+    (repo / "forerunner.config.yaml").write_text(
+        "api_key_env:\n  anthropic: MY_KEY\n", encoding="utf-8"
+    )
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("MY_KEY", "x")
+    findings = run(repo)
+    matches = [f for f in findings if f.check == "provider-api-key"]
+    assert len(matches) == 1
+    assert matches[0].severity == "ok"
+
+
 def test_main_exits_one_when_error_present(tmp_path: Path, capsys):
     repo = _copy_repo_layout(tmp_path)
     drifted = repo / "skills/codeforerunner/SKILL.md"

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from codeforerunner.cli import main
+from codeforerunner.providers import CompletionResult
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -149,3 +150,59 @@ def test_scan_prints_env_hint(tmp_path, capsys):
 def test_check_no_config_exits_zero(tmp_path, capsys):
     rc = main(["--repo", str(tmp_path), "check"])
     assert rc == 0
+
+
+def test_generate_calls_provider_with_resolved_bundle(tmp_path, capsys, monkeypatch):
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+    calls: list[dict] = []
+
+    class FakeProvider:
+        default_env_var = "FAKE_API_KEY"
+        default_model = "fake-default"
+
+        def complete(self, *, prompt, model=None, api_key=None):
+            calls.append({"prompt": prompt, "model": model, "api_key": api_key})
+            return CompletionResult(text="generated text", model=model or "fake-default")
+
+    from codeforerunner import providers
+
+    monkeypatch.setitem(providers.REGISTRY, "fake", FakeProvider)
+    monkeypatch.setenv("FAKE_API_KEY", "secret")
+
+    rc = main(["--repo", str(tmp_path), "generate", "readme", "--provider", "fake"])
+    cap = capsys.readouterr()
+
+    assert rc == 0
+    assert cap.out == "generated text\n"
+    assert "# fake fake-default" in cap.err
+    assert calls == [
+        {
+            "prompt": "<!-- system: base.md -->\n# base\n\n<!-- task: readme.md -->\n# readme task\n",
+            "model": "fake-default",
+            "api_key": "secret",
+        }
+    ]
+
+
+def test_generate_missing_api_key_exits_three(tmp_path, capsys, monkeypatch):
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+
+    class FakeProvider:
+        default_env_var = "FAKE_API_KEY"
+        default_model = "fake-default"
+
+        def complete(self, *, prompt, model=None, api_key=None):  # pragma: no cover
+            raise AssertionError("provider should not be called without API key")
+
+    from codeforerunner import providers
+
+    monkeypatch.setitem(providers.REGISTRY, "fake", FakeProvider)
+    monkeypatch.delenv("FAKE_API_KEY", raising=False)
+
+    rc = main(["--repo", str(tmp_path), "generate", "readme", "--provider", "fake"])
+    cap = capsys.readouterr()
+
+    assert rc == 3
+    assert "missing API key" in cap.err

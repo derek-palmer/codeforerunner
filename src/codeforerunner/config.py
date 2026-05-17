@@ -42,6 +42,7 @@ class ForerunnerConfig:
     context_max_lines_per_file: int = 300
     approaching_eol_threshold_months: int = 6
     ignore_patterns: tuple[str, ...] = ()
+    api_key_env: dict[str, str] = field(default_factory=dict)
     check: CheckConfig = field(default_factory=CheckConfig)
     version_audit: VersionAuditConfig = field(default_factory=VersionAuditConfig)
 
@@ -65,6 +66,29 @@ def _coerce_str_tuple(value: Any, field_name: str) -> tuple[str, ...]:
             raise ConfigError(f"{field_name}[{i}]: expected string, got {type(item).__name__}")
         out.append(item)
     return tuple(out)
+
+
+def _parse_api_key_env(raw: Any) -> dict[str, str]:
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise ConfigError(f"api_key_env: expected dict, got {type(raw).__name__}")
+    out: dict[str, str] = {}
+    for k, v in raw.items():
+        if not isinstance(k, str):
+            raise ConfigError(
+                f"api_key_env: keys must be strings, got {type(k).__name__}"
+            )
+        if k not in _KNOWN_PROVIDERS:
+            raise ConfigError(
+                f"api_key_env: unknown provider '{k}' (expected one of {sorted(_KNOWN_PROVIDERS)})"
+            )
+        if not isinstance(v, str) or not v:
+            raise ConfigError(
+                f"api_key_env[{k}]: expected non-empty string, got {type(v).__name__}"
+            )
+        out[k] = v
+    return out
 
 
 def _parse_check(raw: Any) -> CheckConfig:
@@ -128,6 +152,7 @@ def parse(raw: dict[str, Any] | None) -> ForerunnerConfig:
         context_max_lines_per_file=int(raw.get("context_max_lines_per_file", 300)),
         approaching_eol_threshold_months=int(raw.get("approaching_eol_threshold_months", 6)),
         ignore_patterns=_coerce_str_tuple(raw.get("ignore_patterns", []), "ignore_patterns"),
+        api_key_env=_parse_api_key_env(raw.get("api_key_env")),
         check=_parse_check(tasks.get("check")),
         version_audit=_parse_version_audit(tasks.get("version_audit")),
     )
