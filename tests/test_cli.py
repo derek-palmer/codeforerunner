@@ -52,6 +52,32 @@ def test_init_scan_resolve_bundle(cmd, task_file, capsys):
     assert body.splitlines()[0] in out
 
 
+def test_init_agents_only_matches_default(capsys):
+    rc = main(["--repo", str(REPO), "init", "--agents-only"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "<!-- task: init-agent-onboarding.md -->" in out
+    assert "<!-- task: scan.md -->" not in out
+
+
+def test_init_full_prepends_scan(capsys):
+    rc = main(["--repo", str(REPO), "init", "--full"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "section 1/2 (scan)" in out
+    assert "<!-- task: scan.md -->" in out
+    assert "section 2/2 (onboarding)" in out
+    assert "<!-- task: init-agent-onboarding.md -->" in out
+    assert out.index("<!-- task: scan.md -->") < out.index(
+        "<!-- task: init-agent-onboarding.md -->"
+    )
+
+
+def test_init_full_and_agents_only_mutually_exclusive(capsys):
+    with pytest.raises(SystemExit):
+        main(["--repo", str(REPO), "init", "--full", "--agents-only"])
+
+
 def test_check_no_config_exits_zero(tmp_path, capsys):
     rc = main(["--repo", str(tmp_path), "check"])
     assert rc == 0

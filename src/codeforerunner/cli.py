@@ -52,6 +52,13 @@ def _doc_for(args: argparse.Namespace, task: str) -> int:
 
 
 def cmd_init(args: argparse.Namespace) -> int:
+    """Default + --agents-only = onboarding bundle only. --full prepends scan."""
+    if getattr(args, "full", False):
+        sys.stdout.write("<!-- forerunner init --full: section 1/2 (scan) -->\n")
+        rc = _doc_for(args, "scan")
+        if rc != 0:
+            return rc
+        sys.stdout.write("\n<!-- forerunner init --full: section 2/2 (onboarding) -->\n")
     return _doc_for(args, "init-agent-onboarding")
 
 
@@ -65,11 +72,16 @@ def cmd_check(args: argparse.Namespace) -> int:
         root = _repo_root(Path(args.repo) if args.repo else None)
     except FileNotFoundError:
         root = Path.cwd()
-    cfg = root / "forerunner.config.yaml"
-    if not cfg.is_file():
-        return 0
     from codeforerunner import check as _check
-    violations = _check.run(root)
+    from codeforerunner.config import ConfigError, load_from_repo
+    try:
+        cfg = load_from_repo(root)
+    except ConfigError as e:
+        print(f"forerunner check: invalid config: {e}", file=sys.stderr)
+        return 2
+    if cfg is None:
+        return 0
+    violations = _check.run(root, cfg.check)
     if not violations:
         return 0
     sys.stderr.write(_check.format_violations(violations) + "\n")
@@ -91,6 +103,17 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True, metavar="<cmd>")
 
     s_init = sub.add_parser("init", help="resolve init-agent-onboarding prompt bundle to stdout")
+    init_scope = s_init.add_mutually_exclusive_group()
+    init_scope.add_argument(
+        "--full",
+        action="store_true",
+        help="prepend scan bundle before the onboarding bundle (scan-first per V2)",
+    )
+    init_scope.add_argument(
+        "--agents-only",
+        action="store_true",
+        help="explicit alias for the default scope (AGENTS.md update only)",
+    )
     s_init.set_defaults(func=cmd_init)
 
     s_scan = sub.add_parser("scan", help="resolve scan prompt bundle to stdout")

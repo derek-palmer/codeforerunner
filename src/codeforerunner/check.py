@@ -1,9 +1,12 @@
 """Drift detection for docs that claim files don't exist when they do."""
 from __future__ import annotations
 
+import fnmatch
 import re
 from dataclasses import dataclass
 from pathlib import Path
+
+from codeforerunner.config import CheckConfig
 
 
 @dataclass(frozen=True)
@@ -77,19 +80,38 @@ def _scanned_docs(repo: Path) -> list[Path]:
     return docs
 
 
-def run(repo: Path) -> list[Violation]:
-    """Scan repo docs for drift; return list of violations."""
+def _path_ignored(repo: Path, doc: Path, ignore_patterns: tuple[str, ...]) -> bool:
+    if not ignore_patterns:
+        return False
+    try:
+        rel = doc.relative_to(repo).as_posix()
+    except ValueError:
+        rel = doc.as_posix()
+    return any(fnmatch.fnmatch(rel, pat) for pat in ignore_patterns)
+
+
+def run(repo: Path, config: CheckConfig | None = None) -> list[Violation]:
+    """Scan repo docs for drift; return list of violations.
+
+    `config` filters rules via `enabled_rules` and skips docs matching `ignore_paths`.
+    `None` config (default) preserves the pre-T25 behavior: all rules, no ignores.
+    """
     repo = Path(repo)
+    enabled = set(config.enabled_rules) if (config and config.enabled_rules is not None) else None
+    ignore_patterns = config.ignore_paths if config else ()
+
     active_rules = [
         (rid, rx, msg)
         for rid, rx, triggers, msg in _RULES
-        if _trigger_exists(repo, triggers)
+        if _trigger_exists(repo, triggers) and (enabled is None or rid in enabled)
     ]
     if not active_rules:
         return []
 
     violations: list[Violation] = []
     for doc in _scanned_docs(repo):
+        if _path_ignored(repo, doc, ignore_patterns):
+            continue
         try:
             text = doc.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
