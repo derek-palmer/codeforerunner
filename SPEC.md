@@ -77,11 +77,11 @@ T15|x|P4|design installer + Codex marketplace + Claude install (§D.installer); 
 T17|x|P5|implement minimal `forerunner` CLI under `src/` (D.cli: init, scan, doc, check stubs routing to prompt pack)|I.cli,D.cli,C1,V4,V11
 T18|x|P4|implement idempotent installer `forerunner install <agent>` (D.installer: body-parity check, managed-region markers, --check dry-run)|I.installer,D.installer,V8,V10,V11,V12
 T19|x|P5|wire pre-commit + CI hooks calling `forerunner check` (D.hooks: skip when no forerunner.config.yaml)|I.hooks,D.hooks,V11
-T20|.|P5|wire `forerunner init` subcommand to `prompts/tasks/init-agent-onboarding.md` bundle (replace stub exit 2)|I.cli,I.init-onboarding,D.cli,V2,V9
-T21|.|P5|wire `forerunner scan` subcommand to `prompts/tasks/scan.md` bundle (replace stub exit 2)|I.cli,I.prompts,D.cli,V2
-T22|.|P5|implement real `forerunner check` rules: detect V1/V3/V5 drift (docs claim absent files, files claim absent docs); exit ≠0 on violation|I.cli,I.hooks,D.cli,D.hooks,V1,V3,V5
-T23|.|P5|design + implement minimal MCP server exposing prompt bundles (promote I.future-mcp → I.mcp); add §D.mcp design row|I.future-mcp,D.mcp,C1,V11
-T24|.|P4|publish Codex marketplace manifest at `plugins/codex/marketplace.json` (D.installer follow-up); installer learns `--marketplace` flag|I.installer,D.installer,V11
+T20|x|P5|wire `forerunner init` subcommand to `prompts/tasks/init-agent-onboarding.md` bundle (replace stub exit 2)|I.cli,I.init-onboarding,D.cli,V2,V9
+T21|x|P5|wire `forerunner scan` subcommand to `prompts/tasks/scan.md` bundle (replace stub exit 2)|I.cli,I.prompts,D.cli,V2
+T22|x|P5|implement real `forerunner check` rules: detect V1/V3/V5 drift (docs claim absent files, files claim absent docs); exit ≠0 on violation|I.cli,I.hooks,D.cli,D.hooks,V1,V3,V5
+T23|x|P5|design + implement minimal MCP server exposing prompt bundles (promote I.future-mcp → I.mcp); add §D.mcp design row|I.future-mcp,D.mcp,C1,V11
+T24|x|P4|publish Codex marketplace manifest at `plugins/codex/marketplace.json` (D.installer follow-up); installer learns `--marketplace` flag|I.installer,D.installer,V11
 
 ## Init-Onboarding
 
