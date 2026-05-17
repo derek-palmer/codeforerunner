@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 from typing import Sequence
+
+SCAN_EXEMPT_TASKS = frozenset({"scan", "init-agent-onboarding"})
+SCAN_DONE_ENV = "FORERUNNER_SCAN_DONE"
 
 
 def _repo_root(start: Path | None = None) -> Path:
@@ -30,6 +34,17 @@ def cmd_doc(args: argparse.Namespace) -> int:
     if not task_path.is_file():
         print(f"error: unknown task '{args.task}' (no {task_path})", file=sys.stderr)
         return 2
+
+    if (
+        args.task not in SCAN_EXEMPT_TASKS
+        and (root / "forerunner.config.yaml").is_file()
+        and not os.environ.get(SCAN_DONE_ENV)
+    ):
+        print(
+            f"warning: SPEC V2 scan-first — run `forerunner scan` first, "
+            f"then export {SCAN_DONE_ENV}=1 to silence this warning.",
+            file=sys.stderr,
+        )
 
     parts: list[str] = []
     base = root / "prompts" / "system" / "base.md"
@@ -63,7 +78,14 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
-    return _doc_for(args, "scan")
+    rc = _doc_for(args, "scan")
+    if rc == 0:
+        print(
+            f"hint: export {SCAN_DONE_ENV}=1 in this shell to silence "
+            "scan-first warnings on follow-up `forerunner doc`/`init` calls.",
+            file=sys.stderr,
+        )
+    return rc
 
 
 def cmd_check(args: argparse.Namespace) -> int:

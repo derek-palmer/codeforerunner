@@ -78,6 +78,65 @@ def test_init_full_and_agents_only_mutually_exclusive(capsys):
         main(["--repo", str(REPO), "init", "--full", "--agents-only"])
 
 
+def _seed_repo_with_config(tmp_path):
+    (tmp_path / "prompts/system").mkdir(parents=True)
+    (tmp_path / "prompts/system/base.md").write_text("# base\n", encoding="utf-8")
+    (tmp_path / "prompts/partials").mkdir()
+    (tmp_path / "prompts/tasks").mkdir()
+    (tmp_path / "prompts/tasks/readme.md").write_text("# readme task\n", encoding="utf-8")
+    (tmp_path / "prompts/tasks/scan.md").write_text("# scan task\n", encoding="utf-8")
+    (tmp_path / "prompts/tasks/init-agent-onboarding.md").write_text(
+        "# onboarding\n", encoding="utf-8"
+    )
+    (tmp_path / "forerunner.config.yaml").write_text("", encoding="utf-8")
+
+
+def test_doc_non_exempt_with_config_warns_without_env(tmp_path, capsys, monkeypatch):
+    _seed_repo_with_config(tmp_path)
+    monkeypatch.delenv("FORERUNNER_SCAN_DONE", raising=False)
+    rc = main(["--repo", str(tmp_path), "doc", "readme"])
+    cap = capsys.readouterr()
+    assert rc == 0
+    assert "scan-first" in cap.err
+    assert "FORERUNNER_SCAN_DONE" in cap.err
+
+
+def test_doc_non_exempt_with_env_set_no_warning(tmp_path, capsys, monkeypatch):
+    _seed_repo_with_config(tmp_path)
+    monkeypatch.setenv("FORERUNNER_SCAN_DONE", "1")
+    rc = main(["--repo", str(tmp_path), "doc", "readme"])
+    cap = capsys.readouterr()
+    assert rc == 0
+    assert "scan-first" not in cap.err
+
+
+def test_doc_exempt_task_no_warning(tmp_path, capsys, monkeypatch):
+    _seed_repo_with_config(tmp_path)
+    monkeypatch.delenv("FORERUNNER_SCAN_DONE", raising=False)
+    rc = main(["--repo", str(tmp_path), "doc", "scan"])
+    cap = capsys.readouterr()
+    assert rc == 0
+    assert "scan-first" not in cap.err
+
+
+def test_doc_without_config_no_warning(tmp_path, capsys, monkeypatch):
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+    monkeypatch.delenv("FORERUNNER_SCAN_DONE", raising=False)
+    rc = main(["--repo", str(tmp_path), "doc", "readme"])
+    cap = capsys.readouterr()
+    assert rc == 0
+    assert "scan-first" not in cap.err
+
+
+def test_scan_prints_env_hint(tmp_path, capsys):
+    _seed_repo_with_config(tmp_path)
+    rc = main(["--repo", str(tmp_path), "scan"])
+    cap = capsys.readouterr()
+    assert rc == 0
+    assert "FORERUNNER_SCAN_DONE" in cap.err
+
+
 def test_check_no_config_exits_zero(tmp_path, capsys):
     rc = main(["--repo", str(tmp_path), "check"])
     assert rc == 0
