@@ -127,3 +127,90 @@ def test_unknown_method(server: _Server) -> None:
     resp = server.request({"jsonrpc": "2.0", "id": 1, "method": "no/such/method", "params": {}})
     assert "error" in resp
     assert resp["error"]["code"] == -32601
+
+
+def test_tools_call_blocks_without_scan(server: _Server) -> None:
+    server.request({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+    resp = server.request(
+        {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {"name": "readme", "arguments": {}},
+        }
+    )
+    assert "error" in resp
+    assert resp["error"]["code"] == -32000
+    msg = resp["error"]["message"]
+    assert "scan-first" in msg
+    assert "V2" in msg
+
+
+def test_tools_call_exempt_init_agent_onboarding(server: _Server) -> None:
+    server.request({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+    resp = server.request(
+        {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {"name": "init-agent-onboarding", "arguments": {}},
+        }
+    )
+    assert "error" not in resp
+    assert resp["result"]["isError"] is False
+
+
+def test_tools_call_allowed_after_scan(server: _Server) -> None:
+    server.request({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+    scan_resp = server.request(
+        {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {"name": "scan", "arguments": {}},
+        }
+    )
+    assert "error" not in scan_resp
+    resp = server.request(
+        {
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "tools/call",
+            "params": {"name": "readme", "arguments": {}},
+        }
+    )
+    assert "error" not in resp
+    assert resp["result"]["isError"] is False
+
+
+def test_tools_call_state_resets_per_process() -> None:
+    s1 = _Server()
+    try:
+        s1.request({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+        scan_resp = s1.request(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/call",
+                "params": {"name": "scan", "arguments": {}},
+            }
+        )
+        assert "error" not in scan_resp
+    finally:
+        s1.close()
+
+    s2 = _Server()
+    try:
+        s2.request({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+        resp = s2.request(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/call",
+                "params": {"name": "readme", "arguments": {}},
+            }
+        )
+        assert "error" in resp
+        assert resp["error"]["code"] == -32000
+    finally:
+        s2.close()

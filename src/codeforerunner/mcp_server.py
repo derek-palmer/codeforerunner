@@ -85,7 +85,10 @@ def _err(req_id: Any, code: int, message: str) -> dict[str, Any]:
     return {"jsonrpc": "2.0", "id": req_id, "error": {"code": code, "message": message}}
 
 
-def _handle(repo: Path, msg: dict[str, Any]) -> dict[str, Any] | None:
+SCAN_EXEMPT_TOOLS = frozenset({"init-agent-onboarding", "scan"})
+
+
+def _handle(repo: Path, msg: dict[str, Any], state: dict[str, Any]) -> dict[str, Any] | None:
     method = msg.get("method")
     req_id = msg.get("id")
     params = msg.get("params") or {}
@@ -114,6 +117,14 @@ def _handle(repo: Path, msg: dict[str, Any]) -> dict[str, Any] | None:
         task_path = repo / "prompts" / "tasks" / f"{name}.md"
         if not isinstance(name, str) or not task_path.is_file():
             return _err(req_id, -32602, f"unknown tool: {name!r}")
+        if name not in SCAN_EXEMPT_TOOLS and not state.get("scan_called"):
+            return _err(
+                req_id,
+                -32000,
+                "scan-first required: call tools/call name=scan before this task (SPEC V2)",
+            )
+        if name == "scan":
+            state["scan_called"] = True
         try:
             text = resolve_bundle(repo, name)
         except Exception as e:  # pragma: no cover - defensive
@@ -127,6 +138,7 @@ def _handle(repo: Path, msg: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def serve(repo: Path, stdin: Iterable[str] = sys.stdin, stdout=sys.stdout, stderr=sys.stderr) -> int:
+    state: dict[str, Any] = {"scan_called": False}
     for raw in stdin:
         line = raw.strip()
         if not line:
@@ -141,7 +153,7 @@ def serve(repo: Path, stdin: Iterable[str] = sys.stdin, stdout=sys.stdout, stder
             continue
 
         try:
-            resp = _handle(repo, msg)
+            resp = _handle(repo, msg, state)
         except Exception as e:  # pragma: no cover - defensive
             print(f"mcp_server: handler error: {e}", file=stderr)
             resp = _err(msg.get("id"), -32603, f"internal error: {e}")
