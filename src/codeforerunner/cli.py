@@ -46,37 +46,40 @@ def cmd_doc(args: argparse.Namespace) -> int:
     return 0
 
 
-def _stub(name: str) -> int:
-    print(
-        f"forerunner {name}: not yet implemented; see SPEC.md §D.cli (V11 design-only).",
-        file=sys.stderr,
-    )
-    return 2
+def _doc_for(args: argparse.Namespace, task: str) -> int:
+    ns = argparse.Namespace(repo=getattr(args, "repo", None), task=task)
+    return cmd_doc(ns)
 
 
-def cmd_init(_: argparse.Namespace) -> int:
-    return _stub("init")
+def cmd_init(args: argparse.Namespace) -> int:
+    return _doc_for(args, "init-agent-onboarding")
 
 
-def cmd_scan(_: argparse.Namespace) -> int:
-    return _stub("scan")
+def cmd_scan(args: argparse.Namespace) -> int:
+    return _doc_for(args, "scan")
 
 
 def cmd_check(args: argparse.Namespace) -> int:
-    """Stub. Honest exit: 0 when no config; 0 + notice when config present (no rules wired)."""
+    """Run check rules when `forerunner.config.yaml` present. Silent no-op otherwise."""
     try:
         root = _repo_root(Path(args.repo) if args.repo else None)
     except FileNotFoundError:
         root = Path.cwd()
     cfg = root / "forerunner.config.yaml"
     if not cfg.is_file():
-        # Hook contract: silent no-op when project hasn't opted in.
         return 0
-    print(
-        "forerunner check: config detected but no check rules wired yet (SPEC §D.hooks).",
-        file=sys.stderr,
-    )
-    return 0
+    from codeforerunner import check as _check
+    violations = _check.run(root)
+    if not violations:
+        return 0
+    sys.stderr.write(_check.format_violations(violations) + "\n")
+    return 1
+
+
+def cmd_mcp_server(args: argparse.Namespace) -> int:
+    from codeforerunner import mcp_server
+    root = _repo_root(Path(args.repo) if args.repo else None)
+    return mcp_server.serve(root)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -87,18 +90,21 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--repo", help="path to repo root (defaults to cwd ancestor with prompts/tasks/)")
     sub = p.add_subparsers(dest="cmd", required=True, metavar="<cmd>")
 
-    s_init = sub.add_parser("init", help="onboarding orchestration (stub)")
+    s_init = sub.add_parser("init", help="resolve init-agent-onboarding prompt bundle to stdout")
     s_init.set_defaults(func=cmd_init)
 
-    s_scan = sub.add_parser("scan", help="run scan pipeline (stub)")
+    s_scan = sub.add_parser("scan", help="resolve scan prompt bundle to stdout")
     s_scan.set_defaults(func=cmd_scan)
 
     s_doc = sub.add_parser("doc", help="resolve prompt bundle for <task> to stdout")
     s_doc.add_argument("task", help="task name (basename without .md) under prompts/tasks/")
     s_doc.set_defaults(func=cmd_doc)
 
-    s_check = sub.add_parser("check", help="run check prompts against tracked docs (stub)")
+    s_check = sub.add_parser("check", help="run drift-detection rules against tracked docs")
     s_check.set_defaults(func=cmd_check)
+
+    s_mcp = sub.add_parser("mcp-server", help="serve prompt bundles as MCP tools over stdio")
+    s_mcp.set_defaults(func=cmd_mcp_server)
 
     from codeforerunner import installer
     installer.add_subparser(sub)

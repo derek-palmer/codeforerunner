@@ -39,12 +39,17 @@ def test_doc_unknown_task_exits_nonzero(capsys):
     assert "unknown task" in err
 
 
-@pytest.mark.parametrize("cmd", ["init", "scan"])
-def test_stubs_exit_two(cmd, capsys):
+@pytest.mark.parametrize(
+    "cmd,task_file",
+    [("init", "init-agent-onboarding.md"), ("scan", "scan.md")],
+)
+def test_init_scan_resolve_bundle(cmd, task_file, capsys):
     rc = main(["--repo", str(REPO), cmd])
-    err = capsys.readouterr().err
-    assert rc == 2
-    assert "not yet implemented" in err
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert f"<!-- task: {task_file} -->" in out
+    body = (REPO / "prompts" / "tasks" / task_file).read_text(encoding="utf-8")
+    assert body.splitlines()[0] in out
 
 
 def test_check_no_config_exits_zero(tmp_path, capsys):
