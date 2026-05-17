@@ -129,6 +129,15 @@ def test_doc_without_config_no_warning(tmp_path, capsys, monkeypatch):
     assert "scan-first" not in cap.err
 
 
+def test_version_flag_prints_package_version(capsys):
+    from codeforerunner import __version__
+    with pytest.raises(SystemExit) as exc:
+        main(["--version"])
+    assert exc.value.code == 0
+    cap = capsys.readouterr()
+    assert __version__ in cap.out
+
+
 def test_scan_prints_env_hint(tmp_path, capsys):
     _seed_repo_with_config(tmp_path)
     rc = main(["--repo", str(tmp_path), "scan"])

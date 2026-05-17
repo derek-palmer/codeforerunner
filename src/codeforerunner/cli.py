@@ -116,12 +116,22 @@ def cmd_mcp_server(args: argparse.Namespace) -> int:
     return mcp_server.serve(root)
 
 
+def cmd_doctor(args: argparse.Namespace) -> int:
+    from codeforerunner import doctor
+    root = _repo_root(Path(args.repo) if args.repo else None)
+    findings = doctor.run(root)
+    sys.stdout.write(doctor.format_report(findings) + "\n")
+    return 1 if any(f.severity == "error" for f in findings) else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="forerunner",
         description="Prompt-first repo documentation tooling. Thin CLI; product logic in prompts/.",
     )
     p.add_argument("--repo", help="path to repo root (defaults to cwd ancestor with prompts/tasks/)")
+    from codeforerunner import __version__ as _version
+    p.add_argument("--version", action="version", version=f"forerunner {_version}")
     sub = p.add_subparsers(dest="cmd", required=True, metavar="<cmd>")
 
     s_init = sub.add_parser("init", help="resolve init-agent-onboarding prompt bundle to stdout")
@@ -150,6 +160,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     s_mcp = sub.add_parser("mcp-server", help="serve prompt bundles as MCP tools over stdio")
     s_mcp.set_defaults(func=cmd_mcp_server)
+
+    s_doctor = sub.add_parser("doctor", help="health report: skill parity + marketplace + installed dests")
+    s_doctor.set_defaults(func=cmd_doctor)
 
     from codeforerunner import installer
     installer.add_subparser(sub)
