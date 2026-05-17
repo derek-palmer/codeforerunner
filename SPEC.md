@@ -56,6 +56,7 @@ P4|x|skill/plugin distribution design|simple agent setup planned without runtime
 P5|x|thin wrappers|CLI, hooks, MCP server all runnable; future polish tracked as follow-up §T rows
 P6|x|polish|config schema + scan-first MCP gating + init flags + marketplace publishing CI
 P7|x|surface parity|docs + AGENTS refresh, CLI scan-first parity, expanded check rules
+P8|x|doc backfill|sweep remaining stale "future"/"planned" docs against current SPEC phases
 
 ## T Tasks
 
@@ -92,6 +93,7 @@ T29|x|P7|refresh README + docs/getting-started.md to document mcp-server, init -
 T30|x|P7|refresh AGENTS.md against current repo state (CLI + installer + hooks + MCP + config)|I.init-onboarding,V9
 T31|x|P7|`forerunner doc <task>` emits stderr warning when task ∉ scan-exempt and config present without prior scan (CLI parity w/ MCP V2 gate)|I.cli,V2
 T32|x|P7|expand check rules (R6 Docker/Makefile claims, R7 MCP claims, R8 marketplace claims) + validate workflow lints via actionlint|I.cli,I.hooks,I.installer,V1,V5
+T33|x|P8|refresh docs/roadmap.md + docs/agent-distribution-design.md + README "future installer" reference against current §P statuses|V1,V3,I.docs
 
 ## Init-Onboarding
 
