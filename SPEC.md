@@ -25,7 +25,7 @@ I.spec: `SPEC.md` → canonical phase/task tracker.
 I.agent-skill: `agent/codeforerunner.skill.md` → canonical skill instruction source; its post-frontmatter Markdown content is consumed verbatim by Codex/Claude packages and `forerunner install` (per-agent frontmatter may differ; body cannot). See V10.
 I.skill-plugin: skill/plugin packages = Codex (`plugins/codeforerunner/`) + Claude (`.claude-plugin/`, `skills/codeforerunner/`); install via `forerunner install <agent>` (I.installer).
 I.validation: `scripts/validate_skill_copies.py` → local SPEC V10 body parity check for canonical and distributed skill files.
-I.cli: `forerunner` CLI → `src/codeforerunner/cli.py`; subcommands `init`/`scan`/`doc`/`check`/`mcp-server`/`install`. `init`/`scan`/`doc` → resolve prompt bundle to stdout. `check` → run drift rules (I.hooks gate). `mcp-server` → stdio JSON-RPC (I.mcp). `install` → idempotent skill/marketplace writer (I.installer).
+I.cli: `forerunner` CLI → `src/codeforerunner/cli.py`; subcommands `init`/`scan`/`doc`/`check`/`mcp-server`/`install`/`doctor`. `init`/`scan`/`doc` → resolve prompt bundle to stdout. `check` → run drift rules (I.hooks gate). `mcp-server` → stdio JSON-RPC (I.mcp). `install` → idempotent skill/marketplace writer (I.installer). `doctor` → health report (skill parity + marketplace + install destinations + config). `--version` flag prints package version.
 I.installer: `forerunner install <agent>` → `src/codeforerunner/installer.py`; idempotent body-parity write into Codex/Claude/generic targets; managed-region markers; `--check` dry-run.
 I.hooks: `.pre-commit-hooks.yaml` + `.github/workflows/forerunner-check.yml` → run `forerunner check`; skip when no `forerunner.config.yaml`.
 I.mcp: stdio MCP server → `src/codeforerunner/mcp_server.py`; exposes one tool per `prompts/tasks/*.md` over JSON-RPC 2.0; `tools/call` returns `cmd_doc`-shaped bundle.
@@ -151,6 +151,7 @@ cmd: `forerunner init [--full|--agents-only]` → onboarding orchestration; dele
 cmd: `forerunner scan` → runs `prompts/tasks/scan.md` pipeline; emits repo-evidence JSON.
 cmd: `forerunner doc <task>` → resolves `prompts/tasks/<task>.md` + base + partials → prompt bundle on stdout.
 cmd: `forerunner check` → runs check/review prompts against tracked docs; exit ≠ 0 on drift.
+cmd: `forerunner doctor` → aggregate health checks (V10 parity, V12 markers, config loadable, marketplace valid); exit 1 iff any "error" finding.
 
 Shape:
 - Thin orchestration only; product logic stays in `prompts/`.
