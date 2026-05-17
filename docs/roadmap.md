@@ -40,24 +40,25 @@ Status: complete.
 
 ## P4: Skill/Plugin Distribution
 
-Status: in progress.
+Status: complete.
 
-- Done: add a canonical skill source derived from the prompt pack.
-- Done: add Codex plugin packaging for the prompt workflow.
-- Done: add Claude skill/plugin packaging for the prompt workflow.
-- Add an idempotent installer, Codex marketplace entry, and Claude install support for owned agent artifacts.
-- Keep packages thin: they should route agents to tracked prompts and docs, not duplicate product logic.
-- Do not claim package install support until files exist.
+- Canonical skill source derived from the prompt pack (`agent/codeforerunner.skill.md`).
+- Codex plugin packaging for the prompt workflow.
+- Claude skill/plugin packaging for the prompt workflow.
+- Idempotent `forerunner install <agent>` for Codex, Claude, and generic targets, with body-parity check (SPEC V10) and managed-region markers (SPEC V12).
+- Marketplace publishing for Codex remains a follow-up.
 
 ## P5: Thin Runtime Wrappers
 
-Status: planned.
+Status: in progress.
 
-Potential surfaces:
+Landed:
 
-- CLI for assembling context and running tasks.
+- CLI (`forerunner`) for resolving prompt bundles and routing to the installer (`src/codeforerunner/cli.py`).
+- Pre-commit hook (`.pre-commit-hooks.yaml`) + GitHub Actions workflow (`.github/workflows/forerunner-check.yml`) that no-op without `forerunner.config.yaml`.
+
+Still future:
+
 - MCP server for exposing prompt workflows to agents.
-- Pre-commit hook for doc staleness checks.
-- CI workflow for documentation drift reporting.
-
-Do not add these until prompt contracts are stable enough to wrap.
+- Real `forerunner check` rules (current stub exits 0; gate is presence of `forerunner.config.yaml`).
+- Wiring `init`/`scan` subcommands to the prompt pack (currently honest stubs).

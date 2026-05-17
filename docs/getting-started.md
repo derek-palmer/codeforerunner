@@ -1,6 +1,15 @@
 # Getting Started
 
-`codeforerunner` currently ships prompts, not a runnable CLI.
+`codeforerunner` ships prompts as the core product, plus a thin `forerunner` CLI, an idempotent skill installer, and pre-commit/CI hook wiring. Use the prompts directly with your editor/agent, or use the CLI to assemble bundles.
+
+## Install The CLI (optional)
+
+```bash
+python -m pip install -e .
+forerunner --help
+```
+
+The CLI is a thin orchestration layer; product logic lives in `prompts/`.
 
 ## Use Manually
 
@@ -27,10 +36,21 @@ base.md + context-format.md + target repo context + scan.md
 - Entry points and key modules.
 - Existing docs when updating or checking documentation.
 
+## Use The CLI
+
+```bash
+forerunner doc scan                 # prints base + partials + tasks/scan.md to stdout
+forerunner install codex --check    # dry-run the skill installer for Codex target
+forerunner install claude           # idempotent write into ~/.claude/plugins/...
+forerunner check                    # hook entry point; no-op without forerunner.config.yaml
+```
+
+`init` and `scan` subcommands are honest stubs (exit 2) until the orchestration is wired.
+
 ## What Not To Do
 
-- Do not run `forerunner`; no CLI exists yet.
-- Do not assume Docker, Make, pre-commit, CI, or package publishing exists.
+- Do not assume Docker, Make, or a published package exists yet.
+- Do not assume an MCP server exists; it is still future.
 - Do not accept generated docs until claims match target repo files.
 
 ## Next References

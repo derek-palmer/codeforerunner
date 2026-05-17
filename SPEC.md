@@ -25,10 +25,10 @@ I.spec: `SPEC.md` → canonical phase/task tracker.
 I.agent-skill: `agent/codeforerunner.skill.md` → canonical skill instruction source; its post-frontmatter Markdown content is consumed verbatim by future Codex/Claude packages and installer (per-agent frontmatter may differ; body cannot). See V10.
 I.skill-plugin: skill/plugin packages ? Codex and Claude package artifacts exist; installer/generic distribution remains future.
 I.validation: `scripts/validate_skill_copies.py` → local SPEC V10 body parity check for canonical and distributed skill files.
-I.future-cli: `forerunner` CLI ? future surface; design only (§D.cli); not implemented.
+I.cli: `forerunner` CLI → `src/codeforerunner/cli.py`; subcommands `init`/`scan`/`doc`/`check`/`install`. `init`/`scan` = honest stubs (exit 2); `doc`/`check`/`install` runnable.
+I.installer: `forerunner install <agent>` → `src/codeforerunner/installer.py`; idempotent body-parity write into Codex/Claude/generic targets; managed-region markers; `--check` dry-run.
+I.hooks: `.pre-commit-hooks.yaml` + `.github/workflows/forerunner-check.yml` → run `forerunner check`; skip when no `forerunner.config.yaml`.
 I.future-mcp: MCP server ? future surface; not implemented.
-I.future-hooks: pre-commit/CI checks ? future surface; design only (§D.hooks); not implemented.
-I.future-installer: idempotent installer + Codex marketplace entry + Claude install ? future surface; design only (§D.installer); not implemented.
 
 ## V Invariants
 
@@ -53,7 +53,7 @@ P1|x|prompt pack hardening|task prompts consistent, composable, evidence-first
 P2|x|agent config exports|editor-agent configs usable from tracked prompts
 P3|x|human docs|setup, prompt guide, editor setup, roadmap present
 P4|x|skill/plugin distribution design|simple agent setup planned without runtime claims
-P5|~|thin wrappers|CLI/MCP/hooks design recorded (§D.*); implementation gated on prompt-contract stability
+P5|~|thin wrappers|CLI + hooks runnable; MCP server still future (I.future-mcp)
 
 ## T Tasks
 
@@ -64,19 +64,19 @@ T3|x|P2|add `agent-configs/` scaffolds|V7,I.agent-configs
 T4|x|P3|add `docs/getting-started.md`|I.docs,V1
 T5|x|P3|add `docs/prompt-guide.md`|I.prompts,V2
 T6|x|P3|add `docs/editor-agent-setup.md`|I.agent-configs,V7
-T7|x|P3|add `docs/roadmap.md`|V3,I.future-cli,I.future-mcp,I.future-hooks
+T7|x|P3|add `docs/roadmap.md`|V3,I.cli,I.future-mcp,I.hooks
 T8|x|P1|add evidence rules and gaps convention to all task prompts|I.prompts,V2
 T16|x|P1|add prompt-first init onboarding task for AGENTS generation/update|I.init-onboarding,V9
-T9|x|P5|design CLI surface (§D.cli); implementation deferred|I.future-cli,C1,V11
-T10|x|P5|design hooks/CI surface (§D.hooks); implementation deferred|I.future-hooks,C1,V11
+T9|x|P5|design CLI surface (§D.cli); implementation deferred|I.cli,C1,V11
+T10|x|P5|design hooks/CI surface (§D.hooks); implementation deferred|I.hooks,C1,V11
 T11|x|P4|write skill/plugin distribution design|I.skill-plugin,I.agent-skill,V8,V10
 T12|x|P4|add canonical skill source from prompt pack|I.prompts,I.agent-skill,I.skill-plugin,C7,V10
 T13|x|P4|add Codex plugin package for prompt workflow|I.skill-plugin,I.agent-skill,V8,V10
 T14|x|P4|add Claude skill/plugin package for prompt workflow|I.skill-plugin,I.agent-skill,I.validation,V8,V10
-T15|x|P4|design installer + Codex marketplace + Claude install (§D.installer); implementation deferred|I.skill-plugin,I.agent-skill,I.future-installer,V8,V10,V11,V12
-T17|x|P5|implement minimal `forerunner` CLI under `src/` (D.cli: init, scan, doc, check stubs routing to prompt pack)|I.future-cli,D.cli,C1,V4,V11
-T18|x|P4|implement idempotent installer `forerunner install <agent>` (D.installer: body-parity check, managed-region markers, --check dry-run)|I.future-installer,D.installer,V8,V10,V11,V12
-T19|x|P5|wire pre-commit + CI hooks calling `forerunner check` (D.hooks: skip when no forerunner.config.yaml)|I.future-hooks,D.hooks,V11
+T15|x|P4|design installer + Codex marketplace + Claude install (§D.installer); implementation deferred|I.skill-plugin,I.agent-skill,I.installer,V8,V10,V11,V12
+T17|x|P5|implement minimal `forerunner` CLI under `src/` (D.cli: init, scan, doc, check stubs routing to prompt pack)|I.cli,D.cli,C1,V4,V11
+T18|x|P4|implement idempotent installer `forerunner install <agent>` (D.installer: body-parity check, managed-region markers, --check dry-run)|I.installer,D.installer,V8,V10,V11,V12
+T19|x|P5|wire pre-commit + CI hooks calling `forerunner check` (D.hooks: skip when no forerunner.config.yaml)|I.hooks,D.hooks,V11
 
 ## Init-Onboarding
 

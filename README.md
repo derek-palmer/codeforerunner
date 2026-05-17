@@ -4,15 +4,16 @@
 
 CodeForerunner is a model-agnostic documentation agent that acts as overwatch for your repository, automatically analyzing code and maintaining docs, diagrams, and architecture knowledge as your codebase evolves over time.
 
-The current repo is the prompt-first foundation for that agent: it ships prompt assets for understanding a codebase and generating developer docs. Thin delivery surfaces such as a CLI, MCP server, hooks, and CI checks are roadmap items, not implemented runtime features yet.
+The current repo is the prompt-first foundation for that agent: it ships prompt assets for understanding a codebase and generating developer docs. A thin Python CLI, an idempotent skill installer, and pre-commit + CI hooks now wrap those prompts; an MCP server and a published package remain roadmap items.
 
 ## Current State
 
 - Core product: Markdown prompts in `prompts/`.
 - Agent package artifacts: Codex plugin files under `plugins/codeforerunner/` and Claude Code plugin files under `.claude-plugin/` plus `skills/codeforerunner/`.
-- Current config: `forerunner.config.yaml.example` documents intended options only.
-- Current execution model: paste or attach prompts to your local agent/editor workflow.
-- Not currently present: Python package, CLI, Docker image, Makefile, pre-commit hook, CI workflow, MCP server, installer, or published package.
+- Python package: `pyproject.toml` + `src/codeforerunner/` expose a `forerunner` console script. `forerunner doc <task>` resolves the prompt bundle (base + partials + task) to stdout; `forerunner install <agent>` idempotently writes the canonical skill into agent-specific directories; `forerunner init`/`scan` are honest stubs (exit 2).
+- Hooks: `.pre-commit-hooks.yaml` exposes a `forerunner-check` hook; `.github/workflows/forerunner-check.yml` mirrors it in CI. Both no-op when `forerunner.config.yaml` is absent.
+- Current config: `forerunner.config.yaml.example` documents intended options only; no loader is wired yet.
+- Not currently present: Docker image, Makefile, MCP server, published package.
 
 ## Prompt Layout
 
@@ -73,7 +74,7 @@ prompts/
 
 ## Configuration
 
-`forerunner.config.yaml.example` is a proposed config shape for future wrappers. It is safe to reference when designing integrations, but there is no repo code that loads it today.
+`forerunner.config.yaml.example` is a proposed config shape. The current `forerunner check` only uses its presence as a hook gate; no loader consumes its contents yet.
 
 ## Roadmap
 
@@ -85,7 +86,7 @@ Near-term work should keep the repo lightweight:
 | Todo | P1 | Prompt pack hardening: make task prompts consistent, composable, and evidence-first. |
 | Done | P2 | Agent config exports: Claude, Cursor, Copilot, Cline/Roo, and Windsurf scaffolds. |
 | Done | P3 | Human docs: getting started, prompt guide, editor setup, and roadmap. |
-| In progress | P4 | Skill/plugin distribution: package prompt workflow for Codex/Claude setup; installer work remains. |
-| Later | P5 | Thin wrappers: CLI, MCP, hooks, and CI only after prompt contracts stabilize. |
+| Done | P4 | Skill/plugin distribution: Codex plugin, Claude plugin, and `forerunner install` installer all present. |
+| In progress | P5 | Thin wrappers: CLI + pre-commit/CI hooks runnable; MCP server still future. |
 
 See `SPEC.md` and `docs/roadmap.md` for the current phase plan.
