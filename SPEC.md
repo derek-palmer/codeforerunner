@@ -54,6 +54,7 @@ P2|x|agent config exports|editor-agent configs usable from tracked prompts
 P3|x|human docs|setup, prompt guide, editor setup, roadmap present
 P4|x|skill/plugin distribution design|simple agent setup planned without runtime claims
 P5|x|thin wrappers|CLI, hooks, MCP server all runnable; future polish tracked as follow-up §T rows
+P6|x|polish|config schema + scan-first MCP gating + init flags + marketplace publishing CI
 
 ## T Tasks
 
@@ -82,6 +83,10 @@ T21|x|P5|wire `forerunner scan` subcommand to `prompts/tasks/scan.md` bundle (re
 T22|x|P5|implement real `forerunner check` rules: detect V1/V3/V5 drift (docs claim absent files, files claim absent docs); exit ≠0 on violation|I.cli,I.hooks,D.cli,D.hooks,V1,V3,V5
 T23|x|P5|design + implement minimal MCP server exposing prompt bundles (promote I.future-mcp → I.mcp); add §D.mcp design row|I.mcp,D.mcp,C1,V11
 T24|x|P4|publish Codex marketplace manifest at `plugins/codex/marketplace.json` (D.installer follow-up); installer learns `--marketplace` flag|I.installer,D.installer,V11
+T25|x|P6|define `forerunner.config.yaml` schema + loader; `check` consumes config to drive rule list & ignore paths|I.cli,I.hooks,C4,V2
+T26|x|P6|MCP server enforces scan-first per V2 (`tools/call` for non-exempt tasks → error without prior `scan` call in session)|I.mcp,V2
+T27|x|P6|implement `forerunner init --full` and `--agents-only` flags per Init-Onboarding wrapper block|I.cli,I.init-onboarding,V9
+T28|x|P6|automate Codex marketplace publishing on git tag (CI workflow validates + uploads `plugins/codex/marketplace.json`)|I.installer,I.hooks,V11
 
 ## Init-Onboarding
 
