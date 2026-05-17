@@ -55,6 +55,7 @@ P3|x|human docs|setup, prompt guide, editor setup, roadmap present
 P4|x|skill/plugin distribution design|simple agent setup planned without runtime claims
 P5|x|thin wrappers|CLI, hooks, MCP server all runnable; future polish tracked as follow-up §T rows
 P6|x|polish|config schema + scan-first MCP gating + init flags + marketplace publishing CI
+P7|x|surface parity|docs + AGENTS refresh, CLI scan-first parity, expanded check rules
 
 ## T Tasks
 
@@ -87,6 +88,10 @@ T25|x|P6|define `forerunner.config.yaml` schema + loader; `check` consumes confi
 T26|x|P6|MCP server enforces scan-first per V2 (`tools/call` for non-exempt tasks → error without prior `scan` call in session)|I.mcp,V2
 T27|x|P6|implement `forerunner init --full` and `--agents-only` flags per Init-Onboarding wrapper block|I.cli,I.init-onboarding,V9
 T28|x|P6|automate Codex marketplace publishing on git tag (CI workflow validates + uploads `plugins/codex/marketplace.json`)|I.installer,I.hooks,V11
+T29|x|P7|refresh README + docs/getting-started.md to document mcp-server, init --full/--agents-only, forerunner.config.yaml schema|V1,I.cli,I.mcp,I.hooks
+T30|x|P7|refresh AGENTS.md against current repo state (CLI + installer + hooks + MCP + config)|I.init-onboarding,V9
+T31|x|P7|`forerunner doc <task>` emits stderr warning when task ∉ scan-exempt and config present without prior scan (CLI parity w/ MCP V2 gate)|I.cli,V2
+T32|x|P7|expand check rules (R6 Docker/Makefile claims, R7 MCP claims, R8 marketplace claims) + validate workflow lints via actionlint|I.cli,I.hooks,I.installer,V1,V5
 
 ## Init-Onboarding
 
