@@ -53,6 +53,30 @@ _RULES = [
         ("pyproject.toml",),
         "doc claims no Python package, but pyproject.toml is present",
     ),
+    (
+        "R6-no-docker",
+        re.compile(r"(?i)no\s+Docker(\s+image)?|no\s+Dockerfile"),
+        ("Dockerfile", "compose.yml", "docker-compose.yml"),
+        "doc claims no Docker, but Dockerfile/compose file is present",
+    ),
+    (
+        "R6b-no-makefile",
+        re.compile(r"(?i)no\s+Makefile"),
+        ("Makefile",),
+        "doc claims no Makefile, but Makefile is present",
+    ),
+    (
+        "R7-no-mcp",
+        re.compile(r"(?i)no\s+MCP(\s+server)?"),
+        ("src/codeforerunner/mcp_server.py",),
+        "doc claims no MCP server, but src/codeforerunner/mcp_server.py is present",
+    ),
+    (
+        "R8-no-marketplace",
+        re.compile(r"(?i)no\s+marketplace(\s+manifest)?"),
+        ("plugins/codex/marketplace.json",),
+        "doc claims no marketplace, but plugins/codex/marketplace.json is present",
+    ),
 ]
 
 
