@@ -22,8 +22,8 @@ I.config: `forerunner.config.yaml.example` → example config only; no loader ye
 I.agent-configs: `agent-configs/*.md` → copyable editor-agent instructions.
 I.docs: `docs/*.md` → human setup, prompt guide, editor setup, roadmap.
 I.spec: `SPEC.md` → canonical phase/task tracker.
-I.agent-skill: `agent/codeforerunner.skill.md` → canonical skill instruction source; its post-frontmatter Markdown content is consumed verbatim by future Codex/Claude packages and installer (per-agent frontmatter may differ; body cannot). See V10.
-I.skill-plugin: skill/plugin packages ? Codex and Claude package artifacts exist; installer/generic distribution remains future.
+I.agent-skill: `agent/codeforerunner.skill.md` → canonical skill instruction source; its post-frontmatter Markdown content is consumed verbatim by Codex/Claude packages and `forerunner install` (per-agent frontmatter may differ; body cannot). See V10.
+I.skill-plugin: skill/plugin packages = Codex (`plugins/codeforerunner/`) + Claude (`.claude-plugin/`, `skills/codeforerunner/`); install via `forerunner install <agent>` (I.installer).
 I.validation: `scripts/validate_skill_copies.py` → local SPEC V10 body parity check for canonical and distributed skill files.
 I.cli: `forerunner` CLI → `src/codeforerunner/cli.py`; subcommands `init`/`scan`/`doc`/`check`/`install`. `init`/`scan` = honest stubs (exit 2); `doc`/`check`/`install` runnable.
 I.installer: `forerunner install <agent>` → `src/codeforerunner/installer.py`; idempotent body-parity write into Codex/Claude/generic targets; managed-region markers; `--check` dry-run.
@@ -87,7 +87,7 @@ T24|x|P4|publish Codex marketplace manifest at `plugins/codex/marketplace.json` 
 
 Goal: prompt-first, wrapper-agnostic repo onboarding → `AGENTS.md` + optional per-agent overlays.
 
-State: manual/prompt-driven. `forerunner init` wrapper ? future; cites V9.
+State: prompt-driven; `forerunner init` (I.cli) resolves the bundle for `prompts/tasks/init-agent-onboarding.md` to stdout. Agent applies the bundle to produce/update AGENTS.md.
 
 Concepts:
 - Init pass: read-first analysis + focused instruction updates.
@@ -111,18 +111,18 @@ Rules: executable truth > prose. No generic advice. No speculative claims. Names
 
 Non-destructive updates: preserve user-authored constraints unless contradicted by verifiable repo state. Replace stale commands. Keep deltas minimal & reviewable.
 
-Future wrapper (design only, V9):
+Wrapper:
 ```text
-forerunner init
-forerunner init --full
-forerunner init --agents-only
+forerunner init                     # resolves bundle to stdout; agent applies
+forerunner init --full              ? future flag (no impl yet)
+forerunner init --agents-only       ? future flag (no impl yet)
 ```
 Wrapper = orchestration only; product logic stays in prompt contracts & repo docs.
 
 Acceptance:
 - Output reflects current repo state; no overclaims.
 - `AGENTS.md` compact, specific, materially useful.
-- Prompt-first remains source of truth; wrapper behavior documented as future.
+- Prompt-first remains source of truth.
 
 ## D Future-Surface Designs
 
