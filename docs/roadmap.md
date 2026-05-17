@@ -72,7 +72,39 @@ Status: complete.
 
 ## P8: Doc Backfill
 
-Status: in progress.
+Status: complete.
 
 - Sweep this file and `docs/agent-distribution-design.md` for "future"/"planned" labels that no longer match current `SPEC.md` phase statuses.
 - Reword the README reference to `docs/agent-distribution-design.md` so it no longer implies installer work is outstanding.
+
+## P9: Tool Ergonomics
+
+Status: complete.
+
+- `forerunner --version` reports package version.
+- `forerunner doctor` reports skill body parity, marketplace validation, installed destinations, config loadability, and provider API key status.
+- Workflow YAML parse test catches simple CI syntax issues without requiring `actionlint`.
+- `CHANGELOG.md` records release-ready surfaces.
+
+## P10: Model Runtime
+
+Status: complete.
+
+- Provider abstraction under `src/codeforerunner/providers/`.
+- `forerunner generate <task>` resolves a prompt bundle and calls the configured provider.
+- `forerunner.config.yaml` supports per-provider `api_key_env` overrides.
+- `forerunner doctor` warns when the configured provider key is missing.
+
+## P11: Release
+
+Status: complete.
+
+- `.github/workflows/pypi-publish.yml` builds and publishes on `v*.*.*` tags with PyPI trusted publishing/OIDC.
+- README and CHANGELOG document `pipx` / `pip` install commands for use after the first PyPI release.
+
+## P12: MCP Example
+
+Status: complete.
+
+- `examples/mcp/README.md` shows Claude Desktop and mcp-cli wiring for `forerunner mcp-server`.
+- `examples/mcp/claude-desktop.json` provides a copyable Claude Desktop config shape.

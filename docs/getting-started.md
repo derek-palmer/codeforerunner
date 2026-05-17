@@ -52,18 +52,18 @@ forerunner mcp-server               # serve prompt bundles as MCP tools over std
 
 ## Configuration
 
-Copy `forerunner.config.yaml.example` to `forerunner.config.yaml` at the repo root to opt in. When the file is absent, `forerunner check` exits 0 silently and the pre-commit/CI hooks do nothing. The schema has four top-level groups:
+Copy `forerunner.config.yaml.example` to `forerunner.config.yaml` at the repo root to opt in. When the file is absent, `forerunner check` exits 0 silently and the pre-commit/CI hooks do nothing. The schema has these groups:
 
-- Provider/model fields: `provider`, `model`, `output_dir`, `context_max_files`, `context_max_lines_per_file`, `approaching_eol_threshold_months`.
+- Provider/model fields: `provider`, `model`, `api_key_env`, `output_dir`, `context_max_files`, `context_max_lines_per_file`, `approaching_eol_threshold_months`.
 - `ignore_patterns`: list of glob patterns.
 - `tasks.version_audit`: `enabled`, `stale_after_days`, `fetch_live_eol_data`.
 - `tasks.check`: `block_on` / `warn_on` severity lists, `enabled_rules` (allowlist of rule IDs; omit for all), and `ignore_paths` (fnmatch globs of docs to skip).
 
-Invalid YAML, unknown providers, or unknown severity levels surface as a `ConfigError` and `forerunner check` exits non-zero.
+Invalid YAML, unknown providers, unknown `api_key_env` providers, or unknown severity levels surface as a `ConfigError` and `forerunner check` exits non-zero.
 
 ## What Not To Do
 
-- Do not assume Docker, Make, or a published package exists yet.
+- Do not assume Docker, Make, or a published PyPI release exists yet.
 - Do not accept generated docs until claims match target repo files.
 
 ## Next References

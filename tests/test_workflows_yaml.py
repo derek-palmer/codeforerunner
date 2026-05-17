@@ -75,6 +75,22 @@ def test_marketplace_workflow_triggers_on_version_tag():
     assert "v*.*.*" in tags, f"expected `v*.*.*` in push.tags, got {tags!r}"
 
 
+def test_pypi_publish_workflow_uses_version_tag_and_oidc():
+    wf = WORKFLOWS_DIR / "pypi-publish.yml"
+    doc = yaml.safe_load(wf.read_text())
+    trigger = _trigger(doc)
+    assert isinstance(trigger, dict), "trigger must be a mapping"
+    push = trigger.get("push")
+    assert isinstance(push, dict), "push trigger must be a mapping"
+    assert "v*.*.*" in push.get("tags", [])
+
+    publish = doc["jobs"].get("publish")
+    assert isinstance(publish, dict), "missing publish job"
+    assert publish.get("permissions", {}).get("id-token") == "write"
+    steps_text = "\n".join(str(step) for step in publish.get("steps", []))
+    assert "pypa/gh-action-pypi-publish" in steps_text
+
+
 def test_forerunner_check_workflow_gated_by_config():
     wf = WORKFLOWS_DIR / "forerunner-check.yml"
     text = wf.read_text()

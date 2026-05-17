@@ -13,8 +13,14 @@ this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `forerunner doctor` subcommand — single-screen health report covering skill body parity, Codex marketplace validation, and installed-destination markers (T35).
 - Workflow-YAML parse test (`tests/test_workflows_yaml.py`) — catches typos in `.github/workflows/*.yml` without requiring `actionlint` locally (T36).
 - This changelog (T37).
+- Provider abstraction and `forerunner generate <task>` command for configured model calls (T38).
+- Per-provider `api_key_env` config override plus `forerunner doctor` key checks (T39).
 - PyPI publish workflow (`.github/workflows/pypi-publish.yml`) using OIDC trusted publishing on `v*.*.*` tags (T40).
-- `README.md` "Install" section documenting `pipx`/`pip` install once a release is cut (T40).
+- `README.md` "Install" section documenting `pipx`/`pip` install after the first PyPI release (T40).
+
+### Notes
+
+- Direct model invocation is available through `forerunner generate`; `provider` / `model` config fields are active there.
 
 ## [0.2.0]
 

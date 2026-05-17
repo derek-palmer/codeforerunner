@@ -4,7 +4,7 @@
 
 CodeForerunner is a model-agnostic documentation agent that acts as overwatch for your repository, automatically analyzing code and maintaining docs, diagrams, and architecture knowledge as your codebase evolves over time.
 
-The current repo is the prompt-first foundation for that agent: it ships prompt assets for understanding a codebase and generating developer docs. A thin Python CLI (including `forerunner mcp-server` and a scoped `forerunner init --full / --agents-only`), an idempotent skill installer, and pre-commit + CI hooks now wrap those prompts; a published package remains a roadmap item.
+The current repo is the prompt-first foundation for that agent: it ships prompt assets for understanding a codebase and generating developer docs. A thin Python CLI (including `forerunner mcp-server` and a scoped `forerunner init --full / --agents-only`), an idempotent skill installer, pre-commit + CI hooks, and a PyPI publish workflow now wrap those prompts; the first published PyPI release remains pending.
 
 ## Current State
 
@@ -13,11 +13,11 @@ The current repo is the prompt-first foundation for that agent: it ships prompt 
 - Python package: `pyproject.toml` + `src/codeforerunner/` expose a `forerunner` console script. `forerunner doc <task>` resolves the prompt bundle (base + partials + task) to stdout; `forerunner install <agent>` idempotently writes the canonical skill into agent-specific directories; `forerunner init` resolves the agent-onboarding bundle (with `--full` to prepend a scan or `--agents-only` for the default scope); `forerunner scan` resolves the scan bundle; `forerunner mcp-server` serves prompt bundles as MCP tools over stdio.
 - Hooks: `.pre-commit-hooks.yaml` exposes a `forerunner-check` hook; `.github/workflows/forerunner-check.yml` mirrors it in CI. Both no-op when `forerunner.config.yaml` is absent.
 - Current config: `forerunner.config.yaml.example` documents the schema now parsed by `src/codeforerunner/config.py`; see "Configuration" below.
-- Not currently present: Docker image, Makefile, published package.
+- Not currently present: Docker image, Makefile, published PyPI release.
 
 ## Install
 
-Released versions:
+After the first PyPI release:
 
 ```bash
 pipx install codeforerunner   # recommended; isolated environment
@@ -88,28 +88,19 @@ prompts/
 - `docs/getting-started.md` explains manual prompt use.
 - `docs/prompt-guide.md` explains how system, partial, and task prompts compose.
 - `docs/editor-agent-setup.md` explains how to adapt prompts to local agents.
-- `docs/roadmap.md` mirrors the `SPEC.md` phase status (P0-P7 complete; P8 in progress).
+- `docs/roadmap.md` mirrors the `SPEC.md` phase status in human-readable form.
 - `docs/agent-distribution-design.md` records the design that backs the Codex/Claude packages and `forerunner install`.
 
 ## Configuration
 
-`forerunner.config.yaml.example` documents the loaded schema. Copy it to `forerunner.config.yaml` to opt in; without that file, `forerunner check` is a silent no-op. The schema has four top-level groups: provider/model fields (`provider`, `model`, `output_dir`, `context_max_files`, `context_max_lines_per_file`, `approaching_eol_threshold_months`), `ignore_patterns`, `tasks.version_audit`, and `tasks.check`. `forerunner check` honors `tasks.check.enabled_rules` (allowlist of rule IDs, default all) and `tasks.check.ignore_paths` (fnmatch globs applied to scanned docs). Invalid YAML or unknown providers/severities surface as a `ConfigError` and exit non-zero.
+`forerunner.config.yaml.example` documents the loaded schema. Copy it to `forerunner.config.yaml` to opt in; without that file, `forerunner check` is a silent no-op. The schema has top-level provider/model fields (`provider`, `model`, `api_key_env`, `output_dir`, `context_max_files`, `context_max_lines_per_file`, `approaching_eol_threshold_months`), `ignore_patterns`, `tasks.version_audit`, and `tasks.check`. `forerunner check` honors `tasks.check.enabled_rules` (allowlist of rule IDs, default all) and `tasks.check.ignore_paths` (fnmatch globs applied to scanned docs). Invalid YAML, unknown providers, unknown `api_key_env` providers, or unknown severities surface as a `ConfigError` and exit non-zero.
 
 ### MCP Server
 
 `forerunner mcp-server` speaks JSON-RPC 2.0 over stdio and exposes one tool per `prompts/tasks/*.md` (tool name = filename stem). Each `tools/call` returns the resolved `base + partials + task` bundle as text. A scan-first gate enforces SPEC V2: any tool other than `scan` or `init-agent-onboarding` returns an error until `scan` has been called in the same session. Point any MCP-compatible client at `forerunner mcp-server` as a stdio server (running from the target repo so `prompts/tasks/` resolves).
 
+See `examples/mcp/` for Claude Desktop and mcp-cli wiring examples.
+
 ## Roadmap
 
-Near-term work should keep the repo lightweight:
-
-| Status | Phase | Scope |
-| --- | --- | --- |
-| Done | P0 | Repo truth cleanup: README, spec, and AGENTS align with v2 prompt-first state. |
-| Todo | P1 | Prompt pack hardening: make task prompts consistent, composable, and evidence-first. |
-| Done | P2 | Agent config exports: Claude, Cursor, Copilot, Cline/Roo, and Windsurf scaffolds. |
-| Done | P3 | Human docs: getting started, prompt guide, editor setup, and roadmap. |
-| Done | P4 | Skill/plugin distribution: Codex plugin, Claude plugin, and `forerunner install` installer all present. |
-| In progress | P5 | Thin wrappers: CLI (including `forerunner mcp-server`), pre-commit/CI hooks, and config loader are runnable; published package still pending. |
-
-See `SPEC.md` and `docs/roadmap.md` for the current phase plan.
+See `SPEC.md` for the canonical phase/task tracker and `docs/roadmap.md` for the human-readable roadmap.

@@ -206,3 +206,33 @@ def test_generate_missing_api_key_exits_three(tmp_path, capsys, monkeypatch):
 
     assert rc == 3
     assert "missing API key" in cap.err
+
+
+def test_generate_uses_config_api_key_env_override(tmp_path, capsys, monkeypatch):
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").write_text(
+        "provider: anthropic\napi_key_env:\n  anthropic: MY_ANTHROPIC_KEY\n",
+        encoding="utf-8",
+    )
+    calls: list[dict] = []
+
+    class FakeAnthropicProvider:
+        default_env_var = "ANTHROPIC_API_KEY"
+        default_model = "fake-claude"
+
+        def complete(self, *, prompt, model=None, api_key=None):
+            calls.append({"model": model, "api_key": api_key})
+            return CompletionResult(text="ok", model=model or "fake-claude")
+
+    from codeforerunner import providers
+
+    monkeypatch.setitem(providers.REGISTRY, "anthropic", FakeAnthropicProvider)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("MY_ANTHROPIC_KEY", "override-secret")
+
+    rc = main(["--repo", str(tmp_path), "generate", "readme"])
+    cap = capsys.readouterr()
+
+    assert rc == 0
+    assert cap.out == "ok\n"
+    assert calls == [{"model": "claude-opus-4-7", "api_key": "override-secret"}]

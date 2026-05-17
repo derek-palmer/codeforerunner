@@ -143,10 +143,11 @@ def cmd_generate(args: argparse.Namespace) -> int:
     if rc != 0:
         return rc
 
-    api_key = os.environ.get(provider.default_env_var)
+    env_var = (cfg.api_key_env.get(provider_name) if cfg else None) or provider.default_env_var
+    api_key = os.environ.get(env_var)
     if api_key is None and provider_name != "ollama":
         print(
-            f"error: missing API key; set ${provider.default_env_var}",
+            f"error: missing API key; set ${env_var}",
             file=sys.stderr,
         )
         return 3
