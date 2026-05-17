@@ -28,7 +28,7 @@ I.validation: `scripts/validate_skill_copies.py` → local SPEC V10 body parity 
 I.cli: `forerunner` CLI → `src/codeforerunner/cli.py`; subcommands `init`/`scan`/`doc`/`check`/`install`. `init`/`scan` = honest stubs (exit 2); `doc`/`check`/`install` runnable.
 I.installer: `forerunner install <agent>` → `src/codeforerunner/installer.py`; idempotent body-parity write into Codex/Claude/generic targets; managed-region markers; `--check` dry-run.
 I.hooks: `.pre-commit-hooks.yaml` + `.github/workflows/forerunner-check.yml` → run `forerunner check`; skip when no `forerunner.config.yaml`.
-I.future-mcp: MCP server ? future surface; not implemented.
+I.mcp: stdio MCP server → `src/codeforerunner/mcp_server.py`; exposes one tool per `prompts/tasks/*.md` over JSON-RPC 2.0; `tools/call` returns `cmd_doc`-shaped bundle.
 
 ## V Invariants
 
@@ -53,7 +53,7 @@ P1|x|prompt pack hardening|task prompts consistent, composable, evidence-first
 P2|x|agent config exports|editor-agent configs usable from tracked prompts
 P3|x|human docs|setup, prompt guide, editor setup, roadmap present
 P4|x|skill/plugin distribution design|simple agent setup planned without runtime claims
-P5|~|thin wrappers|CLI + hooks runnable; MCP server still future (I.future-mcp)
+P5|x|thin wrappers|CLI, hooks, MCP server all runnable; future polish tracked as follow-up §T rows
 
 ## T Tasks
 
@@ -64,7 +64,7 @@ T3|x|P2|add `agent-configs/` scaffolds|V7,I.agent-configs
 T4|x|P3|add `docs/getting-started.md`|I.docs,V1
 T5|x|P3|add `docs/prompt-guide.md`|I.prompts,V2
 T6|x|P3|add `docs/editor-agent-setup.md`|I.agent-configs,V7
-T7|x|P3|add `docs/roadmap.md`|V3,I.cli,I.future-mcp,I.hooks
+T7|x|P3|add `docs/roadmap.md`|V3,I.cli,I.mcp,I.hooks
 T8|x|P1|add evidence rules and gaps convention to all task prompts|I.prompts,V2
 T16|x|P1|add prompt-first init onboarding task for AGENTS generation/update|I.init-onboarding,V9
 T9|x|P5|design CLI surface (§D.cli); implementation deferred|I.cli,C1,V11
@@ -80,7 +80,7 @@ T19|x|P5|wire pre-commit + CI hooks calling `forerunner check` (D.hooks: skip wh
 T20|x|P5|wire `forerunner init` subcommand to `prompts/tasks/init-agent-onboarding.md` bundle (replace stub exit 2)|I.cli,I.init-onboarding,D.cli,V2,V9
 T21|x|P5|wire `forerunner scan` subcommand to `prompts/tasks/scan.md` bundle (replace stub exit 2)|I.cli,I.prompts,D.cli,V2
 T22|x|P5|implement real `forerunner check` rules: detect V1/V3/V5 drift (docs claim absent files, files claim absent docs); exit ≠0 on violation|I.cli,I.hooks,D.cli,D.hooks,V1,V3,V5
-T23|x|P5|design + implement minimal MCP server exposing prompt bundles (promote I.future-mcp → I.mcp); add §D.mcp design row|I.future-mcp,D.mcp,C1,V11
+T23|x|P5|design + implement minimal MCP server exposing prompt bundles (promote I.future-mcp → I.mcp); add §D.mcp design row|I.mcp,D.mcp,C1,V11
 T24|x|P4|publish Codex marketplace manifest at `plugins/codex/marketplace.json` (D.installer follow-up); installer learns `--marketplace` flag|I.installer,D.installer,V11
 
 ## Init-Onboarding
