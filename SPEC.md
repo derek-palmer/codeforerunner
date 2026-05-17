@@ -57,6 +57,7 @@ P5|x|thin wrappers|CLI, hooks, MCP server all runnable; future polish tracked as
 P6|x|polish|config schema + scan-first MCP gating + init flags + marketplace publishing CI
 P7|x|surface parity|docs + AGENTS refresh, CLI scan-first parity, expanded check rules
 P8|x|doc backfill|sweep remaining stale "future"/"planned" docs against current SPEC phases
+P9|x|tool ergonomics|`--version`, `forerunner doctor`, workflow lint, initial CHANGELOG
 
 ## T Tasks
 
@@ -94,6 +95,10 @@ T30|x|P7|refresh AGENTS.md against current repo state (CLI + installer + hooks +
 T31|x|P7|`forerunner doc <task>` emits stderr warning when task ∉ scan-exempt and config present without prior scan (CLI parity w/ MCP V2 gate)|I.cli,V2
 T32|x|P7|expand check rules (R6 Docker/Makefile claims, R7 MCP claims, R8 marketplace claims) + validate workflow lints via actionlint|I.cli,I.hooks,I.installer,V1,V5
 T33|x|P8|refresh docs/roadmap.md + docs/agent-distribution-design.md + README "future installer" reference against current §P statuses|V1,V3,I.docs
+T34|x|P9|add `forerunner --version` flag (sources `codeforerunner.__version__`)|I.cli
+T35|x|P9|add `forerunner doctor` subcommand: runs skill body-parity + marketplace validation + flags unmanaged install destinations|I.cli,I.installer,I.validation,V10,V12
+T36|x|P9|add workflow-YAML parse test for `.github/workflows/*.yml` (catches typos without needing actionlint)|I.hooks
+T37|x|P9|seed `CHANGELOG.md` documenting v0.2.0 → release-ready surfaces|I.docs,V1
 
 ## Init-Onboarding
 
