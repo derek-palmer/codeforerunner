@@ -69,8 +69,8 @@ prompts/
 - `docs/getting-started.md` explains manual prompt use.
 - `docs/prompt-guide.md` explains how system, partial, and task prompts compose.
 - `docs/editor-agent-setup.md` explains how to adapt prompts to local agents.
-- `docs/roadmap.md` separates current prompt assets from future wrappers.
-- `docs/agent-distribution-design.md` explains current Codex/Claude package artifacts and future installer work.
+- `docs/roadmap.md` mirrors the `SPEC.md` phase status (P0-P7 complete; P8 in progress).
+- `docs/agent-distribution-design.md` records the design that backs the Codex/Claude packages and `forerunner install`.
 
 ## Configuration
 

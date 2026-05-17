@@ -18,31 +18,31 @@ That shape keeps install UX simple while leaving agent-specific differences isol
 
 ## Package Layout
 
-Codex slice (`plugins/codeforerunner/.codex-plugin/plugin.json` + `plugins/codeforerunner/skills/codeforerunner/SKILL.md`) is implemented (SPEC T13). Claude slice (`.claude-plugin/plugin.json` + `skills/codeforerunner/SKILL.md`) is implemented (SPEC T14). Generic installer-driven distribution remains proposed (SPEC T15) and reuses the same root `skills/codeforerunner/SKILL.md` file rather than a separate generic-only skill file.
+Codex slice (`plugins/codeforerunner/.codex-plugin/plugin.json` + `plugins/codeforerunner/skills/codeforerunner/SKILL.md`) is implemented (SPEC T13). Claude slice (`.claude-plugin/plugin.json` + `skills/codeforerunner/SKILL.md`) is implemented (SPEC T14). Generic installer-driven distribution is implemented via the Python `forerunner install` CLI (SPEC T18) and reuses the root `skills/codeforerunner/SKILL.md` file. The original Node-based wrapper layout (`bin/install-agent.js`, `install.sh`, `install.ps1`, `agent/templates/*`) is no longer the planned route; the Python CLI subsumes that surface.
 
 ```text
 agent/
-  codeforerunner.skill.md
-  templates/                  # planned (T15)
-    codex-plugin.json         # planned (T15)
-    claude-plugin.json        # planned (T15)
-    generic-skill.md          # planned (T15)
-bin/                          # planned (T15)
-  install-agent.js            # planned (T15)
-install.sh                    # planned (T15)
-install.ps1                   # planned (T15)
+  codeforerunner.skill.md       # implemented (T12) — canonical skill source
+src/
+  codeforerunner/
+    installer.py                # implemented (T18) — forerunner install <agent>
 plugins/
   codeforerunner/
     .codex-plugin/
-      plugin.json             # implemented (T13)
+      plugin.json               # implemented (T13)
     skills/
       codeforerunner/
-        SKILL.md              # implemented (T13)
-.claude-plugin/               # implemented (T14)
-  plugin.json                 # implemented (T14)
-skills/                       # implemented for Claude (T14), reused by generic distribution (T15)
-  codeforerunner/             # implemented (T14)
-    SKILL.md                  # implemented (T14)
+        SKILL.md                # implemented (T13)
+  codex/
+    marketplace.json            # implemented (T24)
+.claude-plugin/                 # implemented (T14)
+  plugin.json                   # implemented (T14)
+skills/                         # implemented for Claude (T14), reused by generic distribution (T18)
+  codeforerunner/               # implemented (T14)
+    SKILL.md                    # implemented (T14)
+.github/
+  workflows/
+    codex-marketplace-publish.yml  # implemented (T28)
 ```
 
 ## Ownership Rules
@@ -63,7 +63,7 @@ The skill should tell agents to:
 - assemble repo context using `prompts/partials/context-format.md`,
 - run `prompts/tasks/scan.md` before downstream task prompts,
 - use task prompts from `prompts/tasks/` for README, API docs, stack docs, diagrams, flows, version audits, checks, and reviews,
-- respect `forerunner.config.yaml` as the canonical config name, using the tracked example shape only until a real loader exists,
+- respect `forerunner.config.yaml` as the canonical config name (schema loaded by `src/codeforerunner/config.py`),
 - report generated file changes and stale-doc failures clearly,
 - avoid sending excluded or secret paths to external model providers,
 - stop before destructive overwrites unless the prompt output gives an explicit managed-section strategy.
@@ -74,61 +74,37 @@ The skill should avoid duplicating full product requirements. It should route to
 
 ## Installer Interface
 
-Future CLI commands, once thin wrappers exist:
+The installer is the Python `forerunner install` subcommand (T18). It targets one agent per invocation:
 
 ```bash
-forerunner agent install
-forerunner agent install --only codex
-forerunner agent install --only claude
-forerunner agent uninstall
-forerunner agent doctor
+forerunner install codex             # install skill into ~/.codex/skills/codeforerunner/SKILL.md
+forerunner install claude            # install into ~/.claude/plugins/codeforerunner/skills/codeforerunner/SKILL.md
+forerunner install generic --path PATH    # custom destination
+forerunner install <agent> --check        # dry-run; print plan, write nothing
+forerunner install codex --marketplace    # install plugins/codex/marketplace.json into ~/.codex/marketplaces/
 ```
 
-Design example; standalone wrappers are planned and not currently runnable:
+Uninstall and doctor commands are not implemented; the installer aborts when a destination exists without managed-region markers, so user content is never silently overwritten.
 
-```bash
-bash install.sh --only codex
-pwsh ./install.ps1 --only claude
-```
-
-Design example; one-line shell install is planned and not currently runnable:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/derek-palmer/codeforerunner/main/install.sh | bash
-```
-
-Design example; one-line PowerShell install is planned and not currently runnable:
-
-```powershell
-irm https://raw.githubusercontent.com/derek-palmer/codeforerunner/main/install.ps1 | iex
-```
+The one-line `install.sh` / `install.ps1` / `bin/install-agent.js` shape from earlier drafts is not planned; the Python CLI subsumes that route.
 
 ## Installer Behavior
 
-Install:
+Implemented (T18, T24):
 
-- detect known agent roots,
-- copy owned skill/plugin artifacts,
-- create or update a repo-local marketplace entry when Codex UI discovery is in scope,
-- install or register Claude package artifacts through Claude-specific discovery paths when Claude support is in scope,
+- resolve the agent-specific destination (`codex`, `claude`, or `generic` with `--path`),
+- compare source body against the canonical skill (`agent/codeforerunner.skill.md`); abort with `EXIT_BODY_MISMATCH` on drift (V10),
+- wrap the body in `<!-- forerunner:begin managed=codeforerunner.skill -->` / `<!-- forerunner:end -->` markers,
 - create parent directories as needed,
-- append marker-fenced global instruction blocks only when required by a target agent,
-- avoid duplicate blocks on rerun,
-- print installed/skipped/failed targets.
+- on rerun, overlay only the managed region; preserve any user content outside the markers (V12),
+- skip the write when the rendered output already matches the destination hash (V12 idempotent),
+- abort with `EXIT_UNMANAGED_DEST` when the destination exists without markers, refusing to overwrite user content,
+- print a `create` / `update` / `skip` / `abort` plan line (prefixed with `would ` when `--check` is passed).
 
-Uninstall:
+Not implemented (not currently planned):
 
-- remove owned skill/plugin files,
-- remove marker-fenced blocks,
-- leave unrelated user files untouched,
-- print removed/skipped targets.
-
-Doctor:
-
-- check expected files exist,
-- validate JSON metadata,
-- verify canonical instruction hash or content match where practical,
-- report stale copied artifacts.
+- `forerunner install uninstall` / `forerunner install doctor` — out of scope until a real need surfaces.
+- Bulk install across all agents in one invocation — call `forerunner install <agent>` per target instead.
 
 ## Target Packages
 
@@ -168,6 +144,6 @@ Tests should cover:
 
 ## Open Decisions
 
-- Whether `bin/install-agent.js` is the first implementation or waits until package layout stabilizes.
-- Whether future `forerunner agent install` shells out to Node or uses Python for local installs.
-- Whether installer templates should copy from `agent/codeforerunner.skill.md` every run or fail fast when `scripts/validate_skill_copies.py` reports drift.
+- Whether to add an `uninstall` subcommand once a concrete user need appears (today the managed-region markers make manual removal tractable).
+- Whether `forerunner install codex --marketplace` should learn a `--repository` flag for marketplaces other than the default `~/.codex/marketplaces/`.
+- Whether to expose body-parity validation as a standalone CLI subcommand instead of a separate `scripts/validate_skill_copies.py` script.
