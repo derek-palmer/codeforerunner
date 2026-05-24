@@ -5,6 +5,20 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] — 2026-05-24
+
+### Added
+
+- Inverse drift rules RI1, RI5, RI7: fire when docs positively reference a feature (CLI, pip package, MCP server) that is absent from the repo.
+- Version-pin drift rule RV1: flags `codeforerunner==X.Y.Z` pins in docs that differ from the current `pyproject.toml` version; skips `CHANGELOG.md`.
+- `forerunner doctor --fix`: writes a starter `forerunner.config.yaml` (enabling R1–R5, R7, R8) when no config exists, then runs the normal health report.
+- `forerunner generate --stream`: streams output token-by-token for all four providers (Anthropic SSE, OpenAI SSE, Google `streamGenerateContent?alt=sse`, Ollama NDJSON).
+- `action.yml` composite GitHub Action — `uses: derek-palmer/codeforerunner@vX.Y.Z` installs codeforerunner and runs `forerunner check`. No-op when `forerunner.config.yaml` is absent.
+
+### Changed
+
+- Test suite expanded from 145 to 174 tests: inverse rule and version-drift coverage, streaming provider coverage for all four backends, `doctor --fix` integration tests.
+
 ## [0.3.1] — 2026-05-24
 
 ### Added
@@ -71,7 +85,8 @@ Initial release-ready surface around the prompt pack.
 - `init` and `scan` are honest wrappers over the prompt pack; they emit bundled prompt text to stdout for the calling agent to act on.
 - Model invocation is out of scope; `provider` / `model` config fields are honored only by future wrappers.
 
-[Unreleased]: https://github.com/derek-palmer/codeforerunner/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/derek-palmer/codeforerunner/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/derek-palmer/codeforerunner/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/derek-palmer/codeforerunner/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/derek-palmer/codeforerunner/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/derek-palmer/codeforerunner/releases/tag/v0.2.0
