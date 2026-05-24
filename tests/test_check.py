@@ -271,6 +271,120 @@ def test_violation_line_number_correct(tmp_path):
     assert vs[0].line == 3
 
 
+# ── Inverse rules (RI*) ────────────────────────────────────────────────────
+
+
+def test_ri1_fires_when_cli_absent(tmp_path):
+    _seed(tmp_path, {"README.md": "Run `forerunner init` to get started.\n"})
+    vs = run(tmp_path)
+    assert any(v.rule_id == "RI1-missing-cli" for v in vs)
+
+
+def test_ri1_silent_when_cli_present(tmp_path):
+    _seed(
+        tmp_path,
+        {
+            "README.md": "Run `forerunner init` to get started.\n",
+            "src/codeforerunner/cli.py": "# cli\n",
+        },
+    )
+    assert not any(v.rule_id == "RI1-missing-cli" for v in run(tmp_path))
+
+
+def test_ri5_fires_when_pyproject_absent(tmp_path):
+    _seed(tmp_path, {"README.md": "Install with `pip install codeforerunner`.\n"})
+    vs = run(tmp_path)
+    assert any(v.rule_id == "RI5-missing-python-package" for v in vs)
+
+
+def test_ri5_silent_when_pyproject_present(tmp_path):
+    _seed(
+        tmp_path,
+        {
+            "README.md": "Install with `pip install codeforerunner`.\n",
+            "pyproject.toml": '[project]\nname = "codeforerunner"\n',
+        },
+    )
+    assert not any(v.rule_id == "RI5-missing-python-package" for v in run(tmp_path))
+
+
+def test_ri7_fires_when_mcp_server_absent(tmp_path):
+    _seed(tmp_path, {"README.md": "Start with `forerunner mcp-server`.\n"})
+    vs = run(tmp_path)
+    assert any(v.rule_id == "RI7-missing-mcp" for v in vs)
+
+
+def test_ri7_silent_when_mcp_server_present(tmp_path):
+    _seed(
+        tmp_path,
+        {
+            "README.md": "Start with `forerunner mcp-server`.\n",
+            "src/codeforerunner/mcp_server.py": "# mcp\n",
+        },
+    )
+    assert not any(v.rule_id == "RI7-missing-mcp" for v in run(tmp_path))
+
+
+# ── Version drift (RV1) ────────────────────────────────────────────────────
+
+
+def test_rv1_fires_when_pin_mismatches(tmp_path):
+    _seed(
+        tmp_path,
+        {
+            "README.md": "Install `pip install codeforerunner==0.1.0`.\n",
+            "pyproject.toml": '[project]\nname = "codeforerunner"\nversion = "0.3.1"\n',
+        },
+    )
+    vs = run(tmp_path)
+    rv = [v for v in vs if v.rule_id == "RV1-version-drift"]
+    assert len(rv) == 1
+    assert "0.1.0" in rv[0].message
+    assert "0.3.1" in rv[0].message
+
+
+def test_rv1_silent_when_pin_matches(tmp_path):
+    _seed(
+        tmp_path,
+        {
+            "README.md": "Install `pip install codeforerunner==0.3.1`.\n",
+            "pyproject.toml": '[project]\nname = "codeforerunner"\nversion = "0.3.1"\n',
+        },
+    )
+    assert not any(v.rule_id == "RV1-version-drift" for v in run(tmp_path))
+
+
+def test_rv1_skips_changelog_md(tmp_path):
+    # CHANGELOG.md not in _scanned_docs; old pins there should not fire
+    _seed(
+        tmp_path,
+        {
+            "CHANGELOG.md": "## 0.1.0\n- `pip install codeforerunner==0.1.0`\n",
+            "pyproject.toml": '[project]\nname = "codeforerunner"\nversion = "0.3.1"\n',
+        },
+    )
+    assert not any(v.rule_id == "RV1-version-drift" for v in run(tmp_path))
+
+
+def test_rv1_silent_when_no_pyproject(tmp_path):
+    _seed(tmp_path, {"README.md": "See `pip install codeforerunner==0.1.0`.\n"})
+    assert not any(v.rule_id == "RV1-version-drift" for v in run(tmp_path))
+
+
+def test_rv1_not_run_when_excluded_from_enabled_rules(tmp_path):
+    from codeforerunner.config import CheckConfig
+
+    _seed(
+        tmp_path,
+        {
+            "README.md": "Install `pip install codeforerunner==0.1.0`.\n",
+            "pyproject.toml": '[project]\nname = "codeforerunner"\nversion = "0.3.1"\n',
+        },
+    )
+    cfg = CheckConfig(enabled_rules=("R1-no-cli",))
+    assert not any(v.rule_id == "RV1-version-drift" for v in run(tmp_path, cfg))
+
+
 def test_workflows_lint_when_actionlint_available():
     import shutil
     import subprocess
