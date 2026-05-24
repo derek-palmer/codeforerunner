@@ -1,5 +1,5 @@
 # SPEC.md §D.hooks — CI mirror of pre-commit `forerunner check`.
-# Skip when forerunner.config.yaml absent (matches D.hooks shape).
+# forerunner check exits 0 when forerunner.config.yaml is absent, so no job-level gate needed.
 name: forerunner check
 
 on:
@@ -9,7 +9,6 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('forerunner.config.yaml') != '' }}
     env:
       # Reserved (D.hooks env): optional model override; not consumed yet.
       FORERUNNER_MODEL: ${{ vars.FORERUNNER_MODEL || '' }}
