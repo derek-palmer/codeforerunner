@@ -1,4 +1,4 @@
-"""Thin CLI orchestration. Product logic lives in `prompts/`. See SPEC.md §D.cli."""
+"""Thin CLI orchestration. Product logic lives in prompts/. See SPEC.md §D.cli."""
 
 from __future__ import annotations
 
@@ -8,36 +8,29 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
+from codeforerunner.bundle import find_prompts_root, resolve_bundle
+
 SCAN_EXEMPT_TASKS = frozenset({"scan", "init-agent-onboarding"})
 SCAN_DONE_ENV = "FORERUNNER_SCAN_DONE"
 
 
-def _repo_root(start: Path | None = None) -> Path:
-    """Walk up from cwd (or `start`) to a directory containing `prompts/tasks`."""
-    here = (start or Path.cwd()).resolve()
-    for candidate in [here, *here.parents]:
-        if (candidate / "prompts" / "tasks").is_dir():
-            return candidate
-    raise FileNotFoundError(
-        "could not locate codeforerunner repo root (no prompts/tasks/ found upward)"
-    )
-
-
-def _read(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
-
-
 def cmd_doc(args: argparse.Namespace) -> int:
-    """Resolve `prompts/system/base.md` + `prompts/partials/*.md` + `prompts/tasks/<task>.md` to stdout."""
-    root = _repo_root(Path(args.repo) if args.repo else None)
-    task_path = root / "prompts" / "tasks" / f"{args.task}.md"
+    """Resolve base + partials + task bundle to stdout."""
+    try:
+        prompts_root = find_prompts_root(args.repo)
+    except FileNotFoundError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+
+    task_path = prompts_root / "tasks" / f"{args.task}.md"
     if not task_path.is_file():
         print(f"error: unknown task '{args.task}' (no {task_path})", file=sys.stderr)
         return 2
 
+    repo_root = Path(args.repo) if args.repo else Path.cwd()
     if (
         args.task not in SCAN_EXEMPT_TASKS
-        and (root / "forerunner.config.yaml").is_file()
+        and (repo_root / "forerunner.config.yaml").is_file()
         and not os.environ.get(SCAN_DONE_ENV)
     ):
         print(
@@ -46,18 +39,11 @@ def cmd_doc(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
 
-    parts: list[str] = []
-    base = root / "prompts" / "system" / "base.md"
-    if base.is_file():
-        parts.append(f"<!-- system: base.md -->\n{_read(base).rstrip()}")
-
-    partials_dir = root / "prompts" / "partials"
-    if partials_dir.is_dir():
-        for p in sorted(partials_dir.glob("*.md")):
-            parts.append(f"<!-- partial: {p.name} -->\n{_read(p).rstrip()}")
-
-    parts.append(f"<!-- task: {task_path.name} -->\n{_read(task_path).rstrip()}")
-    sys.stdout.write("\n\n".join(parts) + "\n")
+    try:
+        sys.stdout.write(resolve_bundle(prompts_root, args.task))
+    except FileNotFoundError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
     return 0
 
 
@@ -89,11 +75,8 @@ def cmd_scan(args: argparse.Namespace) -> int:
 
 
 def cmd_check(args: argparse.Namespace) -> int:
-    """Run check rules when `forerunner.config.yaml` present. Silent no-op otherwise."""
-    try:
-        root = _repo_root(Path(args.repo) if args.repo else None)
-    except FileNotFoundError:
-        root = Path.cwd()
+    """Run check rules when forerunner.config.yaml present. Silent no-op otherwise."""
+    root = Path(args.repo).resolve() if args.repo else Path.cwd()
     from codeforerunner import check as _check
     from codeforerunner.config import ConfigError, load_from_repo
     try:
@@ -112,8 +95,12 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 def cmd_mcp_server(args: argparse.Namespace) -> int:
     from codeforerunner import mcp_server
-    root = _repo_root(Path(args.repo) if args.repo else None)
-    return mcp_server.serve(root)
+    try:
+        prompts_root = find_prompts_root(args.repo)
+    except FileNotFoundError as e:
+        print(f"mcp_server: {e}", file=sys.stderr)
+        return 2
+    return mcp_server.serve(prompts_root)
 
 
 def cmd_generate(args: argparse.Namespace) -> int:
@@ -121,8 +108,8 @@ def cmd_generate(args: argparse.Namespace) -> int:
     from codeforerunner import providers as _providers
     from codeforerunner.config import load_from_repo
 
-    root = _repo_root(Path(args.repo) if args.repo else None)
-    cfg = load_from_repo(root)
+    repo_root = Path(args.repo).resolve() if args.repo else Path.cwd()
+    cfg = load_from_repo(repo_root)
 
     provider_name = args.provider or (cfg.provider if cfg else "anthropic")
     model = args.model or (cfg.model if cfg else None)
@@ -133,7 +120,6 @@ def cmd_generate(args: argparse.Namespace) -> int:
     import io as _io
     buf = _io.StringIO()
     ns = argparse.Namespace(repo=getattr(args, "repo", None), task=args.task)
-    # Temporarily redirect stdout to capture cmd_doc output.
     real_stdout = sys.stdout
     sys.stdout = buf
     try:
@@ -146,10 +132,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
     env_var = (cfg.api_key_env.get(provider_name) if cfg else None) or provider.default_env_var
     api_key = os.environ.get(env_var)
     if api_key is None and provider_name != "ollama":
-        print(
-            f"error: missing API key; set ${env_var}",
-            file=sys.stderr,
-        )
+        print(f"error: missing API key; set ${env_var}", file=sys.stderr)
         return 3
 
     try:
@@ -168,7 +151,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
 
 def cmd_doctor(args: argparse.Namespace) -> int:
     from codeforerunner import doctor
-    root = _repo_root(Path(args.repo) if args.repo else None)
+    root = Path(args.repo).resolve() if args.repo else Path.cwd()
     findings = doctor.run(root)
     sys.stdout.write(doctor.format_report(findings) + "\n")
     return 1 if any(f.severity == "error" for f in findings) else 0
@@ -179,7 +162,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="forerunner",
         description="Prompt-first repo documentation tooling. Thin CLI; product logic in prompts/.",
     )
-    p.add_argument("--repo", help="path to repo root (defaults to cwd ancestor with prompts/tasks/)")
+    p.add_argument("--repo", default=argparse.SUPPRESS, help="path to repo root")
     from codeforerunner import __version__ as _version
     p.add_argument("--version", action="version", version=f"forerunner {_version}")
     sub = p.add_subparsers(dest="cmd", required=True, metavar="<cmd>")
@@ -209,6 +192,11 @@ def build_parser() -> argparse.ArgumentParser:
     s_check.set_defaults(func=cmd_check)
 
     s_mcp = sub.add_parser("mcp-server", help="serve prompt bundles as MCP tools over stdio")
+    s_mcp.add_argument(
+        "--repo",
+        default=argparse.SUPPRESS,
+        help="path containing prompts/tasks/ (default: package-bundled prompts)",
+    )
     s_mcp.set_defaults(func=cmd_mcp_server)
 
     s_doctor = sub.add_parser("doctor", help="health report: skill parity + marketplace + installed dests")
@@ -229,6 +217,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if not hasattr(args, "repo"):
+        args.repo = None
     return args.func(args)
 
 

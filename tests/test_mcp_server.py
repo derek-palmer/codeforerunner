@@ -7,9 +7,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+import codeforerunner
 import pytest
 
 REPO = Path(__file__).resolve().parents[1]
+PROMPTS = Path(codeforerunner.__file__).parent / "prompts"
 READ_TIMEOUT = 5.0
 
 
@@ -72,8 +74,9 @@ def test_initialize(server: _Server) -> None:
     resp = server.request({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
     assert resp["id"] == 1
     result = resp["result"]
-    assert result["protocolVersion"] == "2024-11-05"
-    assert result["serverInfo"] == {"name": "codeforerunner", "version": "0.2.0"}
+    assert result["protocolVersion"] == "2025-03-26"
+    from codeforerunner import __version__
+    assert result["serverInfo"] == {"name": "codeforerunner", "version": __version__}
     assert "tools" in result["capabilities"]
 
 
@@ -105,7 +108,7 @@ def test_tools_call_scan_returns_bundle(server: _Server) -> None:
     assert result["isError"] is False
     text = result["content"][0]["text"]
     assert result["content"][0]["type"] == "text"
-    scan_first_line = (REPO / "prompts" / "tasks" / "scan.md").read_text().splitlines()[0]
+    scan_first_line = (PROMPTS / "tasks" / "scan.md").read_text().splitlines()[0]
     assert scan_first_line in text
 
 

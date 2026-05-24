@@ -26,7 +26,7 @@ forerunner = "codeforerunner.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-codeforerunner = ["py.typed"]
+codeforerunner = ["py.typed", "prompts/**/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

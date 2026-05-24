@@ -291,9 +291,7 @@ def add_subparser(sub: argparse._SubParsersAction) -> None:
 
 
 def _cli_entry(args: argparse.Namespace) -> int:
-    from codeforerunner.cli import _repo_root  # local import to avoid cycle
-
-    root = _repo_root(Path(args.repo) if args.repo else None)
+    root = Path(args.repo).resolve() if args.repo else Path.cwd()
     return install(
         agent=args.agent,
         repo_root=root,

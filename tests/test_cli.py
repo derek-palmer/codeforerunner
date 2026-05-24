@@ -4,12 +4,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+import codeforerunner
 import pytest
 
 from codeforerunner.cli import main
 from codeforerunner.providers import CompletionResult
 
 REPO = Path(__file__).resolve().parents[1]
+# Prompts are bundled inside the package; use the installed path.
+PROMPTS = Path(codeforerunner.__file__).parent / "prompts"
 
 
 def test_help_exit_zero():
@@ -24,17 +27,17 @@ def test_help_exit_zero():
 
 
 def test_doc_scan_emits_task_body(capsys):
-    rc = main(["--repo", str(REPO), "doc", "scan"])
+    rc = main(["doc", "scan"])
     out = capsys.readouterr().out
     assert rc == 0
-    scan_body = (REPO / "prompts" / "tasks" / "scan.md").read_text(encoding="utf-8")
+    scan_body = (PROMPTS / "tasks" / "scan.md").read_text(encoding="utf-8")
     first_line = scan_body.splitlines()[0]
     assert first_line in out
     assert "<!-- task: scan.md -->" in out
 
 
 def test_doc_unknown_task_exits_nonzero(capsys):
-    rc = main(["--repo", str(REPO), "doc", "definitely-not-a-task"])
+    rc = main(["doc", "definitely-not-a-task"])
     err = capsys.readouterr().err
     assert rc == 2
     assert "unknown task" in err
@@ -45,16 +48,16 @@ def test_doc_unknown_task_exits_nonzero(capsys):
     [("init", "init-agent-onboarding.md"), ("scan", "scan.md")],
 )
 def test_init_scan_resolve_bundle(cmd, task_file, capsys):
-    rc = main(["--repo", str(REPO), cmd])
+    rc = main([cmd])
     out = capsys.readouterr().out
     assert rc == 0
     assert f"<!-- task: {task_file} -->" in out
-    body = (REPO / "prompts" / "tasks" / task_file).read_text(encoding="utf-8")
+    body = (PROMPTS / "tasks" / task_file).read_text(encoding="utf-8")
     assert body.splitlines()[0] in out
 
 
 def test_init_agents_only_matches_default(capsys):
-    rc = main(["--repo", str(REPO), "init", "--agents-only"])
+    rc = main(["init", "--agents-only"])
     out = capsys.readouterr().out
     assert rc == 0
     assert "<!-- task: init-agent-onboarding.md -->" in out
@@ -62,7 +65,7 @@ def test_init_agents_only_matches_default(capsys):
 
 
 def test_init_full_prepends_scan(capsys):
-    rc = main(["--repo", str(REPO), "init", "--full"])
+    rc = main(["init", "--full"])
     out = capsys.readouterr().out
     assert rc == 0
     assert "section 1/2 (scan)" in out
@@ -76,7 +79,7 @@ def test_init_full_prepends_scan(capsys):
 
 def test_init_full_and_agents_only_mutually_exclusive(capsys):
     with pytest.raises(SystemExit):
-        main(["--repo", str(REPO), "init", "--full", "--agents-only"])
+        main(["init", "--full", "--agents-only"])
 
 
 def _seed_repo_with_config(tmp_path):
@@ -139,9 +142,8 @@ def test_version_flag_prints_package_version(capsys):
     assert __version__ in cap.out
 
 
-def test_scan_prints_env_hint(tmp_path, capsys):
-    _seed_repo_with_config(tmp_path)
-    rc = main(["--repo", str(tmp_path), "scan"])
+def test_scan_prints_env_hint(capsys):
+    rc = main(["scan"])
     cap = capsys.readouterr()
     assert rc == 0
     assert "FORERUNNER_SCAN_DONE" in cap.err
@@ -255,7 +257,6 @@ def test_generate_model_override(tmp_path, capsys, monkeypatch):
 
 
 def test_check_with_violations_exits_one(tmp_path, capsys):
-    (tmp_path / "prompts" / "tasks").mkdir(parents=True)
     (tmp_path / "README.md").write_text("no CLI exists\n", encoding="utf-8")
     (tmp_path / "src" / "codeforerunner").mkdir(parents=True)
     (tmp_path / "src" / "codeforerunner" / "cli.py").write_text("# cli\n", encoding="utf-8")
@@ -269,7 +270,6 @@ def test_check_with_violations_exits_one(tmp_path, capsys):
 
 
 def test_check_invalid_config_exits_two(tmp_path, capsys):
-    (tmp_path / "prompts" / "tasks").mkdir(parents=True)
     (tmp_path / "forerunner.config.yaml").write_text(
         "provider: unknown_xyz\n", encoding="utf-8"
     )
