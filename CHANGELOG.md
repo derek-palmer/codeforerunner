@@ -5,6 +5,23 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-05-24
+
+### Added
+
+- **Multi-agent skill packaging** — 12 per-task slash commands (`/forerunner-scan`, `/forerunner-readme`, `/forerunner-api-docs`, `/forerunner-audit`, `/forerunner-changelog`, `/forerunner-check`, `/forerunner-diagrams`, `/forerunner-flows`, `/forerunner-init`, `/forerunner-review`, `/forerunner-stack-docs`, `/forerunner-version-audit`) for Claude Code, Codex, Gemini CLI, and 30+ other agent CLIs.
+- **`bin/install.js`** — unified cross-platform installer modelled on caveman's pattern: 33-agent matrix with detection probes (`command:`, `macapp:`, `vscode-ext:`, `cursor-ext:`, `jetbrains-plugin:`, `dir:`, `file:`), three install mechanisms (`claude plugin install`, `gemini extensions install`, `npx skills add`), and full flag surface (`--dry-run`, `--force`, `--only`, `--all`, `--minimal`, `--list`, `--no-color`, `--skip-skills`, `--uninstall`).
+- **`install.sh` / `install.ps1`** rewritten as thin Node.js shims: exec `node bin/install.js` locally, fall back to `npx github:derek-palmer/codeforerunner` for curl|bash installs.
+- **`skills-lock.json`** — SHA-256 content hashes for all 13 skill files.
+- Agent autodiscovery files: `GEMINI.md` (Gemini CLI), `.codex/config.toml` (Codex), `.claude-plugin/marketplace.json` (Claude Code marketplace).
+- **Ollama auto-fallback** — `forerunner generate` probes `localhost:11434` when no API key is configured; automatically switches to Ollama local mode if available. Explicit `--provider` or `provider:` in config always takes precedence. Improved error message includes Ollama hint when no fallback is found.
+- `forerunner doctor` surfaces Ollama local-mode status: reports running/not-running when no `forerunner.config.yaml` is present.
+- 218 new tests (187 → 405 total) covering Ollama fallback paths, doctor Ollama checks, and skill installer logic.
+
+### Changed
+
+- Default Anthropic model updated from `claude-opus-4-5` to `claude-opus-4-7` across CLI, MCP server, and provider defaults.
+
 ## [0.3.2] — 2026-05-24
 
 ### Added
