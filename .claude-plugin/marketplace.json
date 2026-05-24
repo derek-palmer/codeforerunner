@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "codeforerunner",
+  "description": "Repo documentation tooling for Claude Code. Adds /forerunner-scan, /forerunner-readme, /forerunner-check, and 9 other documentation slash commands.",
+  "owner": {
+    "name": "Derek Palmer",
+    "url": "https://github.com/derek-palmer"
+  },
+  "plugins": [
+    {
+      "name": "codeforerunner",
+      "description": "Model-agnostic repo documentation prompts. Slash commands for scan, readme, api-docs, diagrams, flows, stack-docs, version-audit, check, review, audit, changelog, and agent onboarding.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}
