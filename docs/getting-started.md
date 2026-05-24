@@ -1,22 +1,31 @@
 # Getting Started
 
-`codeforerunner` ships prompts as the core product, plus a thin `forerunner` CLI, an idempotent skill installer, and pre-commit/CI hook wiring. Use the prompts directly with your editor/agent, or use the CLI to assemble bundles.
+`codeforerunner` ships a prompt pack as the core product, wrapped by a `forerunner` CLI, MCP server, pre-commit/CI hook wiring, and a PyPI package. Use the CLI to assemble bundles, call providers directly, or serve prompts over MCP — or use the prompts manually with your editor/agent.
 
-## Install The CLI (optional)
+## Install
 
 ```bash
-python -m pip install -e .
+pipx install codeforerunner   # recommended — isolated environment
+pip install codeforerunner    # alternative
 forerunner --help
 ```
 
-The CLI is a thin orchestration layer; product logic lives in `prompts/`.
+From source:
+
+```bash
+git clone https://github.com/derek-palmer/codeforerunner
+cd codeforerunner
+python -m pip install -e .
+```
 
 ## Use Manually
 
-1. Put `prompts/system/base.md` in your agent's system or project instructions.
-2. Read `prompts/partials/context-format.md` for context shape.
+Prompts are in `src/codeforerunner/prompts/` (source) or retrieved via `forerunner doc <task>`.
+
+1. Put `system/base.md` in your agent's system or project instructions.
+2. Read `partials/context-format.md` for context shape.
 3. Gather target repo file tree plus relevant config, manifest, entrypoint, and docs files.
-4. Run `prompts/tasks/scan.md` first.
+4. Run `tasks/scan.md` first.
 5. Feed the scan result into one downstream task prompt.
 
 ## Example Flow
@@ -41,18 +50,28 @@ base.md + context-format.md + target repo context + scan.md
 ```bash
 forerunner doc scan                 # prints base + partials + tasks/scan.md to stdout
 forerunner scan                     # shortcut for `forerunner doc scan`
-forerunner init                     # resolves init-agent-onboarding bundle (alias of --agents-only)
+forerunner init                     # resolves init-agent-onboarding bundle
 forerunner init --agents-only       # explicit: AGENTS.md onboarding bundle only
-forerunner init --full              # prepends the scan bundle before onboarding (scan-first per SPEC V2)
+forerunner init --full              # prepends scan bundle before onboarding (scan-first per SPEC V2)
+forerunner generate readme          # resolve bundle and call configured provider
+forerunner generate readme --stream # stream output token-by-token
+forerunner doctor                   # health report: skill parity, config, provider key
+forerunner doctor --fix             # write starter forerunner.config.yaml if absent
 forerunner install codex --check    # dry-run the skill installer for Codex target
 forerunner install claude           # idempotent write into ~/.claude/plugins/...
-forerunner check                    # hook entry point; silent no-op without forerunner.config.yaml
+forerunner check                    # run drift rules; silent no-op without forerunner.config.yaml
 forerunner mcp-server               # serve prompt bundles as MCP tools over stdio JSON-RPC
 ```
 
 ## Configuration
 
-Copy `forerunner.config.yaml.example` to `forerunner.config.yaml` at the repo root to opt in. When the file is absent, `forerunner check` exits 0 silently and the pre-commit/CI hooks do nothing. The schema has these groups:
+Generate a starter config:
+
+```bash
+forerunner doctor --fix
+```
+
+Or copy `forerunner.config.yaml.example` to `forerunner.config.yaml` at the repo root. When the file is absent, `forerunner check` exits 0 silently and the pre-commit/CI hooks do nothing. The schema has these groups:
 
 - Provider/model fields: `provider`, `model`, `api_key_env`, `output_dir`, `context_max_files`, `context_max_lines_per_file`, `approaching_eol_threshold_months`.
 - `ignore_patterns`: list of glob patterns.
@@ -63,7 +82,7 @@ Invalid YAML, unknown providers, unknown `api_key_env` providers, or unknown sev
 
 ## What Not To Do
 
-- Do not assume Docker, Make, or a published PyPI release exists yet.
+- Do not assume Docker or a Makefile exists in this repo.
 - Do not accept generated docs until claims match target repo files.
 
 ## Next References

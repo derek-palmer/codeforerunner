@@ -4,9 +4,9 @@ Use this project as a prompt-first documentation toolkit.
 
 ## Load Order
 
-1. Use `prompts/system/base.md` as project instructions.
-2. Read `prompts/partials/context-format.md` before assembling context.
-3. Run `prompts/tasks/scan.md` first for every target repo.
+1. Run `forerunner doc scan` to get the assembled system + partials + scan bundle, or read `src/codeforerunner/prompts/system/base.md` from source.
+2. Read `partials/context-format.md` before assembling context.
+3. Run `scan` first for every target repo.
 4. Feed scan result into one downstream task prompt.
 
 ## Rules
@@ -18,11 +18,13 @@ Use this project as a prompt-first documentation toolkit.
 
 ## Common Tasks
 
-- README: `prompts/tasks/readme.md`
-- API docs: `prompts/tasks/api-docs.md`
-- Stack docs: `prompts/tasks/stack-docs.md`
-- Diagrams: `prompts/tasks/diagrams.md`
-- Flows: `prompts/tasks/flows.md`
-- Version audit: `prompts/tasks/version-audit.md`
-- Staleness check: `prompts/tasks/check.md`
-- Review summary: `prompts/tasks/review.md`
+- README: `forerunner doc readme`
+- API docs: `forerunner doc api-docs`
+- Stack docs: `forerunner doc stack-docs`
+- Diagrams: `forerunner doc diagrams`
+- Flows: `forerunner doc flows`
+- Version audit: `forerunner doc version-audit`
+- Staleness check: `forerunner doc check`
+- Review summary: `forerunner doc review`
+- Security audit: `forerunner doc audit`
+- Changelog entry: `forerunner doc changelog`
