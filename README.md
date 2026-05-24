@@ -2,39 +2,41 @@
 
 # codeForerunner
 
-CodeForerunner is a model-agnostic documentation agent that acts as overwatch for your repository, automatically analyzing code and maintaining docs, diagrams, and architecture knowledge as your codebase evolves over time.
-
-The current repo is the prompt-first foundation for that agent: it ships prompt assets for understanding a codebase and generating developer docs. A thin Python CLI (including `forerunner mcp-server` and a scoped `forerunner init --full / --agents-only`), an idempotent skill installer, pre-commit + CI hooks, and a PyPI publish workflow now wrap those prompts; the first published PyPI release remains pending.
-
-## Current State
-
-- Core product: Markdown prompts in `prompts/`.
-- Agent package artifacts: Codex plugin files under `plugins/codeforerunner/` and Claude Code plugin files under `.claude-plugin/` plus `skills/codeforerunner/`.
-- Python package: `pyproject.toml` + `src/codeforerunner/` expose a `forerunner` console script. `forerunner doc <task>` resolves the prompt bundle (base + partials + task) to stdout; `forerunner install <agent>` idempotently writes the canonical skill into agent-specific directories; `forerunner init` resolves the agent-onboarding bundle (with `--full` to prepend a scan or `--agents-only` for the default scope); `forerunner scan` resolves the scan bundle; `forerunner mcp-server` serves prompt bundles as MCP tools over stdio.
-- Hooks: `.pre-commit-hooks.yaml` exposes a `forerunner-check` hook; `.github/workflows/forerunner-check.yml` mirrors it in CI. Both no-op when `forerunner.config.yaml` is absent.
-- Current config: `forerunner.config.yaml.example` documents the schema now parsed by `src/codeforerunner/config.py`; see "Configuration" below.
-- Not currently present: Docker image, Makefile, published PyPI release.
+Model-agnostic repository documentation tooling. Ships a prompt pack for codebase analysis and doc generation, a thin Python CLI, an MCP server, a Codex marketplace plugin, and drift-detection rules that keep docs honest.
 
 ## Install
 
-After the first PyPI release:
-
 ```bash
-pipx install codeforerunner   # recommended; isolated environment
+pipx install codeforerunner   # recommended — isolated environment
 pip install codeforerunner    # alternative
 ```
 
 From source:
 
 ```bash
-git clone https://github.com/derek-palmer/codeForerunner
-cd codeForerunner
+git clone https://github.com/derek-palmer/codeforerunner
+cd codeforerunner
 python -m pip install -e .
 ```
 
-Then `forerunner --help` should print the subcommand list.
+Verify: `forerunner --help`
 
-## Prompt Layout
+## CLI
+
+| Command | Purpose |
+|---------|---------|
+| `forerunner init` | Resolve agent-onboarding bundle to stdout (`--full` prepends scan; `--agents-only` is the default scope). |
+| `forerunner scan` | Resolve scan bundle to stdout. |
+| `forerunner doc <task>` | Resolve `base + partials + task` bundle to stdout. |
+| `forerunner check` | Run drift-detection rules; silent no-op without `forerunner.config.yaml`. |
+| `forerunner generate <task>` | Resolve bundle for `<task>` and call the configured provider. Add `--stream` to stream output token-by-token. |
+| `forerunner doctor` | Single-screen health report: skill parity, marketplace validation, installed destinations, config, provider key. Add `--fix` to write a starter `forerunner.config.yaml` if absent. |
+| `forerunner mcp-server` | Serve prompt bundles as MCP tools over stdio (JSON-RPC 2.0). |
+| `forerunner install <agent>` | Idempotently write the canonical skill into agent-specific directories. |
+
+## Prompt Pack
+
+Prompts are bundled inside the package at `src/codeforerunner/prompts/`.
 
 ```text
 prompts/
@@ -54,53 +56,140 @@ prompts/
     ├── flows.md
     ├── version-audit.md
     ├── check.md
-    └── review.md
+    ├── review.md
+    ├── audit.md
+    └── changelog.md
 ```
+
+| Task | Purpose |
+|------|---------|
+| `scan` | Structured repo scan used by downstream tasks. |
+| `init-agent-onboarding` | Generates or updates `AGENTS.md` from repo evidence. |
+| `readme` | Generates or rewrites a top-level README. |
+| `api-docs` | Documents public APIs. |
+| `stack-docs` | Documents stack-specific areas. |
+| `diagrams` | Generates Mermaid architecture or flow diagrams. |
+| `flows` | Documents user, request, job, or data flows. |
+| `version-audit` | Audits pinned versions from manifests, lockfiles, workflows, IaC. |
+| `check` | Checks existing docs for staleness against a fresh scan. |
+| `review` | Summarizes documentation impact for review. |
+| `audit` | Security and dependency audit report. |
+| `changelog` | Generates a Keep-a-Changelog entry from git log. |
 
 ## Quick Start
 
-1. Open `prompts/system/base.md` and use it as the agent system or project instruction.
-2. Assemble repo context using the shape in `prompts/partials/context-format.md`.
-3. For documentation generation, run `prompts/tasks/scan.md` first.
-4. For agent onboarding only, run `prompts/tasks/init-agent-onboarding.md` directly.
-5. Pass the scan result into one downstream documentation prompt, such as `prompts/tasks/readme.md` or `prompts/tasks/stack-docs.md`.
-6. Apply generated docs only after checking that every claim is grounded in provided files.
+```bash
+# 1. Point your agent at the scan prompt
+forerunner scan
 
-## What The Prompts Do
+# 2. Generate or update docs for a task
+export FORERUNNER_SCAN_DONE=1
+forerunner doc readme
 
-| Prompt | Purpose |
-| --- | --- |
-| `prompts/system/base.md` | Defines the codeforerunner role, quality bar, Markdown rules, and accuracy constraints. |
-| `prompts/tasks/scan.md` | Produces the first structured repo scan used by downstream tasks. |
-| `prompts/tasks/init-agent-onboarding.md` | Generates or updates `AGENTS.md` from repo evidence plus files such as `CLAUDE.md`, `.cursor/rules/*`, `.cursorrules`, `.github/copilot-instructions.md`, and `opencode.json`. |
-| `prompts/tasks/readme.md` | Generates or rewrites a top-level README from scan output and selected files. |
-| `prompts/tasks/api-docs.md` | Documents public APIs when endpoints/interfaces are evident. |
-| `prompts/tasks/stack-docs.md` | Documents stack-specific areas of a repo. |
-| `prompts/tasks/diagrams.md` | Generates Mermaid architecture or flow diagrams. |
-| `prompts/tasks/flows.md` | Documents user, request, job, or data flows. |
-| `prompts/tasks/version-audit.md` | Audits pinned versions from manifests, lockfiles, Dockerfiles, workflows, or IaC. |
-| `prompts/tasks/check.md` | Checks existing docs for staleness against a fresh scan. |
-| `prompts/tasks/review.md` | Summarizes documentation impact for review. |
+# 3. Direct model call (needs provider config)
+forerunner generate readme --stream
+```
 
-## Docs And Spec
+## GitHub Action
 
-- `SPEC.md` tracks phases, invariants, and tasks so future PRs can make small status updates instead of broad rewrites.
-- `docs/getting-started.md` explains manual prompt use.
-- `docs/prompt-guide.md` explains how system, partial, and task prompts compose.
-- `docs/editor-agent-setup.md` explains how to adapt prompts to local agents.
-- `docs/roadmap.md` mirrors the `SPEC.md` phase status in human-readable form.
-- `docs/agent-distribution-design.md` records the design that backs the Codex/Claude packages and `forerunner install`.
+Use forerunner check as a reusable action in any workflow:
+
+```yaml
+- uses: derek-palmer/codeforerunner@v0.3.2
+```
+
+With a pinned version:
+
+```yaml
+- uses: derek-palmer/codeforerunner@v0.3.2
+  with:
+    version: '0.3.2'
+```
+
+No-op when `forerunner.config.yaml` is absent.
 
 ## Configuration
 
-`forerunner.config.yaml.example` documents the loaded schema. Copy it to `forerunner.config.yaml` to opt in; without that file, `forerunner check` is a silent no-op. The schema has top-level provider/model fields (`provider`, `model`, `api_key_env`, `output_dir`, `context_max_files`, `context_max_lines_per_file`, `approaching_eol_threshold_months`), `ignore_patterns`, `tasks.version_audit`, and `tasks.check`. `forerunner check` honors `tasks.check.enabled_rules` (allowlist of rule IDs, default all) and `tasks.check.ignore_paths` (fnmatch globs applied to scanned docs). Invalid YAML, unknown providers, unknown `api_key_env` providers, or unknown severities surface as a `ConfigError` and exit non-zero.
+Copy `forerunner.config.yaml.example` to `forerunner.config.yaml` to opt in. Without that file, `forerunner check` is a silent no-op. Generate a starter config with:
+
+```bash
+forerunner doctor --fix
+```
+
+### Config fields
+
+```yaml
+provider: anthropic          # anthropic | openai | google | ollama
+model: claude-opus-4-7
+api_key_env:
+  anthropic: ANTHROPIC_API_KEY   # override per-provider env var name
+
+tasks:
+  check:
+    enabled_rules:
+      - R1-no-cli
+      - R2-no-pre-commit
+      - R3-no-ci
+      - R4-no-installer
+      - R5-no-python-package
+      - R7-no-mcp
+      - R8-no-marketplace
+      - RI1-missing-cli          # inverse: doc claims CLI but file absent
+      - RI5-missing-python-package
+      - RI7-missing-mcp
+      - RV1-version-drift        # pinned version in docs ≠ pyproject.toml
+    ignore_paths:
+      - docs/legacy/**/*.md
+```
+
+### Drift rules
+
+| Rule | Fires when |
+|------|-----------|
+| `R1-no-cli` | Doc denies having a CLI, but `cli.py` is present |
+| `R2-no-pre-commit` | Doc denies having pre-commit hooks, but `.pre-commit-hooks.yaml` present |
+| `R3-no-ci` | Doc denies having CI, but `.github/workflows/*.yml` present |
+| `R4-no-installer` | Doc denies having an installer, but `installer.py` present |
+| `R5-no-python-package` | Doc denies having a Python package, but `pyproject.toml` present |
+| `R6-no-docker` | Doc denies having Docker, but `Dockerfile`/`compose.yml` present |
+| `R7-no-mcp` | Doc denies having an MCP server, but `mcp_server.py` present |
+| `R8-no-marketplace` | Doc denies having a marketplace, but `marketplace.json` present |
+| `RI1-missing-cli` | Doc references `forerunner` subcommands but `cli.py` absent |
+| `RI5-missing-python-package` | Doc shows `pip install codeforerunner` but `pyproject.toml` absent |
+| `RI7-missing-mcp` | Doc references `forerunner mcp-server` but `mcp_server.py` absent |
+| `RV1-version-drift` | Doc pins `codeforerunner==X.Y.Z` differing from current version |
 
 ### MCP Server
 
-`forerunner mcp-server` speaks JSON-RPC 2.0 over stdio and exposes one tool per `prompts/tasks/*.md` (tool name = filename stem). Each `tools/call` returns the resolved `base + partials + task` bundle as text. A scan-first gate enforces SPEC V2: any tool other than `scan` or `init-agent-onboarding` returns an error until `scan` has been called in the same session. Point any MCP-compatible client at `forerunner mcp-server` as a stdio server (running from the target repo so `prompts/tasks/` resolves).
+`forerunner mcp-server` speaks JSON-RPC 2.0 over stdio and exposes one tool per `prompts/tasks/*.md`. A scan-first gate enforces SPEC V2: any tool except `scan` or `init-agent-onboarding` returns an error until `scan` has been called in the same session.
 
 See `examples/mcp/` for Claude Desktop and mcp-cli wiring examples.
 
-## Roadmap
+## Providers
 
-See `SPEC.md` for the canonical phase/task tracker and `docs/roadmap.md` for the human-readable roadmap.
+`forerunner generate` supports four providers. Set the appropriate env var before calling:
+
+| Provider | Env var | Default model |
+|----------|---------|---------------|
+| `anthropic` | `ANTHROPIC_API_KEY` | `claude-opus-4-5` |
+| `openai` | `OPENAI_API_KEY` | `gpt-4o` |
+| `google` | `GOOGLE_API_KEY` | `gemini-2.5-pro` |
+| `ollama` | `OLLAMA_HOST` (optional) | `llama3` |
+
+## Codex Plugin
+
+```bash
+forerunner install codex --marketplace
+```
+
+Installs the Codex marketplace entry and skill. Or install manually:
+`forerunner install <agent>` copies the canonical skill into the agent-specific directory.
+
+## Docs and Spec
+
+- `SPEC.md` — canonical phase/task tracker
+- `docs/getting-started.md` — manual prompt use
+- `docs/prompt-guide.md` — how system, partial, and task prompts compose
+- `docs/editor-agent-setup.md` — adapting prompts to local agents
+- `docs/roadmap.md` — human-readable roadmap
+- `docs/agent-distribution-design.md` — design backing Codex/Claude packages
