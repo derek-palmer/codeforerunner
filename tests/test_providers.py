@@ -48,7 +48,7 @@ def test_anthropic_builds_request_correctly():
     captured: dict = {}
     fake = {
         "content": [{"text": "hello world"}],
-        "model": "claude-opus-4-5",
+        "model": "claude-opus-4-7",
         "usage": {"input_tokens": 5, "output_tokens": 2},
     }
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
@@ -59,11 +59,11 @@ def test_anthropic_builds_request_correctly():
     assert lower["x-api-key"] == "sk-test"
     assert lower["anthropic-version"] == "2023-06-01"
     assert lower["content-type"] == "application/json"
-    assert captured["body"]["model"] == "claude-opus-4-5"
+    assert captured["body"]["model"] == "claude-opus-4-7"
     assert captured["body"]["max_tokens"] == 4096
     assert captured["body"]["messages"] == [{"role": "user", "content": "hi"}]
     assert result.text == "hello world"
-    assert result.model == "claude-opus-4-5"
+    assert result.model == "claude-opus-4-7"
     assert result.usage == {"input_tokens": 5, "output_tokens": 2}
 
 

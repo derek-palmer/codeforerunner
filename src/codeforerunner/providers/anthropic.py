@@ -13,7 +13,7 @@ from codeforerunner.providers.base import CompletionResult, ProviderError
 class AnthropicProvider:
     name = "anthropic"
     default_env_var = "ANTHROPIC_API_KEY"
-    default_model = "claude-opus-4-5"
+    default_model = "claude-opus-4-7"
 
     endpoint = "https://api.anthropic.com/v1/messages"
 

@@ -2,7 +2,7 @@
 # Copy this file to forerunner.config.yaml and fill in your values.
 
 provider: anthropic          # anthropic | openai | google | ollama
-model: claude-opus-4-5       # any model your provider supports
+model: claude-opus-4-7       # any model your provider supports
 api_key_env:
   anthropic: ANTHROPIC_API_KEY
   openai: OPENAI_API_KEY
