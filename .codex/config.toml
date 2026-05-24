@@ -1,0 +1,5 @@
+# codeforerunner Codex integration
+# Skills installed here are available as Codex slash commands.
+
+[features]
+skills = true

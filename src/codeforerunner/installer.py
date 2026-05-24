@@ -21,6 +21,23 @@ EXIT_USAGE = 2
 EXIT_BODY_MISMATCH = 3
 EXIT_UNMANAGED_DEST = 4
 
+# Per-task skill slugs (source: skills/<slug>/SKILL.md → plugins/codeforerunner/skills/<slug>/SKILL.md)
+TASK_SKILL_SLUGS: tuple[str, ...] = (
+    "codeforerunner",
+    "forerunner-scan",
+    "forerunner-readme",
+    "forerunner-api-docs",
+    "forerunner-audit",
+    "forerunner-changelog",
+    "forerunner-check",
+    "forerunner-diagrams",
+    "forerunner-flows",
+    "forerunner-init",
+    "forerunner-review",
+    "forerunner-stack-docs",
+    "forerunner-version-audit",
+)
+
 
 @dataclass(frozen=True)
 class Target:
@@ -44,7 +61,63 @@ def resolve_target(agent: str, override: Path | None) -> Target:
         return Target(agent, home / ".codex/skills/codeforerunner/SKILL.md")
     if agent == "claude":
         return Target(agent, home / ".claude/plugins/codeforerunner/skills/codeforerunner/SKILL.md")
+    if agent == "gemini":
+        raise ValueError(
+            "gemini install is handled via `gemini extensions install`; "
+            "run `./install.sh --only gemini` instead"
+        )
     raise ValueError(f"unknown agent '{agent}' (expected: codex, claude, generic)")
+
+
+def resolve_skill_target(agent: str, slug: str) -> Target:
+    """Return install target for a per-task skill slug."""
+    home = _home()
+    if agent == "codex":
+        return Target(agent, home / f".codex/skills/{slug}/SKILL.md")
+    if agent == "claude":
+        return Target(agent, home / f".claude/plugins/codeforerunner/skills/{slug}/SKILL.md")
+    raise ValueError(f"install_all not supported for agent '{agent}' (expected: codex, claude)")
+
+
+def install_all_skills(
+    *,
+    agent: str,
+    repo_root: Path,
+    check_only: bool,
+    out=None,
+    err=None,
+) -> int:
+    """Install all per-task skills for the given agent. Returns 0 on full success."""
+    out = out or sys.stdout
+    err = err or sys.stderr
+    any_error = False
+    for slug in TASK_SKILL_SLUGS:
+        src_path = repo_root / "plugins" / "codeforerunner" / "skills" / slug / "SKILL.md"
+        if not src_path.is_file():
+            print(f"warning: skill source not found: {src_path}", file=err)
+            continue
+        try:
+            target = resolve_skill_target(agent, slug)
+        except ValueError as e:
+            print(f"error: {e}", file=err)
+            return EXIT_USAGE
+        # For per-task skills use simple copy (no body-parity check against canonical)
+        dest = target.path
+        prefix = "would " if check_only else ""
+        if dest.exists():
+            src_trimmed = src_path.read_bytes().rstrip()
+            dest_trimmed = dest.read_bytes().rstrip()
+            if src_trimmed == dest_trimmed:
+                print(f"skip: {dest} (up-to-date)", file=out)
+                continue
+            action = "update"
+        else:
+            action = "create"
+        print(f"{prefix}{action}: {dest}", file=out)
+        if not check_only:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(src_path.read_bytes())
+    return EXIT_OK if not any_error else EXIT_BODY_MISMATCH
 
 
 def resolve_marketplace_target(agent: str, override: Path | None) -> Target:
@@ -277,8 +350,11 @@ def install(
 
 
 def add_subparser(sub: argparse._SubParsersAction) -> None:
-    p = sub.add_parser("install", help="install skill into agent-specific directory (D.installer)")
-    p.add_argument("agent", choices=["codex", "claude", "generic"])
+    p = sub.add_parser("install", help="install skill(s) into agent-specific directories (D.installer)")
+    p.add_argument("agent", choices=["codex", "claude", "generic"], nargs="?",
+                   help="target agent (omit with --all to install to all detected agents)")
+    p.add_argument("--all", action="store_true",
+                   help="install all per-task skills for the specified agent")
     p.add_argument("--check", action="store_true", help="dry-run: print plan, write nothing")
     p.add_argument("--path", type=Path, help="dest path override (required for generic)")
     p.add_argument("--source", type=Path, help="source skill file (default: agent/codeforerunner.skill.md)")
@@ -292,6 +368,19 @@ def add_subparser(sub: argparse._SubParsersAction) -> None:
 
 def _cli_entry(args: argparse.Namespace) -> int:
     root = Path(args.repo).resolve() if args.repo else Path.cwd()
+
+    if getattr(args, "all", False):
+        agent = args.agent or "claude"
+        return install_all_skills(
+            agent=agent,
+            repo_root=root,
+            check_only=args.check,
+        )
+
+    if not args.agent:
+        print("error: specify an agent or use --all", file=sys.stderr)
+        return EXIT_USAGE
+
     return install(
         agent=args.agent,
         repo_root=root,

@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "skills": {
+    "codeforerunner": {
+      "source": "plugins/codeforerunner/skills/codeforerunner/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/codeforerunner/SKILL.md",
+      "computedHash": "6ad73a8da10842b0ae9e642eabf91805dad295d825ae95bab1f663af829adb0d"
+    },
+    "forerunner-scan": {
+      "source": "plugins/codeforerunner/skills/forerunner-scan/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-scan/SKILL.md",
+      "computedHash": "3d7b0fe2ba54ade4b629751e227fd871f3215c0c69fd15fd5c588dc900fd1569"
+    },
+    "forerunner-readme": {
+      "source": "plugins/codeforerunner/skills/forerunner-readme/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-readme/SKILL.md",
+      "computedHash": "1c3e6c6ae9759c0dab6475a2f3f62cf12bce02dc9b6d4733951d3ffa47161a5d"
+    },
+    "forerunner-api-docs": {
+      "source": "plugins/codeforerunner/skills/forerunner-api-docs/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-api-docs/SKILL.md",
+      "computedHash": "9cb7636fe715e7b3024273f5dfe064fa57a35b09e1016b5692c68cdd9f7a9d43"
+    },
+    "forerunner-audit": {
+      "source": "plugins/codeforerunner/skills/forerunner-audit/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-audit/SKILL.md",
+      "computedHash": "cebb2b1c15b824994a8e0f6e9f51b682f9041641d9c1c189d8b1be173938a0fe"
+    },
+    "forerunner-changelog": {
+      "source": "plugins/codeforerunner/skills/forerunner-changelog/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-changelog/SKILL.md",
+      "computedHash": "e622f4563243207c277088b2f35b66df02d7218893e7253b77f821dafc9ccdbd"
+    },
+    "forerunner-check": {
+      "source": "plugins/codeforerunner/skills/forerunner-check/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-check/SKILL.md",
+      "computedHash": "a5f03599888640a90a71c2cec20418d9be39301fb5fa59f938feb01dec30149d"
+    },
+    "forerunner-diagrams": {
+      "source": "plugins/codeforerunner/skills/forerunner-diagrams/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-diagrams/SKILL.md",
+      "computedHash": "4040c91cb7c6c2646b1ee7f29d536881329db4dc212294905d52755bc4b9a07d"
+    },
+    "forerunner-flows": {
+      "source": "plugins/codeforerunner/skills/forerunner-flows/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-flows/SKILL.md",
+      "computedHash": "d7f01af2f125304a3b58e502ff106927f2ea0ebab95f05a92e87e4149b35d00d"
+    },
+    "forerunner-init": {
+      "source": "plugins/codeforerunner/skills/forerunner-init/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-init/SKILL.md",
+      "computedHash": "1a6122cb77f8ce7c68b6e189374e5e69179de7ec3682a39c24051243acd02ae3"
+    },
+    "forerunner-review": {
+      "source": "plugins/codeforerunner/skills/forerunner-review/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-review/SKILL.md",
+      "computedHash": "0d24cfbcc77c5d82509c2d701c73ce2c61a99ec61000b36ac22224f6976037a9"
+    },
+    "forerunner-stack-docs": {
+      "source": "plugins/codeforerunner/skills/forerunner-stack-docs/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-stack-docs/SKILL.md",
+      "computedHash": "1f608dbbd98da240beac45679fd456990626454d79ec7bfb9b56df049b6479c5"
+    },
+    "forerunner-version-audit": {
+      "source": "plugins/codeforerunner/skills/forerunner-version-audit/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-version-audit/SKILL.md",
+      "computedHash": "17d9367e2e3608b9a9fde05730a4199cb1674a1e4529aaf53364c02b76e5149a"
+    }
+  }
+}
