@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from codeforerunner.doctor import Finding, format_report, main, run
+from codeforerunner.doctor import Finding, format_report, main, run, starter_config
 
 REPO = Path(__file__).resolve().parent.parent
 
@@ -135,3 +135,42 @@ def test_main_exits_one_when_error_present(tmp_path: Path, capsys):
     rc = main(["--repo", str(repo)])
     capsys.readouterr()
     assert rc == 1
+
+
+# ── starter_config / --fix ─────────────────────────────────────────────────
+
+
+def test_starter_config_contains_expected_rules():
+    cfg = starter_config()
+    assert "R1-no-cli" in cfg
+    assert "R7-no-mcp" in cfg
+    assert "R8-no-marketplace" in cfg
+    assert "ignore_paths" in cfg
+
+
+def test_doctor_fix_writes_config_when_absent(tmp_path: Path, capsys):
+    from codeforerunner.cli import main as cli_main
+
+    repo = _copy_repo_layout(tmp_path)
+    cfg_path = repo / "forerunner.config.yaml"
+    assert not cfg_path.exists()
+
+    cli_main(["--repo", str(repo), "doctor", "--fix"])
+    capsys.readouterr()
+
+    assert cfg_path.is_file()
+    content = cfg_path.read_text(encoding="utf-8")
+    assert "R1-no-cli" in content
+
+
+def test_doctor_fix_does_not_overwrite_existing_config(tmp_path: Path, capsys):
+    from codeforerunner.cli import main as cli_main
+
+    repo = _copy_repo_layout(tmp_path)
+    cfg_path = repo / "forerunner.config.yaml"
+    cfg_path.write_text("# my custom config\n", encoding="utf-8")
+
+    cli_main(["--repo", str(repo), "doctor", "--fix"])
+    capsys.readouterr()
+
+    assert cfg_path.read_text(encoding="utf-8") == "# my custom config\n"

@@ -135,6 +135,17 @@ def cmd_generate(args: argparse.Namespace) -> int:
         print(f"error: missing API key; set ${env_var}", file=sys.stderr)
         return 3
 
+    if getattr(args, "stream", False):
+        try:
+            for chunk in provider.stream(prompt=buf.getvalue(), model=model, api_key=api_key):
+                sys.stdout.write(chunk)
+                sys.stdout.flush()
+        except _providers.ProviderError as e:
+            print(f"error: {provider_name} provider failed: {e}", file=sys.stderr)
+            return 4
+        sys.stdout.write("\n")
+        return 0
+
     try:
         result = provider.complete(prompt=buf.getvalue(), model=model, api_key=api_key)
     except _providers.ProviderError as e:
@@ -151,7 +162,15 @@ def cmd_generate(args: argparse.Namespace) -> int:
 
 def cmd_doctor(args: argparse.Namespace) -> int:
     from codeforerunner import doctor
+    from codeforerunner.config import CONFIG_FILENAME
     root = Path(args.repo).resolve() if args.repo else Path.cwd()
+    if getattr(args, "fix", False):
+        cfg_path = root / CONFIG_FILENAME
+        if not cfg_path.is_file():
+            cfg_path.write_text(doctor.starter_config(), encoding="utf-8")
+            print(f"wrote {cfg_path}", file=sys.stderr)
+        else:
+            print(f"{cfg_path} already exists; skipping --fix", file=sys.stderr)
     findings = doctor.run(root)
     sys.stdout.write(doctor.format_report(findings) + "\n")
     return 1 if any(f.severity == "error" for f in findings) else 0
@@ -200,12 +219,18 @@ def build_parser() -> argparse.ArgumentParser:
     s_mcp.set_defaults(func=cmd_mcp_server)
 
     s_doctor = sub.add_parser("doctor", help="health report: skill parity + marketplace + installed dests")
+    s_doctor.add_argument(
+        "--fix",
+        action="store_true",
+        help="write a starter forerunner.config.yaml if absent",
+    )
     s_doctor.set_defaults(func=cmd_doctor)
 
     s_gen = sub.add_parser("generate", help="resolve bundle for <task> and call the configured provider")
     s_gen.add_argument("task", help="task basename under prompts/tasks/")
     s_gen.add_argument("--provider", help="override config provider")
     s_gen.add_argument("--model", help="override config model")
+    s_gen.add_argument("--stream", action="store_true", help="stream output token-by-token")
     s_gen.set_defaults(func=cmd_generate)
 
     from codeforerunner import installer
