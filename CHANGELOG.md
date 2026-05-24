@@ -5,6 +5,27 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] — 2026-05-24
+
+### Added
+
+- `forerunner.config.yaml` dogfood config at repo root; enables drift rules R1–R5, R7, R8.
+- `audit` and `changelog` task prompts (`prompts/tasks/audit.md`, `prompts/tasks/changelog.md`).
+- PyPI `classifiers` and `keywords` in `pyproject.toml` for discoverability.
+- `src/codeforerunner/bundle.py` — shared `find_prompts_root()` + `resolve_bundle()` used by both `cli.py` and `mcp_server.py`; eliminates duplicated `_repo_root` logic.
+
+### Fixed
+
+- `forerunner mcp-server` now works after `pip install` without requiring `--repo`: prompts bundled inside the package (`src/codeforerunner/prompts/`) and included via `package-data`.
+- `forerunner --version` and MCP `serverInfo.version` now read the installed package version dynamically instead of the hardcoded `"0.2.0"` string.
+- MCP advertised protocol version updated from `2024-11-05` to `2025-03-26`.
+- `forerunner mcp-server --repo /path` now works and appears in `--help` (previously only `forerunner --repo /path mcp-server` worked).
+- `forerunner-check` CI no longer fails on every push: removed pre-checkout `hashFiles()` gate that always evaluated false (empty workspace before `actions/checkout`).
+
+### Changed
+
+- Test suite expanded from 117 to 145 tests: HTTP/network error paths for all four providers, check edge cases, CLI exit codes.
+
 ## [0.3.0] — 2026-05-24
 
 ### Added
@@ -50,6 +71,7 @@ Initial release-ready surface around the prompt pack.
 - `init` and `scan` are honest wrappers over the prompt pack; they emit bundled prompt text to stdout for the calling agent to act on.
 - Model invocation is out of scope; `provider` / `model` config fields are honored only by future wrappers.
 
-[Unreleased]: https://github.com/derek-palmer/codeForerunner/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/derek-palmer/codeForerunner/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/derek-palmer/codeForerunner/releases/tag/v0.2.0
+[Unreleased]: https://github.com/derek-palmer/codeforerunner/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/derek-palmer/codeforerunner/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/derek-palmer/codeforerunner/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/derek-palmer/codeforerunner/releases/tag/v0.2.0
