@@ -225,13 +225,23 @@ def _check_config_loadable(repo: Path) -> list[Finding]:
 
 
 def _check_provider_api_key(repo: Path) -> list[Finding]:
+    from codeforerunner.providers.ollama import is_available as _ollama_available
+
     cfg_path = repo / CONFIG_FILENAME
     if not cfg_path.is_file():
+        if _ollama_available():
+            return [
+                Finding(
+                    "ok",
+                    "provider-api-key",
+                    "no config; Ollama running — generate will use local mode automatically",
+                )
+            ]
         return [
             Finding(
                 "ok",
                 "provider-api-key",
-                f"no {CONFIG_FILENAME}; provider key not checked",
+                f"no {CONFIG_FILENAME}; set an API key in config or start Ollama for keyless local generation",
             )
         ]
     try:
@@ -259,7 +269,7 @@ def _check_provider_api_key(repo: Path) -> list[Finding]:
             Finding(
                 "ok",
                 "provider-api-key",
-                "ollama needs no API key (OLLAMA_HOST optional)",
+                "running in local mode (Ollama; no API key needed)",
             )
         ]
     env_var = cfg.api_key_env.get(provider) or _DEFAULT_PROVIDER_ENV.get(provider, "")

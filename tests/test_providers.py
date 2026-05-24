@@ -479,3 +479,52 @@ def test_ollama_stream_http_error_raises():
     with patch("urllib.request.urlopen", side_effect=_stream_http_error(500)):
         with pytest.raises(ProviderError, match="HTTP 500"):
             list(OllamaProvider().stream(prompt="hi"))
+
+
+# ── OllamaProvider.is_available ───────────────────────────────────────────────
+
+def test_ollama_is_available_returns_true_when_reachable(monkeypatch):
+    monkeypatch.delenv("OLLAMA_HOST", raising=False)
+    with patch("urllib.request.urlopen", return_value=MagicMock()):
+        from codeforerunner.providers.ollama import is_available
+        assert is_available() is True
+
+
+def test_ollama_is_available_returns_false_on_connection_error(monkeypatch):
+    import urllib.error
+    monkeypatch.delenv("OLLAMA_HOST", raising=False)
+    with patch("urllib.request.urlopen", side_effect=OSError("connection refused")):
+        from codeforerunner.providers.ollama import is_available
+        assert is_available() is False
+
+
+def test_ollama_is_available_uses_env_host(monkeypatch):
+    monkeypatch.setenv("OLLAMA_HOST", "http://myhost:11434")
+    captured_url: list[str] = []
+
+    def fake_open(url, timeout=None):
+        captured_url.append(url)
+        return MagicMock()
+
+    with patch("urllib.request.urlopen", side_effect=fake_open):
+        from codeforerunner.providers.ollama import is_available
+        assert is_available() is True
+    assert captured_url[0].startswith("http://myhost:11434")
+
+
+def test_ollama_is_available_uses_explicit_host():
+    captured_url: list[str] = []
+
+    def fake_open(url, timeout=None):
+        captured_url.append(url)
+        return MagicMock()
+
+    with patch("urllib.request.urlopen", side_effect=fake_open):
+        from codeforerunner.providers.ollama import is_available
+        assert is_available(host="http://custom:9999") is True
+    assert captured_url[0].startswith("http://custom:9999")
+
+
+def test_ollama_available_exported_from_providers_package():
+    from codeforerunner.providers import ollama_available
+    assert callable(ollama_available)

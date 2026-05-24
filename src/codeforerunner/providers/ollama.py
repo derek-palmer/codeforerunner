@@ -13,6 +13,16 @@ from codeforerunner.providers.base import CompletionResult, ProviderError
 DEFAULT_HOST = "http://localhost:11434"
 
 
+def is_available(host: str | None = None) -> bool:
+    """Return True if an Ollama instance is reachable at the configured host."""
+    base = (host or os.environ.get("OLLAMA_HOST") or DEFAULT_HOST).rstrip("/")
+    try:
+        urllib.request.urlopen(f"{base}/api/tags", timeout=2)
+        return True
+    except Exception:
+        return False
+
+
 class OllamaProvider:
     name = "ollama"
     default_env_var = "OLLAMA_HOST"

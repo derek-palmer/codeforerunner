@@ -111,7 +111,8 @@ def cmd_generate(args: argparse.Namespace) -> int:
     repo_root = Path(args.repo).resolve() if args.repo else Path.cwd()
     cfg = load_from_repo(repo_root)
 
-    provider_name = args.provider or (cfg.provider if cfg else "anthropic")
+    explicit_provider = args.provider or (cfg.provider if cfg else None)
+    provider_name = explicit_provider or "anthropic"
     model = args.model or (cfg.model if cfg else None)
     provider_cls = _providers.get(provider_name)
     provider = provider_cls()
@@ -132,8 +133,19 @@ def cmd_generate(args: argparse.Namespace) -> int:
     env_var = (cfg.api_key_env.get(provider_name) if cfg else None) or provider.default_env_var
     api_key = os.environ.get(env_var)
     if api_key is None and provider_name != "ollama":
-        print(f"error: missing API key; set ${env_var}", file=sys.stderr)
-        return 3
+        if explicit_provider is None and _providers.ollama_available():
+            provider_name = "ollama"
+            provider_cls = _providers.get("ollama")
+            provider = provider_cls()
+            if not args.model:
+                model = provider.default_model
+            print("info: no API key; falling back to Ollama (local mode)", file=sys.stderr)
+        else:
+            msg = f"error: missing API key; set ${env_var}"
+            if explicit_provider is None:
+                msg += "\nhint: start Ollama for keyless local generation (https://ollama.com)"
+            print(msg, file=sys.stderr)
+            return 3
 
     if getattr(args, "stream", False):
         try:
