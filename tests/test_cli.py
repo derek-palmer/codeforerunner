@@ -307,3 +307,133 @@ def test_generate_uses_config_api_key_env_override(tmp_path, capsys, monkeypatch
     assert rc == 0
     assert cap.out == "ok\n"
     assert calls == [{"model": "claude-opus-4-7", "api_key": "override-secret"}]
+
+
+# ── Ollama local-mode fallback ─────────────────────────────────────────────────
+
+def test_generate_falls_back_to_ollama_when_no_key_and_ollama_running(
+    tmp_path, capsys, monkeypatch
+):
+    """No explicit provider, no API key, Ollama reachable → auto-switch to Ollama."""
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+    calls: list[dict] = []
+
+    class FakeOllamaProvider:
+        default_env_var = "OLLAMA_HOST"
+        default_model = "llama3"
+
+        def complete(self, *, prompt, model=None, api_key=None):
+            calls.append({"model": model, "api_key": api_key})
+            return CompletionResult(text="ollama output", model=model or "llama3")
+
+    from codeforerunner import providers
+    from unittest.mock import patch
+
+    monkeypatch.setitem(providers.REGISTRY, "ollama", FakeOllamaProvider)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    with patch("codeforerunner.providers.ollama_available", return_value=True):
+        rc = main(["--repo", str(tmp_path), "generate", "readme"])
+
+    cap = capsys.readouterr()
+    assert rc == 0
+    assert "local mode" in cap.err
+    assert cap.out == "ollama output\n"
+    assert calls[0]["model"] == "llama3"
+
+
+def test_generate_no_fallback_when_provider_explicit_and_key_missing(
+    tmp_path, capsys, monkeypatch
+):
+    """Explicit --provider means no auto-fallback even if Ollama is running."""
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+
+    class FakeProvider:
+        default_env_var = "FAKE_API_KEY"
+        default_model = "fake-default"
+
+        def complete(self, *, prompt, model=None, api_key=None):  # pragma: no cover
+            raise AssertionError("should not be called")
+
+    from codeforerunner import providers
+    from unittest.mock import patch
+
+    monkeypatch.setitem(providers.REGISTRY, "fake", FakeProvider)
+    monkeypatch.delenv("FAKE_API_KEY", raising=False)
+
+    with patch("codeforerunner.providers.ollama_available", return_value=True):
+        rc = main(["--repo", str(tmp_path), "generate", "readme", "--provider", "fake"])
+
+    cap = capsys.readouterr()
+    assert rc == 3
+    assert "missing API key" in cap.err
+
+
+def test_generate_no_fallback_when_config_provider_set_and_key_missing(
+    tmp_path, capsys, monkeypatch
+):
+    """Provider in config file counts as explicit — no auto-fallback."""
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").write_text(
+        "provider: anthropic\n", encoding="utf-8"
+    )
+
+    from unittest.mock import patch
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    with patch("codeforerunner.providers.ollama_available", return_value=True):
+        rc = main(["--repo", str(tmp_path), "generate", "readme"])
+
+    cap = capsys.readouterr()
+    assert rc == 3
+    assert "missing API key" in cap.err
+
+
+def test_generate_missing_key_includes_ollama_hint_when_ollama_absent(
+    tmp_path, capsys, monkeypatch
+):
+    """No explicit provider, no API key, Ollama not running → error + Ollama hint."""
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+
+    from unittest.mock import patch
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    with patch("codeforerunner.providers.ollama_available", return_value=False):
+        rc = main(["--repo", str(tmp_path), "generate", "readme"])
+
+    cap = capsys.readouterr()
+    assert rc == 3
+    assert "missing API key" in cap.err
+    assert "Ollama" in cap.err
+
+
+def test_generate_ollama_fallback_uses_explicit_model(tmp_path, capsys, monkeypatch):
+    """--model flag is preserved when falling back to Ollama."""
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+    calls: list[dict] = []
+
+    class FakeOllamaProvider:
+        default_env_var = "OLLAMA_HOST"
+        default_model = "llama3"
+
+        def complete(self, *, prompt, model=None, api_key=None):
+            calls.append({"model": model})
+            return CompletionResult(text="ok", model=model or "llama3")
+
+    from codeforerunner import providers
+    from unittest.mock import patch
+
+    monkeypatch.setitem(providers.REGISTRY, "ollama", FakeOllamaProvider)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    with patch("codeforerunner.providers.ollama_available", return_value=True):
+        rc = main(["--repo", str(tmp_path), "generate", "readme", "--model", "llama3.2"])
+
+    assert rc == 0
+    assert calls[0]["model"] == "llama3.2"

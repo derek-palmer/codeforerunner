@@ -174,3 +174,42 @@ def test_doctor_fix_does_not_overwrite_existing_config(tmp_path: Path, capsys):
     capsys.readouterr()
 
     assert cfg_path.read_text(encoding="utf-8") == "# my custom config\n"
+
+
+# ── local-mode surfacing ───────────────────────────────────────────────────────
+
+def test_provider_api_key_local_mode_when_ollama_running_no_config(tmp_path: Path):
+    from unittest.mock import patch
+    repo = _copy_repo_layout(tmp_path)
+    # no forerunner.config.yaml
+    with patch("codeforerunner.providers.ollama.is_available", return_value=True):
+        findings = run(repo)
+    matches = [f for f in findings if f.check == "provider-api-key"]
+    assert len(matches) == 1
+    assert matches[0].severity == "ok"
+    assert "local mode" in matches[0].message
+
+
+def test_provider_api_key_hint_when_ollama_absent_no_config(tmp_path: Path):
+    from unittest.mock import patch
+    repo = _copy_repo_layout(tmp_path)
+    # no forerunner.config.yaml
+    with patch("codeforerunner.providers.ollama.is_available", return_value=False):
+        findings = run(repo)
+    matches = [f for f in findings if f.check == "provider-api-key"]
+    assert len(matches) == 1
+    assert matches[0].severity == "ok"
+    assert "Ollama" in matches[0].message
+
+
+def test_provider_api_key_ollama_config_shows_local_mode(tmp_path: Path, monkeypatch):
+    repo = _copy_repo_layout(tmp_path)
+    (repo / "forerunner.config.yaml").write_text(
+        "provider: ollama\nmodel: llama3\n", encoding="utf-8"
+    )
+    monkeypatch.delenv("OLLAMA_HOST", raising=False)
+    findings = run(repo)
+    matches = [f for f in findings if f.check == "provider-api-key"]
+    assert len(matches) == 1
+    assert matches[0].severity == "ok"
+    assert "local mode" in matches[0].message

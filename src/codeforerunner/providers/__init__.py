@@ -5,7 +5,7 @@ from __future__ import annotations
 from codeforerunner.providers.anthropic import AnthropicProvider
 from codeforerunner.providers.base import CompletionResult, Provider, ProviderError
 from codeforerunner.providers.google import GoogleProvider
-from codeforerunner.providers.ollama import OllamaProvider
+from codeforerunner.providers.ollama import OllamaProvider, is_available as ollama_available
 from codeforerunner.providers.openai import OpenAIProvider
 
 __all__ = [
@@ -18,6 +18,7 @@ __all__ = [
     "ProviderError",
     "REGISTRY",
     "get",
+    "ollama_available",
 ]
 
 REGISTRY: dict[str, type] = {
