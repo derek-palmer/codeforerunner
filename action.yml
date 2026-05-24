@@ -1,0 +1,31 @@
+name: 'Forerunner Check'
+description: >
+  Run forerunner drift-detection rules against tracked docs.
+  No-op when forerunner.config.yaml is absent.
+author: 'derek-palmer'
+
+inputs:
+  version:
+    description: 'codeforerunner version to install (empty = latest)'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install codeforerunner
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          pip install "codeforerunner==${{ inputs.version }}"
+        else
+          pip install codeforerunner
+        fi
+
+    - name: Run forerunner check
+      shell: bash
+      run: forerunner check
+
+branding:
+  icon: 'check-circle'
+  color: 'blue'
