@@ -5,6 +5,20 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] — 2026-05-24
+
+### Added
+
+- **npm publish** — `codeforerunner` package published to npmjs.com alongside the existing PyPI release. `npx codeforerunner` and `npx codeforerunner-install` both run the multi-agent installer.
+- Root `package.json` with `bin`, `files`, `engines`, `keywords`, `repository` fields.
+- `.github/workflows/npm-publish.yml` — publishes to npm with provenance (`--provenance --access public`) on every `v*.*.*` tag push, using `NPM_TOKEN` secret.
+- `install.sh` and `install.ps1` now probe the npm registry first (`HEAD https://registry.npmjs.org/codeforerunner/latest`) and fall back to `npx github:derek-palmer/codeforerunner` if npm is unavailable.
+
+### Notes
+
+- Both `pyproject.toml` and `package.json` versions must be kept in sync on every release. Bump both files, commit as a single `chore: bump to vX.Y.Z` commit, then tag.
+- npm provenance requires the `npm` GitHub Actions environment to be configured in the repo settings and an `NPM_TOKEN` secret with `Automation` scope to be added.
+
 ## [0.4.0] — 2026-05-24
 
 ### Added

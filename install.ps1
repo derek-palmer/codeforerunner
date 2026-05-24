@@ -12,6 +12,7 @@ param([Parameter(ValueFromRemainingArguments=$true)][string[]]$Args)
 
 $ErrorActionPreference = "Stop"
 
+$NpmPkg  = "codeforerunner"
 $Repo    = "derek-palmer/codeforerunner"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $LocalJs = Join-Path $ScriptDir "bin\install.js"
@@ -19,5 +20,15 @@ $LocalJs = Join-Path $ScriptDir "bin\install.js"
 if (Test-Path $LocalJs) {
     & node $LocalJs @Args
 } else {
-    & npx -y "github:$Repo" -- @Args
+    # Primary: npm registry. Fallback: GitHub source (in case npm is down).
+    $npmUp = $false
+    try {
+        $null = Invoke-WebRequest -Uri "https://registry.npmjs.org/$NpmPkg/latest" -Method Head -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+        $npmUp = $true
+    } catch {}
+    if ($npmUp) {
+        & npx --yes $NpmPkg -- @Args
+    } else {
+        & npx --yes "github:$Repo" -- @Args
+    }
 }

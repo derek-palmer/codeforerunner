@@ -14,6 +14,7 @@
 
 set -euo pipefail
 
+NPM_PKG="codeforerunner"
 REPO="derek-palmer/codeforerunner"
 
 # Locate bin/install.js relative to this script (works even when piped through bash)
@@ -23,5 +24,11 @@ LOCAL_JS="${SCRIPT_DIR}/bin/install.js"
 if [[ -n "$SCRIPT_DIR" && -f "$LOCAL_JS" ]]; then
   exec node "$LOCAL_JS" "$@"
 else
-  exec npx -y "github:${REPO}" -- "$@"
+  # Primary: npm registry. Fallback: GitHub source (in case npm is down).
+  # Probe the registry with a HEAD request to avoid running npx twice.
+  if curl -sf --head "https://registry.npmjs.org/${NPM_PKG}/latest" &>/dev/null; then
+    exec npx --yes "${NPM_PKG}" -- "$@"
+  else
+    exec npx --yes "github:${REPO}" -- "$@"
+  fi
 fi

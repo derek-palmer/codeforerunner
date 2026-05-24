@@ -1,0 +1,44 @@
+{
+  "name": "codeforerunner",
+  "version": "0.4.1",
+  "description": "Model-agnostic repository documentation tooling — installs /forerunner-* slash commands into 30+ agent CLIs",
+  "main": "./bin/install.js",
+  "bin": {
+    "codeforerunner": "./bin/install.js",
+    "codeforerunner-install": "./bin/install.js"
+  },
+  "files": [
+    "bin/",
+    "skills/",
+    "install.sh",
+    "install.ps1",
+    "skills-lock.json"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "codeforerunner",
+    "documentation",
+    "repository-docs",
+    "agent",
+    "llm",
+    "skills",
+    "slash-commands",
+    "claude",
+    "codex",
+    "gemini",
+    "cursor",
+    "windsurf"
+  ],
+  "license": "SEE LICENSE IN LICENSE.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/derek-palmer/codeforerunner.git"
+  },
+  "homepage": "https://github.com/derek-palmer/codeforerunner",
+  "bugs": {
+    "url": "https://github.com/derek-palmer/codeforerunner/issues"
+  },
+  "type": "commonjs"
+}
