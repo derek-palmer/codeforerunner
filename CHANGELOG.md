@@ -5,7 +5,7 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] — 2026-05-24
 
 ### Added
 
@@ -50,5 +50,6 @@ Initial release-ready surface around the prompt pack.
 - `init` and `scan` are honest wrappers over the prompt pack; they emit bundled prompt text to stdout for the calling agent to act on.
 - Model invocation is out of scope; `provider` / `model` config fields are honored only by future wrappers.
 
-[Unreleased]: https://github.com/derek-palmer/codeForerunner/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/derek-palmer/codeForerunner/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/derek-palmer/codeForerunner/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/derek-palmer/codeForerunner/releases/tag/v0.2.0

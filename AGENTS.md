@@ -49,3 +49,17 @@
 - Skill source changes: also run `.venv/bin/python scripts/validate_skill_copies.py`.
 - Marketplace manifest changes: also run `.venv/bin/python scripts/validate_codex_marketplace.py`.
 - Doc/prompt-only changes: re-read affected Markdown for consistency with `SPEC.md`; run `forerunner check` (with a temporary `forerunner.config.yaml`) to catch claim-vs-file drift.
+
+## Agent skills
+
+### Issue tracker
+
+Local markdown under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default canonical labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), applied via a `Status:` line in each issue file. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.
