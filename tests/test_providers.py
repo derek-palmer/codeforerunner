@@ -302,3 +302,180 @@ def test_ollama_api_key_used_as_base_url(monkeypatch):
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
         OllamaProvider().complete(prompt="hi", api_key="http://custom:8888")
     assert captured["url"] == "http://custom:8888/api/generate"
+
+
+# ── Streaming helpers ─────────────────────────────────────────────────────
+
+
+def _fake_stream_urlopen(lines: list[bytes]):
+    """Return urlopen side_effect that yields byte-lines and has .close()."""
+
+    def _opener(req, *args, **kwargs):
+        mock = MagicMock()
+        mock.__iter__ = MagicMock(return_value=iter(lines))
+        mock.close = MagicMock()
+        return mock
+
+    return _opener
+
+
+def _stream_http_error(code: int):
+    import urllib.error
+
+    def _opener(req, *args, **kwargs):
+        raise urllib.error.HTTPError(
+            url=req.full_url, code=code, msg="err", hdrs=None, fp=io.BytesIO(b"err")
+        )
+
+    return _opener
+
+
+# ── Anthropic stream ──────────────────────────────────────────────────────
+
+
+def test_anthropic_stream_yields_text():
+    lines = [
+        b'event: content_block_delta\n',
+        b'data: {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "hello "}}\n',
+        b'\n',
+        b'data: {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "world"}}\n',
+        b'data: {"type": "message_stop"}\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(AnthropicProvider().stream(prompt="hi", api_key="sk"))
+    assert chunks == ["hello ", "world"]
+
+
+def test_anthropic_stream_sends_stream_true():
+    lines = [b'data: {"type": "message_stop"}\n']
+    captured: dict = {}
+
+    def _opener(req, *args, **kwargs):
+        captured["body"] = json.loads(req.data.decode("utf-8"))
+        mock = MagicMock()
+        mock.__iter__ = MagicMock(return_value=iter(lines))
+        mock.close = MagicMock()
+        return mock
+
+    with patch("urllib.request.urlopen", side_effect=_opener):
+        list(AnthropicProvider().stream(prompt="hi", api_key="sk"))
+    assert captured["body"]["stream"] is True
+
+
+def test_anthropic_stream_missing_key_raises():
+    with pytest.raises(ProviderError):
+        list(AnthropicProvider().stream(prompt="hi", api_key=None))
+
+
+def test_anthropic_stream_http_error_raises():
+    with patch("urllib.request.urlopen", side_effect=_stream_http_error(401)):
+        with pytest.raises(ProviderError, match="HTTP 401"):
+            list(AnthropicProvider().stream(prompt="hi", api_key="sk"))
+
+
+# ── OpenAI stream ─────────────────────────────────────────────────────────
+
+
+def test_openai_stream_yields_text():
+    lines = [
+        b'data: {"choices": [{"delta": {"content": "foo"}}]}\n',
+        b'data: {"choices": [{"delta": {"content": " bar"}}]}\n',
+        b'data: [DONE]\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(OpenAIProvider().stream(prompt="hi", api_key="sk"))
+    assert chunks == ["foo", " bar"]
+
+
+def test_openai_stream_missing_key_raises():
+    with pytest.raises(ProviderError):
+        list(OpenAIProvider().stream(prompt="hi", api_key=None))
+
+
+def test_openai_stream_http_error_raises():
+    with patch("urllib.request.urlopen", side_effect=_stream_http_error(429)):
+        with pytest.raises(ProviderError, match="HTTP 429"):
+            list(OpenAIProvider().stream(prompt="hi", api_key="sk"))
+
+
+def test_openai_stream_ignores_done_sentinel():
+    lines = [
+        b'data: {"choices": [{"delta": {"content": "x"}}]}\n',
+        b'data: [DONE]\n',
+        b'data: {"choices": [{"delta": {"content": "should not appear"}}]}\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(OpenAIProvider().stream(prompt="hi", api_key="sk"))
+    assert chunks == ["x"]
+
+
+# ── Google stream ─────────────────────────────────────────────────────────
+
+
+def test_google_stream_yields_text():
+    lines = [
+        b'data: {"candidates": [{"content": {"parts": [{"text": "hi "}]}}]}\n',
+        b'data: {"candidates": [{"content": {"parts": [{"text": "there"}]}}]}\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(GoogleProvider().stream(prompt="q", api_key="g-key"))
+    assert chunks == ["hi ", "there"]
+
+
+def test_google_stream_uses_stream_endpoint():
+    lines = [b'data: {"candidates": [{"content": {"parts": [{"text": "x"}]}}]}\n']
+    captured: dict = {}
+
+    def _opener(req, *args, **kwargs):
+        captured["url"] = req.full_url
+        mock = MagicMock()
+        mock.__iter__ = MagicMock(return_value=iter(lines))
+        mock.close = MagicMock()
+        return mock
+
+    with patch("urllib.request.urlopen", side_effect=_opener):
+        list(GoogleProvider().stream(prompt="q", api_key="g-key"))
+    assert "streamGenerateContent" in captured["url"]
+    assert "alt=sse" in captured["url"]
+
+
+def test_google_stream_missing_key_raises():
+    with pytest.raises(ProviderError):
+        list(GoogleProvider().stream(prompt="hi", api_key=None))
+
+
+def test_google_stream_http_error_raises():
+    with patch("urllib.request.urlopen", side_effect=_stream_http_error(403)):
+        with pytest.raises(ProviderError, match="HTTP 403"):
+            list(GoogleProvider().stream(prompt="hi", api_key="g-key"))
+
+
+# ── Ollama stream ─────────────────────────────────────────────────────────
+
+
+def test_ollama_stream_yields_text():
+    lines = [
+        b'{"response": "foo ", "done": false}\n',
+        b'{"response": "bar", "done": true}\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(OllamaProvider().stream(prompt="hi"))
+    assert chunks == ["foo ", "bar"]
+
+
+def test_ollama_stream_stops_at_done(monkeypatch):
+    monkeypatch.delenv("OLLAMA_HOST", raising=False)
+    lines = [
+        b'{"response": "a", "done": false}\n',
+        b'{"response": "b", "done": true}\n',
+        b'{"response": "c", "done": false}\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(OllamaProvider().stream(prompt="hi"))
+    assert chunks == ["a", "b"]
+
+
+def test_ollama_stream_http_error_raises():
+    with patch("urllib.request.urlopen", side_effect=_stream_http_error(500)):
+        with pytest.raises(ProviderError, match="HTTP 500"):
+            list(OllamaProvider().stream(prompt="hi"))

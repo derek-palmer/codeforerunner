@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Iterator, Protocol
 
 
 @dataclass(frozen=True)
@@ -25,6 +25,14 @@ class Provider(Protocol):
         model: str | None = None,
         api_key: str | None = None,
     ) -> CompletionResult: ...
+
+    def stream(
+        self,
+        *,
+        prompt: str,
+        model: str | None = None,
+        api_key: str | None = None,
+    ) -> Iterator[str]: ...
 
 
 class ProviderError(Exception):

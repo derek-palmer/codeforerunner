@@ -6,6 +6,7 @@ import json
 import os
 import urllib.error
 import urllib.request
+from typing import Iterator
 
 from codeforerunner.providers.base import CompletionResult, ProviderError
 
@@ -54,3 +55,47 @@ class OllamaProvider:
         usage_keys = ("prompt_eval_count", "eval_count", "total_duration")
         usage = {k: data[k] for k in usage_keys if k in data} or None
         return CompletionResult(text=text, model=data.get("model", model), usage=usage)
+
+    def stream(
+        self,
+        *,
+        prompt: str,
+        model: str | None = None,
+        api_key: str | None = None,
+    ) -> Iterator[str]:
+        base = api_key or os.environ.get(self.default_env_var) or DEFAULT_HOST
+        base = base.rstrip("/")
+        model = model or self.default_model
+        url = f"{base}/api/generate"
+        body = json.dumps(
+            {"model": model, "prompt": prompt, "stream": True}
+        ).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=body,
+            method="POST",
+            headers={"content-type": "application/json"},
+        )
+        try:
+            resp = urllib.request.urlopen(req)
+        except urllib.error.HTTPError as e:
+            snippet = (e.read() or b"")[:500].decode("utf-8", errors="replace")
+            raise ProviderError(f"HTTP {e.code}: {snippet}") from e
+        except urllib.error.URLError as e:
+            raise ProviderError(f"network error: {e.reason}") from e
+        try:
+            for raw_line in resp:
+                line = raw_line.decode("utf-8").strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                text = event.get("response", "")
+                if text:
+                    yield text
+                if event.get("done", False):
+                    break
+        finally:
+            resp.close()
