@@ -138,8 +138,8 @@ Non-destructive updates: preserve user-authored constraints unless contradicted 
 Wrapper:
 ```text
 forerunner init                     # resolves bundle to stdout; agent applies
-forerunner init --full              ? future flag (no impl yet)
-forerunner init --agents-only       ? future flag (no impl yet)
+forerunner init --full              # prepends scan bundle before onboarding bundle
+forerunner init --agents-only       # onboarding bundle only (no scan)
 ```
 Wrapper = orchestration only; product logic stays in prompt contracts & repo docs.
 
