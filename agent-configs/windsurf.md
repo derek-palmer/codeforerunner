@@ -4,10 +4,10 @@ Use `codeforerunner` prompts to produce repo-grounded documentation.
 
 ## Prompt Stack
 
-- System: `prompts/system/base.md`
-- Shared rules: `prompts/partials/`
-- First task: `prompts/tasks/scan.md`
-- Downstream tasks: `prompts/tasks/*.md`
+- System: `src/codeforerunner/prompts/system/base.md` (or `forerunner doc scan` for the assembled bundle)
+- Shared rules: `src/codeforerunner/prompts/partials/`
+- First task: `forerunner doc scan`
+- Downstream tasks: `forerunner doc <task>`
 
 ## Required Behavior
 
@@ -19,4 +19,4 @@ Use `codeforerunner` prompts to produce repo-grounded documentation.
 
 ## Current Repo Boundary
 
-There is no implemented runtime wrapper yet. Treat CLI, MCP, hooks, and CI as roadmap surfaces unless corresponding files are added.
+`forerunner` CLI, MCP server, pre-commit hook, CI, and PyPI package are all live. Docker image and Makefile are not present.

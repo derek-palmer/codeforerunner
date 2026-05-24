@@ -108,3 +108,13 @@ Status: complete.
 
 - `examples/mcp/README.md` shows Claude Desktop and mcp-cli wiring for `forerunner mcp-server`.
 - `examples/mcp/claude-desktop.json` provides a copyable Claude Desktop config shape.
+
+## P13: Drift Hardening + Streaming + GitHub Action
+
+Status: complete.
+
+- Inverse drift rules (RI1, RI5, RI7): fire when docs claim a feature that is absent from the repo.
+- Version-pin drift rule (RV1): flags `codeforerunner==X.Y.Z` pins in docs that differ from `pyproject.toml`; skips `CHANGELOG.md`.
+- `forerunner doctor --fix`: writes a starter `forerunner.config.yaml` (R1–R5, R7, R8 enabled) when none exists.
+- `forerunner generate --stream`: streams output token-by-token for all four providers (Anthropic SSE, OpenAI SSE, Google `streamGenerateContent?alt=sse`, Ollama NDJSON).
+- `action.yml` composite GitHub Action: `uses: derek-palmer/codeforerunner@vX.Y.Z` installs and runs `forerunner check`; no-op without `forerunner.config.yaml`.

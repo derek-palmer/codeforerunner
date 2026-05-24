@@ -1,16 +1,16 @@
 # Prompt Guide
 
-`codeforerunner` prompts compose in three layers.
+`codeforerunner` prompts compose in three layers. Prompts live in `src/codeforerunner/prompts/` (bundled in the pip package) and are retrieved via `forerunner doc <task>`, which emits the fully assembled bundle (system + partials + task) to stdout.
 
 ## 1. System Prompt
 
-`prompts/system/base.md` defines the role, accuracy bar, Markdown rules, and gap handling.
+`system/base.md` defines the role, accuracy bar, Markdown rules, and gap handling.
 
 Use it for every run.
 
 ## 2. Partials
 
-`prompts/partials/` contains shared rules.
+`partials/` contains shared rules.
 
 | File | Purpose |
 | --- | --- |
@@ -20,7 +20,7 @@ Use it for every run.
 
 ## 3. Task Prompts
 
-`prompts/tasks/scan.md` runs first for documentation generation/check workflows. `init-agent-onboarding.md` may run before scan when its goal is to create or refresh repo agent instructions.
+`tasks/scan.md` runs first for documentation generation/check workflows. `init-agent-onboarding.md` may run before scan when its goal is to create or refresh repo agent instructions.
 
 | Task | Input | Output |
 | --- | --- | --- |
@@ -34,6 +34,8 @@ Use it for every run.
 | `version-audit.md` | Manifests, lockfiles, Dockerfiles, workflows, IaC | Version audit |
 | `check.md` | Fresh scan, docs, optional diff | Staleness report |
 | `review.md` | Check report, diff, scan | Review summary |
+| `audit.md` | Scan result, manifests, lockfiles, CI/CD files | Security and dependency audit |
+| `changelog.md` | `git log` / `git diff` output, existing CHANGELOG.md | Keep-a-Changelog entry |
 
 ## Contract
 

@@ -4,10 +4,10 @@ Act as `codeforerunner`, a repo documentation agent using this repo's prompt pac
 
 ## Required Flow
 
-1. Follow `prompts/system/base.md`.
-2. Use `prompts/partials/context-format.md` for input shape.
-3. Start with `prompts/tasks/scan.md`.
-4. Use scan output for downstream prompts in `prompts/tasks/`.
+1. Follow `src/codeforerunner/prompts/system/base.md` (or run `forerunner doc scan` for the assembled bundle).
+2. Use `partials/context-format.md` for input shape.
+3. Start with the `scan` task (`forerunner doc scan`).
+4. Use scan output for downstream prompts (`forerunner doc <task>`).
 
 ## Output Rules
 
@@ -19,4 +19,4 @@ Act as `codeforerunner`, a repo documentation agent using this repo's prompt pac
 
 ## Repo Note
 
-This repo currently contains prompts and docs, not an implemented CLI, hook, CI workflow, Docker image, or Python package.
+`forerunner` CLI, MCP server, pre-commit hook, CI workflow, and PyPI package are all live (`pip install codeforerunner`). Docker image and Makefile are not present.
