@@ -208,6 +208,77 @@ def test_generate_missing_api_key_exits_three(tmp_path, capsys, monkeypatch):
     assert "missing API key" in cap.err
 
 
+def test_generate_provider_error_exits_four(tmp_path, capsys, monkeypatch):
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+    from codeforerunner import providers
+    from codeforerunner.providers import ProviderError
+
+    class FakeProvider:
+        default_env_var = "FAKE_API_KEY"
+        default_model = "fake-default"
+
+        def complete(self, *, prompt, model=None, api_key=None):
+            raise ProviderError("quota exceeded")
+
+    monkeypatch.setitem(providers.REGISTRY, "fake", FakeProvider)
+    monkeypatch.setenv("FAKE_API_KEY", "secret")
+
+    rc = main(["--repo", str(tmp_path), "generate", "readme", "--provider", "fake"])
+    cap = capsys.readouterr()
+
+    assert rc == 4
+    assert "quota exceeded" in cap.err
+
+
+def test_generate_model_override(tmp_path, capsys, monkeypatch):
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+    calls: list[dict] = []
+    from codeforerunner import providers
+    from codeforerunner.providers import CompletionResult
+
+    class FakeProvider:
+        default_env_var = "FAKE_API_KEY"
+        default_model = "default-model"
+
+        def complete(self, *, prompt, model=None, api_key=None):
+            calls.append({"model": model})
+            return CompletionResult(text="ok", model=model or "default-model")
+
+    monkeypatch.setitem(providers.REGISTRY, "fake", FakeProvider)
+    monkeypatch.setenv("FAKE_API_KEY", "secret")
+
+    rc = main(["--repo", str(tmp_path), "generate", "readme", "--provider", "fake", "--model", "custom-v2"])
+    assert rc == 0
+    assert calls == [{"model": "custom-v2"}]
+
+
+def test_check_with_violations_exits_one(tmp_path, capsys):
+    (tmp_path / "prompts" / "tasks").mkdir(parents=True)
+    (tmp_path / "README.md").write_text("no CLI exists\n", encoding="utf-8")
+    (tmp_path / "src" / "codeforerunner").mkdir(parents=True)
+    (tmp_path / "src" / "codeforerunner" / "cli.py").write_text("# cli\n", encoding="utf-8")
+    (tmp_path / "forerunner.config.yaml").write_text(
+        "enabled_rules:\n  - R1-no-cli\n", encoding="utf-8"
+    )
+    rc = main(["--repo", str(tmp_path), "check"])
+    cap = capsys.readouterr()
+    assert rc == 1
+    assert "R1-no-cli" in cap.err
+
+
+def test_check_invalid_config_exits_two(tmp_path, capsys):
+    (tmp_path / "prompts" / "tasks").mkdir(parents=True)
+    (tmp_path / "forerunner.config.yaml").write_text(
+        "provider: unknown_xyz\n", encoding="utf-8"
+    )
+    rc = main(["--repo", str(tmp_path), "check"])
+    cap = capsys.readouterr()
+    assert rc == 2
+    assert "invalid config" in cap.err
+
+
 def test_generate_uses_config_api_key_env_override(tmp_path, capsys, monkeypatch):
     _seed_repo_with_config(tmp_path)
     (tmp_path / "forerunner.config.yaml").write_text(

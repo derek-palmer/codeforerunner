@@ -91,9 +91,11 @@ def test_pypi_publish_workflow_uses_version_tag_and_oidc():
     assert "pypa/gh-action-pypi-publish" in steps_text
 
 
-def test_forerunner_check_workflow_gated_by_config():
+def test_forerunner_check_workflow_always_runs():
     wf = WORKFLOWS_DIR / "forerunner-check.yml"
     text = wf.read_text()
-    assert "hashFiles('forerunner.config.yaml')" in text, (
-        "forerunner-check.yml must gate on hashFiles('forerunner.config.yaml')"
-    )
+    assert "forerunner check" in text
+    # No job-level hashFiles gate: forerunner check exits 0 when config absent.
+    # A pre-checkout hashFiles() always returns '' (empty workspace), so it
+    # would skip the job unconditionally, making every push show as failed.
+    assert "hashFiles('forerunner.config.yaml')" not in text

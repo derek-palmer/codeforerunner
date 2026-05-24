@@ -180,6 +180,97 @@ def test_real_repo_r7_r8_triggers_active_but_no_drift():
     assert vs == []
 
 
+def test_multiple_violations_in_one_doc(tmp_path):
+    _seed(
+        tmp_path,
+        {
+            "README.md": "no CLI exists\nno pre-commit hook here\n",
+            "src/codeforerunner/cli.py": "# cli\n",
+            ".pre-commit-hooks.yaml": "- id: check\n",
+        },
+    )
+    vs = run(tmp_path)
+    rule_ids = [v.rule_id for v in vs]
+    assert "R1-no-cli" in rule_ids
+    assert "R2-no-pre-commit" in rule_ids
+
+
+def test_multiple_docs_both_yield_violations(tmp_path):
+    _seed(
+        tmp_path,
+        {
+            "README.md": "no CLI exists\n",
+            "docs/guide.md": "no CLI exists\n",
+            "src/codeforerunner/cli.py": "# cli\n",
+        },
+    )
+    vs = run(tmp_path)
+    paths = {v.path.name for v in vs}
+    assert "README.md" in paths
+    assert "guide.md" in paths
+
+
+def test_enabled_rules_empty_list_skips_all(tmp_path):
+    _seed(
+        tmp_path,
+        {
+            "README.md": "no CLI exists\nno pre-commit hook\n",
+            "src/codeforerunner/cli.py": "# cli\n",
+            ".pre-commit-hooks.yaml": "- id: check\n",
+        },
+    )
+    from codeforerunner.config import CheckConfig
+    cfg = CheckConfig(enabled_rules=())
+    assert run(tmp_path, cfg) == []
+
+
+def test_ignore_paths_glob_pattern(tmp_path):
+    _seed(
+        tmp_path,
+        {
+            "README.md": "no CLI exists\n",
+            "docs/guide.md": "no CLI exists\n",
+            "docs/ref.md": "no CLI exists\n",
+            "src/codeforerunner/cli.py": "# cli\n",
+        },
+    )
+    from codeforerunner.config import CheckConfig
+    cfg = CheckConfig(ignore_paths=("docs/*.md",))
+    vs = run(tmp_path, cfg)
+    paths = {v.path.name for v in vs}
+    assert "guide.md" not in paths
+    assert "ref.md" not in paths
+    assert "README.md" in paths
+
+
+def test_unicode_error_file_skipped(tmp_path):
+    (tmp_path / "src" / "codeforerunner").mkdir(parents=True)
+    (tmp_path / "src" / "codeforerunner" / "cli.py").write_text("# cli\n", encoding="utf-8")
+    binary = tmp_path / "README.md"
+    binary.write_bytes(b"no CLI exists\xff\xfe bad bytes")
+    vs = run(tmp_path)
+    assert vs == []
+
+
+def test_no_readme_no_docs_returns_empty(tmp_path):
+    (tmp_path / "src" / "codeforerunner").mkdir(parents=True)
+    (tmp_path / "src" / "codeforerunner" / "cli.py").write_text("# cli\n", encoding="utf-8")
+    assert run(tmp_path) == []
+
+
+def test_violation_line_number_correct(tmp_path):
+    _seed(
+        tmp_path,
+        {
+            "README.md": "line one\nline two\nno CLI exists here\nline four\n",
+            "src/codeforerunner/cli.py": "# cli\n",
+        },
+    )
+    vs = run(tmp_path)
+    assert len(vs) == 1
+    assert vs[0].line == 3
+
+
 def test_workflows_lint_when_actionlint_available():
     import shutil
     import subprocess

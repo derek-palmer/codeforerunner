@@ -15,11 +15,13 @@ def test_pre_commit_manifest_has_required_keys():
         assert key in text, f"missing key: {key}"
 
 
-def test_ci_workflow_present_and_gated():
+def test_ci_workflow_present_and_runs_check():
     text = CI.read_text(encoding="utf-8")
     assert "name: forerunner check" in text
-    assert "hashFiles('forerunner.config.yaml')" in text, "CI must skip when config absent (D.hooks)"
     assert "forerunner check" in text
+    # hashFiles() gate removed: forerunner check exits 0 when config absent,
+    # so the job always runs and skipping is not needed.
+    assert "hashFiles('forerunner.config.yaml')" not in text
 
 
 def test_check_exit_zero_without_config(tmp_path):
