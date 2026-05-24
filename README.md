@@ -171,7 +171,7 @@ See `examples/mcp/` for Claude Desktop and mcp-cli wiring examples.
 
 | Provider | Env var | Default model |
 |----------|---------|---------------|
-| `anthropic` | `ANTHROPIC_API_KEY` | `claude-opus-4-5` |
+| `anthropic` | `ANTHROPIC_API_KEY` | `claude-opus-4-7` |
 | `openai` | `OPENAI_API_KEY` | `gpt-4o` |
 | `google` | `GOOGLE_API_KEY` | `gemini-2.5-pro` |
 | `ollama` | `OLLAMA_HOST` (optional) | `llama3` |
