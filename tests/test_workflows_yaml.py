@@ -76,7 +76,7 @@ def test_marketplace_workflow_triggers_on_version_tag():
 
 
 def test_pypi_publish_workflow_uses_version_tag_and_oidc():
-    wf = WORKFLOWS_DIR / "pypi-publish.yml"
+    wf = WORKFLOWS_DIR / "publish.yml"
     doc = yaml.safe_load(wf.read_text())
     trigger = _trigger(doc)
     assert isinstance(trigger, dict), "trigger must be a mapping"

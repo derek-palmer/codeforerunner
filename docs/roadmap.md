@@ -99,7 +99,7 @@ Status: complete.
 
 Status: complete.
 
-- `.github/workflows/pypi-publish.yml` builds and publishes on `v*.*.*` tags with PyPI trusted publishing/OIDC.
+- `.github/workflows/publish.yml` builds and publishes on `v*.*.*` tags with PyPI trusted publishing/OIDC.
 - README and CHANGELOG document `pipx` / `pip` install commands for use after the first PyPI release.
 
 ## P12: MCP Example

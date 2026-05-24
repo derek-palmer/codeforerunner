@@ -15,7 +15,7 @@ this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - This changelog (T37).
 - Provider abstraction and `forerunner generate <task>` command for configured model calls (T38).
 - Per-provider `api_key_env` config override plus `forerunner doctor` key checks (T39).
-- PyPI publish workflow (`.github/workflows/pypi-publish.yml`) using OIDC trusted publishing on `v*.*.*` tags (T40).
+- PyPI publish workflow (`.github/workflows/publish.yml`) using OIDC trusted publishing on `v*.*.*` tags (T40).
 - `README.md` "Install" section documenting `pipx`/`pip` install after the first PyPI release (T40).
 
 ### Notes

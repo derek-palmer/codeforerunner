@@ -104,7 +104,7 @@ T36|x|P9|add workflow-YAML parse test for `.github/workflows/*.yml` (catches typ
 T37|x|P9|seed `CHANGELOG.md` documenting v0.2.0 → release-ready surfaces|I.docs,V1
 T38|x|P10|provider abstraction (`src/codeforerunner/providers/`) + `forerunner generate <task>` subcommand calling configured provider|I.cli,C4,V2
 T39|x|P10|extend `forerunner.config.yaml` schema with per-provider `api_key_env` override; `forerunner doctor` reports missing key when provider configured|I.cli,I.installer,V12
-T40|x|P11|add `.github/workflows/pypi-publish.yml` (publish on `v*.*.*` tag via OIDC); document `pipx`/`pip` install in README + CHANGELOG|I.hooks,I.docs,V5
+T40|x|P11|add `.github/workflows/publish.yml` (publish on `v*.*.*` tag via OIDC); document `pipx`/`pip` install in README + CHANGELOG|I.hooks,I.docs,V5
 T41|x|P12|add `examples/mcp/` with Claude Desktop config snippet + README showing how to wire `forerunner mcp-server`|I.mcp,I.docs
 
 ## Init-Onboarding
