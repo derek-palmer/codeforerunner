@@ -5,7 +5,7 @@
 ## Workflow
 
 1. Apply the system prompt (`forerunner doc scan` emits it as part of the scan bundle, or read `src/codeforerunner/prompts/system/base.md`).
-2. Build context using the `context-format` partial.
+2. Build context using `src/codeforerunner/prompts/partials/context-format.md`.
 3. Run `forerunner doc scan` (or the `scan` task directly) before any generation/check task.
 4. Use the scan result as input to the selected task prompt.
 

@@ -55,7 +55,7 @@ Per-run, in this order:
 2. **Run the matching task prompt.** See `docs/prompt-guide.md` section 3 for the authoritative task → input → output table. Pick the task that matches the user's request and pass the scan result plus any task-specific inputs.
 3. **Honor task output contracts.** When a task prompt specifies `<!-- output: path/to/file.md -->`, write the artifact to that path. When it does not, return Markdown for the user to place. Append a `## Gaps` section whenever evidence was insufficient — never silently invent content.
 
-To call a provider directly: `forerunner generate <task>` (add `--stream` for token-by-token output). To check drift: `forerunner check`. To get a health report: `forerunner doctor`.
+Call a provider directly with `forerunner generate <task>` (add `--stream` for token-by-token output). Check drift using `forerunner check`. Get a health report via `forerunner doctor`.
 
 ## Safety And Scope Rules
 

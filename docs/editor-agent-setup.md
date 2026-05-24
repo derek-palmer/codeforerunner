@@ -16,7 +16,7 @@ Use `agent-configs/` as copyable starting points for editor-agent instructions.
 
 1. Copy the matching config into your editor's instruction surface.
 2. Point it at the system prompt (`forerunner doc scan` emits the full assembled bundle, or read `src/codeforerunner/prompts/system/base.md` directly from source).
-3. Include the `context-format` and `output-rules` partials in the agent context.
+3. Include `partials/context-format.md` and `partials/output-rules.md` in the agent context.
 4. Run the `scan` task before any downstream task.
 
 ## Usage Notes
