@@ -1,0 +1,35 @@
+name: codex-marketplace-publish
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  validate-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install package
+        run: python -m pip install -e .
+      - name: Validate manifest
+        run: python scripts/validate_codex_marketplace.py
+      - name: Verify tag matches manifest version
+        run: |
+          set -e
+          TAG="${GITHUB_REF#refs/tags/v}"
+          MANIFEST_VERSION="$(python -c 'import json; d=json.load(open("plugins/codex/marketplace.json")); print(d["marketplace"]["version"])')"
+          if [ "$TAG" != "$MANIFEST_VERSION" ]; then
+            echo "tag ($TAG) does not match manifest version ($MANIFEST_VERSION)" >&2
+            exit 1
+          fi
+      - name: Attach manifest to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: plugins/codex/marketplace.json
+          fail_on_unmatched_files: true

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "codeforerunner": {
+      "command": "forerunner",
+      "args": ["--repo", "/path/to/codeforerunner", "mcp-server"]
+    }
+  }
+}
