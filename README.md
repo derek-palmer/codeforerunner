@@ -148,7 +148,7 @@ forerunner check               # run any time or as pre-commit hook
 ## GitHub Action
 
 ```yaml
-- uses: derek-palmer/codeforerunner@v0.3.2
+- uses: derek-palmer/codeforerunner@v0.4.1
 ```
 
 No-op when `forerunner.config.yaml` is absent.
