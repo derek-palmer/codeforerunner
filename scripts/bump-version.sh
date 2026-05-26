@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+if [ -x "${REPO_ROOT}/.venv/bin/python" ]; then
+  PYTHON_BIN="${REPO_ROOT}/.venv/bin/python"
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN="$(command -v python3)"
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_BIN="$(command -v python)"
+else
+  echo "error: no python interpreter found (.venv/bin/python, python3, or python)" >&2
+  exit 1
+fi
+
 if [ "$#" -ne 1 ]; then
   echo "usage: scripts/bump-version.sh <semver>" >&2
   exit 1
@@ -8,15 +22,16 @@ fi
 
 VERSION="$1"
 export VERSION
+export REPO_ROOT
 
-python <<'PY'
+"$PYTHON_BIN" <<'PY'
 import json
 import os
 import re
 import sys
 from pathlib import Path
 
-root = Path.cwd()
+root = Path(os.environ["REPO_ROOT"])
 version = os.environ["VERSION"]
 
 if not re.fullmatch(r"\d+\.\d+\.\d+", version):
@@ -76,6 +91,10 @@ if len(set(current_versions.values())) != 1:
     for name, value in current_versions.items():
         print(f"  {name}: {value}", file=sys.stderr)
     raise SystemExit(1)
+
+if current_pyproject == version:
+    print(f"version already at {version}; no changes made")
+    raise SystemExit(0)
 
 new_pyproject_text = pyproject_text.replace(
     pyproject_line,

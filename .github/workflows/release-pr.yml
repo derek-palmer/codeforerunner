@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install package
-        run: python -m pip install -e .
+        run: python -m pip install -e . pytest build
       - name: Check version consistency
         run: python scripts/check_versions.py
       - name: Validate marketplace manifest
@@ -27,9 +27,7 @@ jobs:
       - name: Run tests
         run: pytest -q
       - name: Build sdist + wheel
-        run: |
-          python -m pip install --upgrade build
-          python -m build
+        run: python -m build
       - name: Upload release-pr artifacts
         uses: actions/upload-artifact@v7.0.1
         with:
