@@ -91,6 +91,30 @@ def test_pypi_publish_workflow_uses_version_tag_and_oidc():
     assert "pypa/gh-action-pypi-publish" in steps_text
 
 
+def test_docker_publish_workflow_uses_version_tag_and_ghcr():
+    wf = WORKFLOWS_DIR / "docker-publish.yml"
+    doc = yaml.safe_load(wf.read_text())
+    trigger = _trigger(doc)
+    assert isinstance(trigger, dict), "trigger must be a mapping"
+    push = trigger.get("push")
+    assert isinstance(push, dict), "push trigger must be a mapping"
+    assert "v*.*.*" in push.get("tags", [])
+
+    publish = doc["jobs"].get("publish")
+    assert isinstance(publish, dict), "missing publish job"
+    assert publish.get("permissions", {}).get("packages") == "write"
+    steps = publish.get("steps", [])
+    login_steps = [
+        step for step in steps
+        if isinstance(step, dict) and step.get("uses") == "docker/login-action@v3"
+    ]
+    assert any(step.get("with", {}).get("registry") == "dhi.io" for step in login_steps)
+    steps_text = "\n".join(str(step) for step in publish.get("steps", []))
+    assert "docker/login-action" in steps_text
+    assert "docker/build-push-action" in steps_text
+    assert "scripts/check_versions.py" in steps_text
+
+
 def test_release_pr_workflow_requires_release_signal_and_uploads_artifacts():
     wf = WORKFLOWS_DIR / "release-pr.yml"
     doc = yaml.safe_load(wf.read_text())

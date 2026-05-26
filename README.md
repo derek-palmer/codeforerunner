@@ -101,6 +101,34 @@ pip install codeforerunner
 | `forerunner mcp-server` | Serve prompt bundles as MCP tools over stdio (JSON-RPC 2.0). |
 | `forerunner install <agent>` | Install canonical skill into agent-specific directory. Add `--all` for all per-task skills. |
 
+### Docker sample
+
+If you want to try the CLI without installing Python locally, build and run it through Docker:
+
+```bash
+make docker-login-dhi
+make forerunner check
+make forerunner generate readme FORERUNNER_FLAGS="--stream"
+```
+
+The Docker image uses Docker Hardened Images for its base runtime (`dhi.io/python:3.13`), so you need to sign in to `dhi.io` first. The target builds a local image, mounts this repo into `/workspace`, and forwards common provider env vars. If you want to talk to Ollama from Docker Desktop, set `OLLAMA_HOST=http://host.docker.internal:11434`.
+
+The `Makefile` target is backed by [compose.yml](/Users/derek/code/codeforerunner/compose.yml:1). You can also run Compose directly:
+
+```bash
+docker compose run --rm forerunner check
+docker compose run --rm forerunner generate readme --stream
+```
+
+Published images can be pulled from GHCR on tagged releases:
+
+```bash
+docker pull ghcr.io/derek-palmer/codeforerunner:latest
+docker pull ghcr.io/derek-palmer/codeforerunner:0.4.3
+```
+
+To publish those images from GitHub Actions, configure repository secrets `DHI_USERNAME` and `DHI_PASSWORD` so the workflow can pull the DHI base image during the build.
+
 ## Prompt pack
 
 Prompts are bundled inside the package at `src/codeforerunner/prompts/`.
