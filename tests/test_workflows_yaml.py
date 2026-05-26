@@ -91,6 +91,26 @@ def test_pypi_publish_workflow_uses_version_tag_and_oidc():
     assert "pypa/gh-action-pypi-publish" in steps_text
 
 
+def test_release_pr_workflow_requires_release_signal_and_uploads_artifacts():
+    wf = WORKFLOWS_DIR / "release-pr.yml"
+    doc = yaml.safe_load(wf.read_text())
+    trigger = _trigger(doc)
+    assert isinstance(trigger, dict), "trigger must be a mapping"
+    pull_request = trigger.get("pull_request")
+    assert isinstance(pull_request, dict), "pull_request trigger must be a mapping"
+
+    validate_build = doc["jobs"].get("validate-build")
+    assert isinstance(validate_build, dict), "missing validate-build job"
+    validate_if = str(validate_build.get("if", ""))
+    assert "release/" in validate_if
+    assert "release-prerelease" in validate_if
+
+    steps_text = "\n".join(str(step) for step in validate_build.get("steps", []))
+    assert "actions/upload-artifact" in steps_text
+    assert "scripts/check_versions.py" in steps_text
+    assert "scripts/validate_codex_marketplace.py" in steps_text
+
+
 def test_forerunner_check_workflow_always_runs():
     wf = WORKFLOWS_DIR / "forerunner-check.yml"
     text = wf.read_text()

@@ -1,0 +1,76 @@
+name: release-pr
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+
+jobs:
+  validate-build:
+    if: startsWith(github.head_ref, 'release/') || contains(github.event.pull_request.labels.*.name, 'release-prerelease')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.11"
+      - name: Install package
+        run: python -m pip install -e .
+      - name: Check version consistency
+        run: python scripts/check_versions.py
+      - name: Validate marketplace manifest
+        run: python scripts/validate_codex_marketplace.py
+      - name: Run tests
+        run: pytest -q
+      - name: Build sdist + wheel
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+      - name: Upload release-pr artifacts
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: release-pr-dist
+          path: dist/
+
+  prerelease:
+    if: contains(github.event.pull_request.labels.*.name, 'release-prerelease')
+    needs: validate-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.11"
+      - name: Download release-pr artifacts
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: release-pr-dist
+          path: dist/
+      - name: Resolve prerelease metadata
+        id: meta
+        run: |
+          VERSION="$(python -c 'import tomllib,sys; sys.stdout.write(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=prerelease-pr-${{ github.event.pull_request.number }}-v$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Publish GitHub prerelease
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRERELEASE_TAG: ${{ steps.meta.outputs.tag }}
+          PRERELEASE_VERSION: ${{ steps.meta.outputs.version }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          gh release delete "$PRERELEASE_TAG" --yes --cleanup-tag >/dev/null 2>&1 || true
+          gh release create "$PRERELEASE_TAG" \
+            dist/* \
+            plugins/codex/marketplace.json \
+            --prerelease \
+            --target "$PR_SHA" \
+            --title "Prerelease $PRERELEASE_VERSION (PR #$PR_NUMBER)" \
+            --notes "Prerelease build for PR #$PR_NUMBER at $PR_SHA."

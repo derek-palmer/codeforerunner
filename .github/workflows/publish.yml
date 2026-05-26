@@ -24,6 +24,8 @@ jobs:
             echo "tag ($TAG) does not match pyproject.toml version ($PKG_VERSION)" >&2
             exit 1
           fi
+      - name: Validate marketplace manifest
+        run: python scripts/validate_codex_marketplace.py
       - name: Build sdist + wheel
         run: |
           python -m pip install --upgrade build
