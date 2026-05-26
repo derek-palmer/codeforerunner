@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import json
 from unittest.mock import MagicMock, patch
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
@@ -106,9 +107,10 @@ def test_google_builds_request_correctly():
     }
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
         result = GoogleProvider().generate(prompt="q", api_key="g-key")
-    assert "generativelanguage.googleapis.com" in captured["url"]
-    assert "gemini-2.5-pro:generateContent" in captured["url"]
-    assert "key=g-key" in captured["url"]
+    parsed = urlparse(captured["url"])
+    assert parsed.hostname == "generativelanguage.googleapis.com"
+    assert parsed.path.endswith("/models/gemini-2.5-pro:generateContent")
+    assert parse_qs(parsed.query).get("key") == ["g-key"]
     assert captured["body"] == {"contents": [{"parts": [{"text": "q"}]}]}
     assert result.text == "gemini reply"
 
