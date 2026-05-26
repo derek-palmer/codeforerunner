@@ -242,7 +242,13 @@ function detectMatch(spec) {
 function quoteWinArg(a) {
   if (!IS_WIN) return a;
   if (a === '' || /[\s"]/.test(a)) {
-    return '"' + String(a).replace(/\\(?=\\*"|$)/g, '\\\\').replace(/"/g, '\\"') + '"';
+    // Per MS CommandLineToArgvW: backslashes are literal unless followed by `"`.
+    // Runs of N backslashes before `"` become 2N backslashes plus `\"`. Trailing
+    // runs (before the closing `"` we add) must also be doubled.
+    const escaped = String(a).replace(/(\\*)("|$)/g, (_m, slashes, quote) =>
+      slashes + slashes + (quote === '"' ? '\\"' : '')
+    );
+    return '"' + escaped + '"';
   }
   return a;
 }
