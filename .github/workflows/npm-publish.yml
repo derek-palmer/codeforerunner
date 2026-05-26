@@ -30,3 +30,23 @@ jobs:
           fi
       - name: Publish to npm
         run: npm publish --provenance --access public
+
+  publish-gpr:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/setup-node@v6.4.0
+        with:
+          node-version: "22"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@derek-palmer"
+      - name: Scope package name for GitHub Packages
+        run: npm pkg set name="@derek-palmer/codeforerunner"
+      - name: Publish to GitHub Packages
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
