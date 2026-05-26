@@ -21,6 +21,8 @@ class Violation:
 
 @dataclass(frozen=True)
 class _Rule:
+    """Drift detection rule: pattern to match, trigger files, and violation message."""
+
     id: str
     pattern: re.Pattern
     triggers: tuple[str, ...]
@@ -124,6 +126,7 @@ _CHANGELOG_FILENAME = "CHANGELOG.md"
 
 
 def _trigger_exists(repo: Path, patterns: tuple[str, ...]) -> bool:
+    """Return True if any pattern matches an existing file in repo."""
     for pat in patterns:
         if "*" in pat:
             parent = repo / Path(pat).parent
@@ -137,6 +140,7 @@ def _trigger_exists(repo: Path, patterns: tuple[str, ...]) -> bool:
 
 
 def _scanned_docs(repo: Path) -> list[Path]:
+    """Collect README.md and all *.md files under docs/ from repo."""
     docs: list[Path] = []
     readme = repo / "README.md"
     if readme.is_file():
@@ -148,6 +152,7 @@ def _scanned_docs(repo: Path) -> list[Path]:
 
 
 def _path_ignored(repo: Path, doc: Path, ignore_patterns: tuple[str, ...]) -> bool:
+    """Return True if doc's repo-relative path matches any ignore pattern."""
     if not ignore_patterns:
         return False
     try:
@@ -158,6 +163,7 @@ def _path_ignored(repo: Path, doc: Path, ignore_patterns: tuple[str, ...]) -> bo
 
 
 def _current_version(repo: Path) -> str | None:
+    """Extract the package version from pyproject.toml, or None if absent/unparseable."""
     pyproject = repo / "pyproject.toml"
     if not pyproject.is_file():
         return None
@@ -175,6 +181,7 @@ def _check_version_drift(
     ignore_patterns: tuple[str, ...],
     enabled: set[str] | None,
 ) -> list[Violation]:
+    """Scan docs for pinned version strings that don't match pyproject.toml."""
     if enabled is not None and "RV1-version-drift" not in enabled:
         return []
     current = _current_version(repo)
