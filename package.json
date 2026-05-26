@@ -1,6 +1,6 @@
 {
   "name": "codeforerunner",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Model-agnostic repository documentation tooling — installs /forerunner-* slash commands into 30+ agent CLIs",
   "main": "./bin/install.js",
   "bin": {
