@@ -5,6 +5,7 @@
 tasks:
   check:
     enabled_rules:
+      - RV1-version-drift
       - R1-no-cli
       - R2-no-pre-commit
       - R3-no-ci

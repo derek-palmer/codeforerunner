@@ -41,8 +41,9 @@ if not re.fullmatch(r"\d+\.\d+\.\d+", version):
 pyproject_path = root / "pyproject.toml"
 package_path = root / "package.json"
 marketplace_path = root / "plugins" / "codex" / "marketplace.json"
+readme_path = root / "README.md"
 
-for path in (pyproject_path, package_path, marketplace_path):
+for path in (pyproject_path, package_path, marketplace_path, readme_path):
     if not path.is_file():
         print(f"error: missing required file: {path}", file=sys.stderr)
         raise SystemExit(1)
@@ -70,6 +71,7 @@ if current_pyproject is None or pyproject_line is None:
 
 package_data = json.loads(package_path.read_text())
 marketplace_data = json.loads(marketplace_path.read_text())
+readme_text = readme_path.read_text()
 
 try:
     current_package = package_data["version"]
@@ -109,9 +111,22 @@ package_data["version"] = version
 marketplace_data["marketplace"]["version"] = version
 marketplace_data["plugins"][0]["version"] = version
 
+new_readme_text = readme_text
+new_readme_text = re.sub(
+    rf"(https://badge\.socket\.dev/npm/package/codeforerunner/){re.escape(current_pyproject)}",
+    rf"\g<1>{version}",
+    new_readme_text,
+)
+new_readme_text = re.sub(
+    rf"(@v){re.escape(current_pyproject)}(\b)",
+    rf"\g<1>{version}\g<2>",
+    new_readme_text,
+)
+
 pyproject_path.write_text(new_pyproject_text)
 package_path.write_text(json.dumps(package_data, indent=2) + "\n")
 marketplace_path.write_text(json.dumps(marketplace_data, indent=2) + "\n")
+readme_path.write_text(new_readme_text)
 
 print(f"bumped version {current_pyproject} -> {version}")
 PY
