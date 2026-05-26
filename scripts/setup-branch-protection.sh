@@ -18,6 +18,8 @@ echo "Creating ruleset '${RULESET_NAME}'..."
 
 gh api \
   --method POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
   "repos/${REPO}/rulesets" \
   --input - <<'JSON'
 {
@@ -44,7 +46,8 @@ gh api \
         "required_approving_review_count": 1,
         "dismiss_stale_reviews_on_push": true,
         "require_code_owner_review": false,
-        "require_last_push_approval": false
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": true
       }
     },
     {
