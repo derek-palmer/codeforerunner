@@ -2,14 +2,16 @@
 
 Runs a full documentation refresh cycle: scan, check staleness, then generate or update every stale or missing doc in one pass.
 
+This prompt is the batch form (all bundles concatenated). When running via the `/forerunner-refresh` skill, the agent calls `forerunner doc <task>` for each step individually so it can process each result before moving to the next.
+
 ## Steps (execute in order)
 
 1. **Scan** — Execute the scan task bundle. Capture the YAML output. All downstream tasks depend on it.
 2. **Check** — Execute the check task bundle using the scan result. Identify every doc with `STALE` or `MISSING` status.
 3. **Generate / update** — For each stale or missing doc, run the corresponding task bundle in this order:
-   `readme` → `api-docs` → `stack-docs` → `diagrams` → `flows` → `version-audit`
+   `readme` → `api-docs` → `stack-docs` → `diagrams` → `flows` → `version-audit` → `audit`
    Skip any task whose check status is `CURRENT`.
-   Note: `audit`, `changelog`, and `review` are on-demand tasks and are intentionally excluded from the automated refresh cycle.
+   Note: `changelog` and `review` are on-demand tasks excluded from automated refresh.
 
 ## Rules
 

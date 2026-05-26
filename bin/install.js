@@ -338,7 +338,7 @@ async function fetchSkill(slug, repoRoot) {
   }
   return new Promise((resolve) => {
     const get = (url) => {
-      https.get(url, (res) => {
+      const req = https.get(url, (res) => {
         if (res.statusCode === 301 || res.statusCode === 302) {
           get(res.headers.location);
           res.resume();
@@ -348,13 +348,18 @@ async function fetchSkill(slug, repoRoot) {
         let data = '';
         res.on('data', d => { data += d; });
         res.on('end', () => resolve(data));
-      }).on('error', () => resolve(null));
+      });
+      req.on('error', () => resolve(null));
+      req.setTimeout(10000, () => { req.destroy(new Error('timeout')); });
     };
     get(`${RAW_BASE}/skills/${slug}/SKILL.md`);
   });
 }
 
 async function writeSkillsLocal(opts, results, c) {
+  if (opts.only.length) {
+    die('error: --only cannot be used with --local (local install writes all skills)');
+  }
   const repoRoot = detectRepoRoot();
   const cwd = process.cwd();
 
@@ -383,6 +388,8 @@ async function writeSkillsLocal(opts, results, c) {
     for (const dest of dests) {
       if (opts.dryRun) {
         process.stdout.write(`  ${c.dim('would write:')} ${dest}\n`);
+      } else if (!opts.force && fs.existsSync(dest)) {
+        process.stdout.write(`  ${c.dim('skip (exists, use --force to overwrite):')} ${dest}\n`);
       } else {
         fs.mkdirSync(path.dirname(dest), { recursive: true });
         fs.writeFileSync(dest, content, 'utf8');

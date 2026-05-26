@@ -117,13 +117,20 @@ def parse(raw: dict[str, Any] | None) -> ForerunnerConfig:
         return ForerunnerConfig()
     _require_type(raw, dict, "<root>")
 
-    tasks = raw.get("tasks") or {}
+    tasks_raw = raw.get("tasks")
+    tasks = tasks_raw if tasks_raw is not None else {}
     _require_type(tasks, dict, "tasks")
 
+    eol_months = _to_int(
+        raw.get("approaching_eol_threshold_months", 6), "approaching_eol_threshold_months"
+    )
+    if eol_months <= 0:
+        raise ConfigError(
+            f"approaching_eol_threshold_months: must be a positive integer, got {eol_months}"
+        )
+
     return ForerunnerConfig(
-        approaching_eol_threshold_months=_to_int(
-            raw.get("approaching_eol_threshold_months", 6), "approaching_eol_threshold_months"
-        ),
+        approaching_eol_threshold_months=eol_months,
         ignore_patterns=_coerce_str_tuple(raw.get("ignore_patterns", []), "ignore_patterns"),
         check=_parse_check(tasks.get("check")),
         version_audit=_parse_version_audit(tasks.get("version_audit")),

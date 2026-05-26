@@ -13,13 +13,21 @@ User asks to: update all docs, refresh documentation, sync docs with code, run a
 
 ## Execute
 
-Run `forerunner refresh` (or `forerunner doc refresh`) to output all task bundles in sequence. Execute each bundle in order:
+Run each step in order, processing the result before moving to the next:
 
-1. **scan** — collect repo evidence
-2. **check** — identify stale or missing docs
-3. For each stale/missing: **readme** → **api-docs** → **stack-docs** → **diagrams** → **flows** → **version-audit**
+1. **Scan** — `forerunner doc scan` → capture YAML output as the scan result
+2. **Check** — `forerunner doc check` → identify every doc with `STALE` or `MISSING` status
+3. **For each stale/missing** — run the corresponding task in this order, passing the scan result:
+   - `forerunner doc readme`
+   - `forerunner doc api-docs`
+   - `forerunner doc stack-docs`
+   - `forerunner doc diagrams`
+   - `forerunner doc flows`
+   - `forerunner doc version-audit`
+   - `forerunner doc audit`
+   - Skip any task whose check status is `CURRENT`
 
-Skip any task where check shows `CURRENT` status.
+`changelog` and `review` are on-demand tasks — exclude from automated refresh.
 
 ## Output
 
