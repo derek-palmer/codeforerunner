@@ -167,7 +167,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
                 )
             return 0
         else:
-            print(f"error: missing API key; set ${env_var}", file=sys.stderr)
+            print("error: missing API key; set the configured API key environment variable", file=sys.stderr)
             return 3
 
     if getattr(args, "stream", False):
