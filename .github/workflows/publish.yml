@@ -6,38 +6,15 @@ on:
       - "v*.*.*"
 
 jobs:
-  sync-marketplace:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6.0.2
-        with:
-          ref: main
-          fetch-depth: 0
-      - name: Sync marketplace.json version
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          jq --arg v "$VERSION" '.marketplace.version = $v | .plugins[0].version = $v' \
-            plugins/codex/marketplace.json > tmp.json && mv tmp.json plugins/codex/marketplace.json
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add plugins/codex/marketplace.json
-          git diff --cached --quiet || git commit -m "chore: sync marketplace.json to $VERSION [skip ci]"
-          git push origin HEAD:main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build:
-    needs: sync-marketplace
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.2
-        with:
-          ref: main
       - uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.11"
+      - name: Verify all version files match
+        run: python scripts/check_versions.py
       - name: Verify tag matches package version
         run: |
           set -e
