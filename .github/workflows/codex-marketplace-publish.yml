@@ -11,8 +11,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.11"
       - name: Install package
@@ -29,7 +29,7 @@ jobs:
             exit 1
           fi
       - name: Attach manifest to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3.0.0
         with:
           files: plugins/codex/marketplace.json
           fail_on_unmatched_files: true
