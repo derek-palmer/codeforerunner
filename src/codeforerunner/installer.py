@@ -48,6 +48,7 @@ class Target:
 
 
 def _home() -> Path:
+    """Return the current user's home directory as a Path."""
     return Path(os.path.expanduser("~"))
 
 
@@ -164,10 +165,12 @@ def extract_frontmatter(text: str) -> str:
 
 
 def _hash(s: str) -> str:
+    """Return SHA-256 hex digest of a UTF-8 encoded string."""
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
 
 def _hash_bytes(b: bytes) -> str:
+    """Return SHA-256 hex digest of raw bytes."""
     return hashlib.sha256(b).hexdigest()
 
 
@@ -383,6 +386,7 @@ def add_subparser(sub: argparse._SubParsersAction) -> None:
 
 
 def _cli_entry(args: argparse.Namespace) -> int:
+    """Dispatch `forerunner install` subcommand from parsed CLI args."""
     root = Path(args.repo).resolve() if args.repo else Path.cwd()
 
     if getattr(args, "all", False):

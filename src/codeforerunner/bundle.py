@@ -5,6 +5,7 @@ from pathlib import Path
 
 
 def _package_prompts() -> Path:
+    """Return the path to the bundled prompts directory inside the package."""
     return Path(__file__).parent / "prompts"
 
 

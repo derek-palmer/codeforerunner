@@ -56,6 +56,7 @@ def cmd_doc(args: argparse.Namespace) -> int:
 
 
 def _doc_for(args: argparse.Namespace, task: str) -> int:
+    """Emit bundle for *task* by delegating to cmd_doc with a synthetic Namespace."""
     ns = argparse.Namespace(repo=getattr(args, "repo", None), task=task)
     return cmd_doc(ns)
 

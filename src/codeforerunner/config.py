@@ -47,6 +47,7 @@ class ForerunnerConfig:
 
 
 def _require_type(value: Any, expected: type, field_name: str) -> Any:
+    """Raise ConfigError if value is not an instance of expected."""
     if not isinstance(value, expected):
         raise ConfigError(
             f"{field_name}: expected {expected.__name__}, got {type(value).__name__}"
@@ -55,6 +56,7 @@ def _require_type(value: Any, expected: type, field_name: str) -> Any:
 
 
 def _coerce_str_tuple(value: Any, field_name: str) -> tuple[str, ...]:
+    """Coerce a list of strings to a tuple, raising ConfigError on bad input."""
     if value is None:
         return ()
     if not isinstance(value, list):
@@ -68,6 +70,7 @@ def _coerce_str_tuple(value: Any, field_name: str) -> tuple[str, ...]:
 
 
 def _parse_check(raw: Any) -> CheckConfig:
+    """Parse the tasks.check mapping into a CheckConfig."""
     if raw is None:
         return CheckConfig()
     _require_type(raw, dict, "tasks.check")
@@ -94,6 +97,7 @@ def _parse_check(raw: Any) -> CheckConfig:
 
 
 def _to_int(value: Any, field_name: str) -> int:
+    """Convert value to int, raising ConfigError on failure."""
     try:
         return int(value)
     except (TypeError, ValueError) as e:
@@ -101,6 +105,7 @@ def _to_int(value: Any, field_name: str) -> int:
 
 
 def _parse_version_audit(raw: Any) -> VersionAuditConfig:
+    """Parse the tasks.version_audit mapping into a VersionAuditConfig."""
     if raw is None:
         return VersionAuditConfig()
     _require_type(raw, dict, "tasks.version_audit")

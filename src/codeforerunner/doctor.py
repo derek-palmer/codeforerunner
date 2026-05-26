@@ -34,6 +34,7 @@ class Finding:
 
 
 def _installed_skill_destinations() -> list[Path]:
+    """Return default install paths for the codeforerunner skill across supported agents."""
     home = Path(os.path.expanduser("~"))
     return [
         home / ".codex/skills/codeforerunner/SKILL.md",
@@ -42,10 +43,12 @@ def _installed_skill_destinations() -> list[Path]:
 
 
 def _installed_marketplace_destination() -> Path:
+    """Return default install path for the Codex marketplace manifest."""
     return Path(os.path.expanduser("~")) / ".codex/marketplaces/codeforerunner.json"
 
 
 def _load_script_module(repo: Path, relpath: str, module_name: str):
+    """Load a Python script from the repo as a module with a unique name to avoid cache collisions."""
     # L3: unique name prevents stale cached module on repeated calls
     unique_name = f"{module_name}_{uuid.uuid4().hex}"
     script_path = repo / relpath
@@ -59,6 +62,7 @@ def _load_script_module(repo: Path, relpath: str, module_name: str):
 
 
 def _check_skill_body_parity(repo: Path, run_scripts: bool = False) -> list[Finding]:
+    """Verify that all distributed skill copies match the canonical body."""
     if not run_scripts:
         return [
             Finding(
@@ -111,6 +115,7 @@ def _check_skill_body_parity(repo: Path, run_scripts: bool = False) -> list[Find
 
 
 def _check_codex_marketplace(repo: Path, run_scripts: bool = False) -> list[Finding]:
+    """Validate the Codex marketplace manifest using the repo validation script."""
     if not run_scripts:
         return [
             Finding(
@@ -138,6 +143,7 @@ def _check_codex_marketplace(repo: Path, run_scripts: bool = False) -> list[Find
 
 
 def _check_installed_destinations(repo: Path) -> list[Finding]:
+    """Check whether installed skill and marketplace files are present and managed."""
     findings: list[Finding] = []
 
     for dest in _installed_skill_destinations():
@@ -222,6 +228,7 @@ def _check_installed_destinations(repo: Path) -> list[Finding]:
 
 
 def _check_config_loadable(repo: Path) -> list[Finding]:
+    """Try parsing forerunner.config.yaml; report error finding on ConfigError."""
     cfg_path = repo / CONFIG_FILENAME
     if not cfg_path.is_file():
         return [

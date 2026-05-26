@@ -19,6 +19,7 @@ SERVER_VERSION = _pkg_version
 
 
 def _list_tasks(prompts_root: Path) -> list[Path]:
+    """Return sorted list of task *.md paths under prompts_root/tasks/."""
     tasks_dir = prompts_root / "tasks"
     if not tasks_dir.is_dir():
         return []
@@ -37,6 +38,7 @@ def _description_for(task_path: Path) -> str:
 
 
 def _tools(prompts_root: Path) -> list[dict[str, Any]]:
+    """Build MCP tools/list payload from all task files in prompts_root."""
     return [
         {
             "name": p.stem,
@@ -48,10 +50,12 @@ def _tools(prompts_root: Path) -> list[dict[str, Any]]:
 
 
 def _ok(req_id: Any, result: Any) -> dict[str, Any]:
+    """Return a JSON-RPC 2.0 success response."""
     return {"jsonrpc": "2.0", "id": req_id, "result": result}
 
 
 def _err(req_id: Any, code: int, message: str) -> dict[str, Any]:
+    """Return a JSON-RPC 2.0 error response."""
     return {"jsonrpc": "2.0", "id": req_id, "error": {"code": code, "message": message}}
 
 
@@ -59,6 +63,7 @@ SCAN_EXEMPT_TOOLS = frozenset({"init-agent-onboarding", "scan"})
 
 
 def _handle(prompts_root: Path, msg: dict[str, Any], state: dict[str, Any]) -> dict[str, Any] | None:
+    """Dispatch a single JSON-RPC message; return response dict or None for notifications."""
     method = msg.get("method")
     req_id = msg.get("id")
     params = msg.get("params") or {}
