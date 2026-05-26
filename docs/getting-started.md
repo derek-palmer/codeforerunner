@@ -1,6 +1,6 @@
 # Getting Started
 
-`codeforerunner` ships a prompt pack as the core product, wrapped by a `forerunner` CLI, MCP server, pre-commit/CI hook wiring, and a PyPI package. Use the CLI to assemble bundles, call providers directly, or serve prompts over MCP — or use the prompts manually with your editor/agent.
+`codeforerunner` ships a prompt pack as the core product, wrapped by a `forerunner` CLI, MCP server, pre-commit/CI hook wiring, and a PyPI package. Use the CLI to assemble bundles and serve prompts over MCP — or use the prompts manually with your editor/agent.
 
 ## Install
 
@@ -53,9 +53,8 @@ forerunner scan                     # shortcut for `forerunner doc scan`
 forerunner init                     # resolves init-agent-onboarding bundle
 forerunner init --agents-only       # explicit: AGENTS.md onboarding bundle only
 forerunner init --full              # prepends scan bundle before onboarding (scan-first per SPEC V2)
-forerunner generate readme          # resolve bundle and call configured provider
-forerunner generate readme --stream # stream output token-by-token
-forerunner doctor                   # health report: skill parity, config, provider key
+forerunner refresh                  # output scan + check + all doc-task bundles in sequence
+forerunner doctor                   # health report: skill parity, config
 forerunner doctor --fix             # write starter forerunner.config.yaml if absent
 forerunner install codex --check    # dry-run the skill installer for Codex target
 forerunner install claude           # idempotent write into ~/.claude/plugins/...
@@ -73,12 +72,12 @@ forerunner doctor --fix
 
 Or copy `forerunner.config.yaml.example` to `forerunner.config.yaml` at the repo root. When the file is absent, `forerunner check` exits 0 silently and the pre-commit/CI hooks do nothing. The schema has these groups:
 
-- Provider/model fields: `provider`, `model`, `api_key_env`, `output_dir`, `context_max_files`, `context_max_lines_per_file`, `approaching_eol_threshold_months`.
+- `approaching_eol_threshold_months`: integer (default 6).
 - `ignore_patterns`: list of glob patterns.
 - `tasks.version_audit`: `enabled`, `stale_after_days`, `fetch_live_eol_data`.
 - `tasks.check`: `block_on` / `warn_on` severity lists, `enabled_rules` (allowlist of rule IDs; omit for all), and `ignore_paths` (fnmatch globs of docs to skip).
 
-Invalid YAML, unknown providers, unknown `api_key_env` providers, or unknown severity levels surface as a `ConfigError` and `forerunner check` exits non-zero.
+Invalid YAML or unknown severity levels surface as a `ConfigError` and `forerunner check` exits non-zero.
 
 ## What Not To Do
 

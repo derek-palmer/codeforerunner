@@ -6,9 +6,7 @@
 
 Model-agnostic repository documentation tooling. Ships a prompt pack for codebase analysis and doc generation, a thin Python CLI, an MCP server, drift-detection rules that keep docs honest — and native slash-command skills for Claude Code, Codex, Gemini CLI, and other agent CLIs.
 
-## Two modes
-
-### Mode A — Agent skill (recommended, no API key required)
+## Install
 
 Install forerunner's prompt pack as skills into your agent CLI. Each documentation task becomes a slash command (`/forerunner-readme`, `/forerunner-check`, etc.) available inside Claude Code, Codex, Gemini CLI, and other agents. Authentication is handled by your existing agent subscription — no separate API key needed.
 
@@ -33,25 +31,8 @@ Then in your agent:
 /forerunner-scan        ← scan the repo first
 /forerunner-readme      ← generate README
 /forerunner-check       ← detect doc drift
+/forerunner-refresh     ← scan + update all stale docs
 ```
-
-### Mode B — Direct API (needs API key or Ollama)
-
-Install the Python CLI and call your provider directly. Works without any agent CLI installed.
-
-```bash
-pipx install codeforerunner   # recommended
-pip install codeforerunner    # alternative
-```
-
-Configure a provider (or start Ollama for keyless local generation):
-
-```bash
-export ANTHROPIC_API_KEY=sk-...
-forerunner generate readme --stream
-```
-
-If no API key and no `--provider` flag, forerunner auto-detects Ollama at `localhost:11434` and falls back to local mode.
 
 ## Slash commands
 
@@ -69,14 +50,17 @@ If no API key and no `--provider` flag, forerunner auto-detects Ollama at `local
 | `/forerunner-audit` | `audit` | Security and dependency audit |
 | `/forerunner-changelog` | `changelog` | Generate changelog from git log |
 | `/forerunner-init` | `init-agent-onboarding` | Bootstrap or refresh AGENTS.md |
+| `/forerunner-refresh` | `refresh` | Scan + check + update all stale docs in one pass |
 
-Slash command availability depends on the agent CLI. Claude Code, Codex, and Gemini CLI support all 12 commands after install.
+Slash command availability depends on the agent CLI. Claude Code, Codex, and Gemini CLI support all commands after install.
 
 ## Skill install options
 
 | Flag | Effect |
 |------|--------|
-| `./install.sh` | Auto-detect all agents, install all skills |
+| `./install.sh` | Auto-detect all agents, prompt global vs local, install all skills |
+| `./install.sh --global` | Skip prompt, install to global agent dirs (all projects) |
+| `./install.sh --local` | Skip prompt, install to `.claude/skills/` and `.agents/skills/` in cwd |
 | `./install.sh --only claude` | Claude Code only |
 | `./install.sh --only codex` | Codex only |
 | `./install.sh --only gemini` | Gemini CLI only |
@@ -95,84 +79,23 @@ pip install codeforerunner
 | `forerunner init` | Resolve agent-onboarding bundle to stdout. |
 | `forerunner scan` | Resolve scan bundle to stdout. |
 | `forerunner doc <task>` | Resolve `base + partials + task` bundle to stdout. |
+| `forerunner refresh` | Output scan + check + all doc-task bundles in sequence for a full doc refresh. |
 | `forerunner check` | Run drift-detection rules; no-op without `forerunner.config.yaml`. |
-| `forerunner generate <task>` | Call configured provider directly. Add `--stream` for token-by-token output. Falls back to Ollama automatically when no API key is configured. |
-| `forerunner doctor` | Health report: skill parity, config, provider key, local-mode status. Add `--fix` to write a starter config. |
+| `forerunner doctor` | Health report: skill parity, config. Add `--fix` to write a starter config. |
 | `forerunner mcp-server` | Serve prompt bundles as MCP tools over stdio (JSON-RPC 2.0). |
 | `forerunner install <agent>` | Install canonical skill into agent-specific directory. Add `--all` for all per-task skills. |
 
-### Docker sample
-
-If you want to try the CLI without installing Python locally, build and run it through Docker:
-
-```bash
-make docker-login-dhi
-make forerunner check
-make forerunner generate readme FORERUNNER_FLAGS="--stream"
-```
-
-The Docker image uses Docker Hardened Images for its base runtime (`dhi.io/python:3.13`), so you need to sign in to `dhi.io` first. The target builds a local image, mounts this repo into `/workspace`, and forwards common provider env vars. If you want to talk to Ollama from Docker Desktop, set `OLLAMA_HOST=http://host.docker.internal:11434`.
-
-The `Makefile` target is backed by [compose.yml](/Users/derek/code/codeforerunner/compose.yml:1). You can also run Compose directly:
-
-```bash
-docker compose run --rm forerunner check
-docker compose run --rm forerunner generate readme --stream
-```
-
-Published images can be pulled from GHCR on tagged releases:
-
-```bash
-docker pull ghcr.io/derek-palmer/codeforerunner:latest
-docker pull ghcr.io/derek-palmer/codeforerunner:0.4.3
-```
-
-To publish those images from GitHub Actions, configure repository secrets `DHI_USERNAME` and `DHI_PASSWORD` so the workflow can pull the DHI base image during the build.
-
-## Prompt pack
-
-Prompts are bundled inside the package at `src/codeforerunner/prompts/`.
-
-```text
-prompts/
-├── system/base.md
-├── partials/
-│   ├── context-format.md
-│   ├── output-rules.md
-│   └── stack-hints.md
-└── tasks/
-    ├── scan.md          api-docs.md    audit.md
-    ├── readme.md        diagrams.md    changelog.md
-    ├── check.md         flows.md       version-audit.md
-    ├── review.md        stack-docs.md
-    └── init-agent-onboarding.md
-```
-
-## Quick start (agent skill mode)
+## Quick start
 
 ```bash
 # Install skills into Claude Code
 curl -fsSL https://raw.githubusercontent.com/derek-palmer/codeforerunner/main/install.sh | bash
 
 # In Claude Code:
-# /forerunner-scan    → scans your repo
-# /forerunner-readme  → generates README.md
-# /forerunner-check   → checks for doc drift
-```
-
-## Quick start (direct API mode)
-
-```bash
-# 1. Install and configure
-pip install codeforerunner
-export ANTHROPIC_API_KEY=sk-...
-
-# 2. Run a task
-forerunner generate readme --stream
-
-# 3. Enable drift detection
-forerunner doctor --fix        # writes forerunner.config.yaml
-forerunner check               # run any time or as pre-commit hook
+# /forerunner-scan     → scans your repo
+# /forerunner-readme   → generates README.md
+# /forerunner-refresh  → updates all stale docs
+# /forerunner-check    → checks for doc drift
 ```
 
 ## GitHub Action
@@ -216,10 +139,7 @@ forerunner doctor --fix
 ### Config fields
 
 ```yaml
-provider: anthropic          # anthropic | openai | google | ollama
-model: claude-opus-4-7
-api_key_env:
-  anthropic: ANTHROPIC_API_KEY
+approaching_eol_threshold_months: 6
 
 tasks:
   check:
@@ -262,16 +182,24 @@ tasks:
 
 See `examples/mcp/` for Claude Desktop and mcp-cli wiring examples.
 
-## Providers
+## Prompt pack
 
-`forerunner generate` supports four providers. When no provider is explicitly configured and no API key is found, forerunner probes `localhost:11434` and falls back to Ollama automatically.
+Prompts are bundled inside the package at `src/codeforerunner/prompts/`.
 
-| Provider | Env var | Default model |
-|----------|---------|---------------|
-| `anthropic` | `ANTHROPIC_API_KEY` | `claude-opus-4-7` |
-| `openai` | `OPENAI_API_KEY` | `gpt-4o` |
-| `google` | `GOOGLE_API_KEY` | `gemini-2.5-pro` |
-| `ollama` | `OLLAMA_HOST` (optional) | `llama3` |
+```text
+prompts/
+├── system/base.md
+├── partials/
+│   ├── context-format.md
+│   ├── output-rules.md
+│   └── stack-hints.md
+└── tasks/
+    ├── scan.md          api-docs.md    audit.md
+    ├── readme.md        diagrams.md    changelog.md
+    ├── check.md         flows.md       version-audit.md
+    ├── review.md        stack-docs.md  refresh.md
+    └── init-agent-onboarding.md
+```
 
 ## Docs and spec
 

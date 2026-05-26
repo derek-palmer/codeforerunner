@@ -80,55 +80,6 @@ def test_main_exits_zero_when_no_errors(capsys):
     assert rc == 0
 
 
-def test_provider_api_key_finding_present_with_config(tmp_path: Path, monkeypatch):
-    from unittest.mock import patch
-    repo = _copy_repo_layout(tmp_path)
-    (repo / "forerunner.config.yaml").write_text("", encoding="utf-8")
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    # Force skill mode off so warn path is exercised
-    with patch("codeforerunner.doctor._skill_mode_active", return_value=False):
-        findings = run(repo)
-    matches = [f for f in findings if f.check == "provider-api-key"]
-    assert len(matches) == 1
-    assert matches[0].severity == "warn"
-
-
-def test_provider_api_key_ok_when_env_set(tmp_path: Path, monkeypatch):
-    repo = _copy_repo_layout(tmp_path)
-    (repo / "forerunner.config.yaml").write_text("", encoding="utf-8")
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
-    findings = run(repo)
-    matches = [f for f in findings if f.check == "provider-api-key"]
-    assert len(matches) == 1
-    assert matches[0].severity == "ok"
-
-
-def test_provider_api_key_ollama_always_ok(tmp_path: Path, monkeypatch):
-    repo = _copy_repo_layout(tmp_path)
-    (repo / "forerunner.config.yaml").write_text(
-        "provider: ollama\nmodel: llama3\n", encoding="utf-8"
-    )
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    monkeypatch.delenv("OLLAMA_HOST", raising=False)
-    findings = run(repo)
-    matches = [f for f in findings if f.check == "provider-api-key"]
-    assert len(matches) == 1
-    assert matches[0].severity == "ok"
-
-
-def test_provider_api_key_uses_override(tmp_path: Path, monkeypatch):
-    repo = _copy_repo_layout(tmp_path)
-    (repo / "forerunner.config.yaml").write_text(
-        "api_key_env:\n  anthropic: MY_KEY\n", encoding="utf-8"
-    )
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    monkeypatch.setenv("MY_KEY", "x")
-    findings = run(repo)
-    matches = [f for f in findings if f.check == "provider-api-key"]
-    assert len(matches) == 1
-    assert matches[0].severity == "ok"
-
-
 def test_main_exits_one_when_error_present(tmp_path: Path, capsys):
     repo = _copy_repo_layout(tmp_path)
     drifted = repo / "skills/codeforerunner/SKILL.md"
@@ -177,59 +128,6 @@ def test_doctor_fix_does_not_overwrite_existing_config(tmp_path: Path, capsys):
     capsys.readouterr()
 
     assert cfg_path.read_text(encoding="utf-8") == "# my custom config\n"
-
-
-# ── local-mode surfacing ───────────────────────────────────────────────────────
-
-def test_provider_api_key_local_mode_when_ollama_running_no_config(tmp_path: Path):
-    from unittest.mock import patch
-    repo = _copy_repo_layout(tmp_path)
-    # no forerunner.config.yaml
-    with patch("codeforerunner.providers.ollama.is_available", return_value=True):
-        findings = run(repo)
-    matches = [f for f in findings if f.check == "provider-api-key"]
-    assert len(matches) == 1
-    assert matches[0].severity == "ok"
-    assert "local mode" in matches[0].message
-
-
-def test_provider_api_key_hint_when_ollama_absent_no_config(tmp_path: Path):
-    from unittest.mock import patch
-    repo = _copy_repo_layout(tmp_path)
-    # no forerunner.config.yaml; no skill installed → fallback message mentions prompt-only
-    with patch("codeforerunner.providers.ollama.is_available", return_value=False), \
-         patch("codeforerunner.doctor._skill_mode_active", return_value=False):
-        findings = run(repo)
-    matches = [f for f in findings if f.check == "provider-api-key"]
-    assert len(matches) == 1
-    assert matches[0].severity == "ok"
-    assert "prompt-only" in matches[0].message
-
-
-def test_provider_api_key_warn_even_in_skill_mode_when_provider_explicit(tmp_path: Path, monkeypatch):
-    from unittest.mock import patch
-    repo = _copy_repo_layout(tmp_path)
-    (repo / "forerunner.config.yaml").write_text("provider: anthropic\n", encoding="utf-8")
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    # Skill mode active but provider is explicitly configured → must still warn
-    with patch("codeforerunner.doctor._skill_mode_active", return_value=True):
-        findings = run(repo)
-    matches = [f for f in findings if f.check == "provider-api-key"]
-    assert len(matches) == 1
-    assert matches[0].severity == "warn"
-
-
-def test_provider_api_key_ollama_config_shows_local_mode(tmp_path: Path, monkeypatch):
-    repo = _copy_repo_layout(tmp_path)
-    (repo / "forerunner.config.yaml").write_text(
-        "provider: ollama\nmodel: llama3\n", encoding="utf-8"
-    )
-    monkeypatch.delenv("OLLAMA_HOST", raising=False)
-    findings = run(repo)
-    matches = [f for f in findings if f.check == "provider-api-key"]
-    assert len(matches) == 1
-    assert matches[0].severity == "ok"
-    assert "local mode" in matches[0].message
 
 
 # ── skill-body-parity edge cases ──────────────────────────────────────────────
@@ -381,81 +279,8 @@ def test_installed_destinations_marketplace_oserror(tmp_path: Path):
 
 def test_check_config_loadable_reports_error_on_invalid_config(tmp_path: Path):
     from codeforerunner.doctor import _check_config_loadable
-    (tmp_path / "forerunner.config.yaml").write_text("provider: bad_unknown_provider\n", encoding="utf-8")
+    (tmp_path / "forerunner.config.yaml").write_text(
+        "approaching_eol_threshold_months: not-a-number\n", encoding="utf-8"
+    )
     findings = _check_config_loadable(tmp_path)
     assert any(f.severity == "error" for f in findings)
-
-
-# ── _skill_mode_active edge cases ─────────────────────────────────────────────
-
-def test_skill_mode_active_returns_true_when_markers_present(tmp_path: Path):
-    from unittest.mock import patch
-    from codeforerunner.doctor import MARKER_BEGIN, MARKER_END, _skill_mode_active
-
-    dest = tmp_path / "SKILL.md"
-    dest.write_text(f"{MARKER_BEGIN}\ncontent\n{MARKER_END}\n", encoding="utf-8")
-
-    with patch("codeforerunner.doctor._installed_skill_destinations", return_value=[dest]):
-        assert _skill_mode_active() is True
-
-
-def test_skill_mode_active_returns_false_when_no_markers(tmp_path: Path):
-    from unittest.mock import patch
-    from codeforerunner.doctor import _skill_mode_active
-
-    dest = tmp_path / "SKILL.md"
-    dest.write_text("# user file", encoding="utf-8")
-
-    with patch("codeforerunner.doctor._installed_skill_destinations", return_value=[dest]):
-        assert _skill_mode_active() is False
-
-
-def test_skill_mode_active_handles_oserror(tmp_path: Path):
-    import pathlib
-    from unittest.mock import patch
-    from codeforerunner.doctor import _skill_mode_active
-
-    dest = tmp_path / "SKILL.md"
-    dest.write_text("content", encoding="utf-8")
-
-    original_read_text = pathlib.Path.read_text
-
-    def _raise(self, *args, **kwargs):
-        if self == dest:
-            raise OSError("denied")
-        return original_read_text(self, *args, **kwargs)
-
-    with patch("codeforerunner.doctor._installed_skill_destinations", return_value=[dest]), \
-         patch.object(pathlib.Path, "read_text", _raise):
-        assert _skill_mode_active() is False
-
-
-# ── _check_provider_api_key with unparseable config ───────────────────────────
-
-def test_provider_api_key_config_error_returns_ok(tmp_path: Path):
-    from unittest.mock import patch
-    from codeforerunner.config import ConfigError
-    from codeforerunner.doctor import _check_provider_api_key
-
-    (tmp_path / "forerunner.config.yaml").write_text("provider: bad\n", encoding="utf-8")
-
-    with patch("codeforerunner.doctor.load_from_repo", side_effect=ConfigError("bad")):
-        findings = _check_provider_api_key(tmp_path)
-
-    assert len(findings) == 1
-    assert findings[0].severity == "ok"
-    assert "config unparseable" in findings[0].message
-
-
-def test_provider_api_key_skill_mode_active_no_config(tmp_path: Path):
-    from unittest.mock import patch
-    from codeforerunner.doctor import _check_provider_api_key
-
-    # no config file; no Ollama; skill mode active
-    with patch("codeforerunner.providers.ollama.is_available", return_value=False), \
-         patch("codeforerunner.doctor._skill_mode_active", return_value=True):
-        findings = _check_provider_api_key(tmp_path)
-
-    assert len(findings) == 1
-    assert findings[0].severity == "ok"
-    assert "skill mode" in findings[0].message
