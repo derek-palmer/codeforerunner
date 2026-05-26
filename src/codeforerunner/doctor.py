@@ -296,19 +296,16 @@ def _check_provider_api_key(repo: Path) -> list[Finding]:
     env_var = cfg.api_key_env.get(provider) or _DEFAULT_PROVIDER_ENV.get(provider, "")
     if os.environ.get(env_var):
         return [Finding("ok", "provider-api-key", f"{provider}: {env_var} is set")]
-    if _skill_mode_active():
-        return [
-            Finding(
-                "ok",
-                "provider-api-key",
-                f"{provider}: ${env_var} not set; skill mode active — agent handles generation",
-            )
-        ]
     return [
         Finding(
             "warn",
             "provider-api-key",
-            f"{provider}: ${env_var} is not set; `forerunner generate` will refuse to run",
+            f"{provider}: ${env_var} is not set; `forerunner generate` will refuse to run"
+            + (
+                " (use `--prompt-only` for key-free bundle output)"
+                if _skill_mode_active()
+                else ""
+            ),
         )
     ]
 
