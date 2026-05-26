@@ -5,6 +5,27 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] — 2026-05-26
+
+### Added
+
+- Installer supports `--global` / `--local` flags and refresh mode for updating existing installations. (`bin/install.js`)
+- GitHub Action published to marketplace — composite runner at `action.yml` for CI-based forerunner runs.
+- Docker + Makefile sample for containerized usage.
+- Dependabot configuration for automated dependency updates.
+- Branch protection rules for `main` via Rulesets API with admin bypass.
+- Published to GitHub Packages npm registry under `@derek-palmer/codeforerunner`.
+
+### Fixed
+
+- `tomllib` import compatibility fix for Python < 3.11; canonical Windows argument quoting.
+- CodeQL scan findings: incomplete URL substring sanitization, workflow missing permissions, incomplete string escaping, clear-text logging of sensitive information.
+
+### Changed
+
+- Configuration and documentation clarity improvements.
+- GitHub Actions pinned to latest versions.
+
 ## [0.4.3] — 2026-05-26
 
 ### Security
