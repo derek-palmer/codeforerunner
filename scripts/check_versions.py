@@ -2,27 +2,16 @@
 """Assert all version fields across pyproject.toml, package.json, and marketplace.json match."""
 
 import json
-import re
 import sys
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 
 
 def read_pyproject_version() -> str:
-    text = (ROOT / "pyproject.toml").read_text()
-    # Match version = "x.y.z" under [project] section
-    in_project = False
-    for line in text.splitlines():
-        if re.match(r"^\[project\]", line):
-            in_project = True
-        elif re.match(r"^\[", line):
-            in_project = False
-        elif in_project:
-            m = re.match(r'^version\s*=\s*"([^"]+)"', line)
-            if m:
-                return m.group(1)
-    raise ValueError("version not found in pyproject.toml [project]")
+    with (ROOT / "pyproject.toml").open("rb") as f:
+        return tomllib.load(f)["project"]["version"]
 
 
 def read_package_json_version() -> str:
@@ -58,7 +47,7 @@ def main() -> int:
         print("\nAll versions match.")
         return 0
 
-    print(f"\nERROR: version mismatch — found {sorted(versions)}", file=sys.stderr)
+    print(f"\nERROR: version mismatch — found {', '.join(sorted(versions))}", file=sys.stderr)
     return 1
 
 
