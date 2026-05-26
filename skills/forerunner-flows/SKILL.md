@@ -21,7 +21,7 @@ User asks to: document flows, describe how the system works end-to-end, explain 
 
 ## Execute
 
-Run `forerunner doc flows` to compose the full prompt with system rules, then execute it.
+Run `forerunner generate --prompt-only flows` — outputs the assembled prompt bundle to stdout. Read this output and execute the documentation task it describes.
 
 Without CLI, get the prompt from:
 - `src/codeforerunner/prompts/tasks/flows.md`

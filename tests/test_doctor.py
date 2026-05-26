@@ -81,10 +81,13 @@ def test_main_exits_zero_when_no_errors(capsys):
 
 
 def test_provider_api_key_finding_present_with_config(tmp_path: Path, monkeypatch):
+    from unittest.mock import patch
     repo = _copy_repo_layout(tmp_path)
     (repo / "forerunner.config.yaml").write_text("", encoding="utf-8")
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    findings = run(repo)
+    # Force skill mode off so warn path is exercised
+    with patch("codeforerunner.doctor._skill_mode_active", return_value=False):
+        findings = run(repo)
     matches = [f for f in findings if f.check == "provider-api-key"]
     assert len(matches) == 1
     assert matches[0].severity == "warn"
@@ -193,13 +196,14 @@ def test_provider_api_key_local_mode_when_ollama_running_no_config(tmp_path: Pat
 def test_provider_api_key_hint_when_ollama_absent_no_config(tmp_path: Path):
     from unittest.mock import patch
     repo = _copy_repo_layout(tmp_path)
-    # no forerunner.config.yaml
-    with patch("codeforerunner.providers.ollama.is_available", return_value=False):
+    # no forerunner.config.yaml; no skill installed → fallback message mentions prompt-only
+    with patch("codeforerunner.providers.ollama.is_available", return_value=False), \
+         patch("codeforerunner.doctor._skill_mode_active", return_value=False):
         findings = run(repo)
     matches = [f for f in findings if f.check == "provider-api-key"]
     assert len(matches) == 1
     assert matches[0].severity == "ok"
-    assert "Ollama" in matches[0].message
+    assert "prompt-only" in matches[0].message
 
 
 def test_provider_api_key_ollama_config_shows_local_mode(tmp_path: Path, monkeypatch):

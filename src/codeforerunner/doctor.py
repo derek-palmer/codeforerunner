@@ -224,6 +224,19 @@ def _check_config_loadable(repo: Path) -> list[Finding]:
     return [Finding("ok", "config-loadable", f"{CONFIG_FILENAME} parses cleanly")]
 
 
+def _skill_mode_active() -> bool:
+    """True if any installed skill destination has managed markers — agent IS the model."""
+    for dest in _installed_skill_destinations():
+        if dest.exists():
+            try:
+                text = dest.read_text(encoding="utf-8")
+                if MARKER_BEGIN in text and MARKER_END in text:
+                    return True
+            except OSError:
+                pass
+    return False
+
+
 def _check_provider_api_key(repo: Path) -> list[Finding]:
     from codeforerunner.providers.ollama import is_available as _ollama_available
 
@@ -237,11 +250,19 @@ def _check_provider_api_key(repo: Path) -> list[Finding]:
                     "no config; Ollama running — generate will use local mode automatically",
                 )
             ]
+        if _skill_mode_active():
+            return [
+                Finding(
+                    "ok",
+                    "provider-api-key",
+                    "no config; skill mode active — the installed agent is the model, no API key needed",
+                )
+            ]
         return [
             Finding(
                 "ok",
                 "provider-api-key",
-                f"no {CONFIG_FILENAME}; set an API key in config or start Ollama for keyless local generation",
+                f"no {CONFIG_FILENAME}; set an API key in config, start Ollama, or use skill mode (`forerunner generate --prompt-only`)",
             )
         ]
     try:
@@ -275,6 +296,14 @@ def _check_provider_api_key(repo: Path) -> list[Finding]:
     env_var = cfg.api_key_env.get(provider) or _DEFAULT_PROVIDER_ENV.get(provider, "")
     if os.environ.get(env_var):
         return [Finding("ok", "provider-api-key", f"{provider}: {env_var} is set")]
+    if _skill_mode_active():
+        return [
+            Finding(
+                "ok",
+                "provider-api-key",
+                f"{provider}: ${env_var} not set; skill mode active — agent handles generation",
+            )
+        ]
     return [
         Finding(
             "warn",

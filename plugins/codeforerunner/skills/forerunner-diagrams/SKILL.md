@@ -20,7 +20,7 @@ User asks to: generate diagrams, create architecture diagrams, visualize the sys
 
 ## Execute
 
-Run `forerunner doc diagrams` to compose the full prompt with system rules, then execute it.
+Run `forerunner generate --prompt-only diagrams` — outputs the assembled prompt bundle to stdout. Read this output and execute the documentation task it describes.
 
 Without CLI, get the prompt from:
 - `src/codeforerunner/prompts/tasks/diagrams.md`

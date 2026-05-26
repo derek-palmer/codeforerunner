@@ -104,12 +104,21 @@ def cmd_mcp_server(args: argparse.Namespace) -> int:
 
 
 def cmd_generate(args: argparse.Namespace) -> int:
-    """Resolve the bundle for <task> and send it to the configured provider."""
+    """Resolve the bundle for <task> and send it to the configured provider.
+
+    With --prompt-only (or when no provider/key/Ollama is reachable), outputs
+    the assembled prompt bundle to stdout for the calling agent to process.
+    """
     from codeforerunner import providers as _providers
     from codeforerunner.config import load_from_repo
 
     repo_root = Path(args.repo).resolve() if args.repo else Path.cwd()
     cfg = load_from_repo(repo_root)
+
+    # --prompt-only: output the bundle and stop; the calling agent is the model.
+    if getattr(args, "prompt_only", False):
+        ns = argparse.Namespace(repo=getattr(args, "repo", None), task=args.task)
+        return cmd_doc(ns)
 
     explicit_provider = args.provider or (cfg.provider if cfg else None)
     provider_name = explicit_provider or "anthropic"
@@ -140,11 +149,21 @@ def cmd_generate(args: argparse.Namespace) -> int:
             if not args.model:
                 model = provider.default_model
             print("info: no API key; falling back to Ollama (local mode)", file=sys.stderr)
+        elif explicit_provider is None:
+            # Skill-mode auto-detect: no provider configured, no Ollama — output
+            # the prompt bundle for the calling agent to process directly.
+            sys.stdout.write(buf.getvalue())
+            if sys.stdout.isatty():
+                print(
+                    "\ninfo: no provider configured and Ollama not running.\n"
+                    "      Prompt bundle written above — paste into your agent,\n"
+                    "      or run: forerunner generate --prompt-only "
+                    f"{args.task}",
+                    file=sys.stderr,
+                )
+            return 0
         else:
-            msg = f"error: missing API key; set ${env_var}"
-            if explicit_provider is None:
-                msg += "\nhint: start Ollama for keyless local generation (https://ollama.com)"
-            print(msg, file=sys.stderr)
+            print(f"error: missing API key; set ${env_var}", file=sys.stderr)
             return 3
 
     if getattr(args, "stream", False):
@@ -243,6 +262,12 @@ def build_parser() -> argparse.ArgumentParser:
     s_gen.add_argument("--provider", help="override config provider")
     s_gen.add_argument("--model", help="override config model")
     s_gen.add_argument("--stream", action="store_true", help="stream output token-by-token")
+    s_gen.add_argument(
+        "--prompt-only",
+        dest="prompt_only",
+        action="store_true",
+        help="output the assembled prompt bundle to stdout; do not call a model (skill mode)",
+    )
     s_gen.set_defaults(func=cmd_generate)
 
     from codeforerunner import installer

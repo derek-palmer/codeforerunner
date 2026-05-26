@@ -22,7 +22,7 @@ User asks to: create AGENTS.md, update agent onboarding, refresh coding agent in
 
 ## Execute
 
-Run `forerunner init` (or `forerunner doc init-agent-onboarding`) to compose the full prompt, then execute it.
+Run `forerunner generate --prompt-only init-agent-onboarding` (or `forerunner init`) — outputs the assembled prompt bundle to stdout. Read this output and execute the documentation task it describes.
 
 Without CLI, get the prompt from:
 - `src/codeforerunner/prompts/tasks/init-agent-onboarding.md`
