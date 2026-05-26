@@ -8,24 +8,24 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-from codeforerunner.bundle import find_prompts_root, resolve_bundle
+from codeforerunner.bundle import find_prompts_root, resolve_bundle as _resolve_bundle
 
 SCAN_EXEMPT_TASKS = frozenset({"scan", "init-agent-onboarding"})
 SCAN_DONE_ENV = "FORERUNNER_SCAN_DONE"
 
 
-def cmd_doc(args: argparse.Namespace) -> int:
-    """Resolve base + partials + task bundle to stdout."""
+def _get_bundle(args: argparse.Namespace) -> tuple[str, int]:
+    """Resolve bundle for args.task. Returns (bundle_text, exit_code). exit_code != 0 on error."""
     try:
         prompts_root = find_prompts_root(args.repo)
     except FileNotFoundError as e:
         print(f"error: {e}", file=sys.stderr)
-        return 2
+        return "", 2
 
     task_path = prompts_root / "tasks" / f"{args.task}.md"
     if not task_path.is_file():
         print(f"error: unknown task '{args.task}' (no {task_path})", file=sys.stderr)
-        return 2
+        return "", 2
 
     repo_root = Path(args.repo) if args.repo else Path.cwd()
     if (
@@ -40,10 +40,18 @@ def cmd_doc(args: argparse.Namespace) -> int:
         )
 
     try:
-        sys.stdout.write(resolve_bundle(prompts_root, args.task))
+        return _resolve_bundle(prompts_root, args.task), 0
     except FileNotFoundError as e:
         print(f"error: {e}", file=sys.stderr)
-        return 2
+        return "", 2
+
+
+def cmd_doc(args: argparse.Namespace) -> int:
+    """Resolve base + partials + task bundle to stdout."""
+    bundle, rc = _get_bundle(args)
+    if rc != 0:
+        return rc
+    sys.stdout.write(bundle)
     return 0
 
 
@@ -115,10 +123,15 @@ def cmd_generate(args: argparse.Namespace) -> int:
     repo_root = Path(args.repo).resolve() if args.repo else Path.cwd()
     cfg = load_from_repo(repo_root)
 
+    ns = argparse.Namespace(repo=getattr(args, "repo", None), task=args.task)
+
     # --prompt-only: output the bundle and stop; the calling agent is the model.
     if getattr(args, "prompt_only", False):
-        ns = argparse.Namespace(repo=getattr(args, "repo", None), task=args.task)
         return cmd_doc(ns)
+
+    bundle, rc = _get_bundle(ns)
+    if rc != 0:
+        return rc
 
     explicit_provider = args.provider or (cfg.provider if cfg else None)
     provider_name = explicit_provider or "anthropic"
@@ -126,18 +139,6 @@ def cmd_generate(args: argparse.Namespace) -> int:
     provider_cls = _providers.get(provider_name)
     provider = provider_cls()
     model = model or provider.default_model
-
-    import io as _io
-    buf = _io.StringIO()
-    ns = argparse.Namespace(repo=getattr(args, "repo", None), task=args.task)
-    real_stdout = sys.stdout
-    sys.stdout = buf
-    try:
-        rc = cmd_doc(ns)
-    finally:
-        sys.stdout = real_stdout
-    if rc != 0:
-        return rc
 
     env_var = (cfg.api_key_env.get(provider_name) if cfg else None) or provider.default_env_var
     api_key = os.environ.get(env_var)
@@ -152,7 +153,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
         elif explicit_provider is None:
             # Skill-mode auto-detect: no provider configured, no Ollama — output
             # the prompt bundle for the calling agent to process directly.
-            sys.stdout.write(buf.getvalue())
+            sys.stdout.write(bundle)
             if sys.stdout.isatty():
                 print(
                     "\ninfo: no provider configured and Ollama not running.\n"
@@ -168,7 +169,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
 
     if getattr(args, "stream", False):
         try:
-            for chunk in provider.stream(prompt=buf.getvalue(), model=model, api_key=api_key):
+            for chunk in provider.stream(prompt=bundle, model=model, api_key=api_key):
                 sys.stdout.write(chunk)
                 sys.stdout.flush()
         except _providers.ProviderError as e:
@@ -178,7 +179,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
         return 0
 
     try:
-        result = provider.complete(prompt=buf.getvalue(), model=model, api_key=api_key)
+        result = provider.complete(prompt=bundle, model=model, api_key=api_key)
     except _providers.ProviderError as e:
         print(f"error: {provider_name} provider failed: {e}", file=sys.stderr)
         return 4
@@ -202,7 +203,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             print(f"wrote {cfg_path}", file=sys.stderr)
         else:
             print(f"{cfg_path} already exists; skipping --fix", file=sys.stderr)
-    findings = doctor.run(root)
+    findings = doctor.run(root, run_scripts=getattr(args, "run_scripts", False))
     sys.stdout.write(doctor.format_report(findings) + "\n")
     return 1 if any(f.severity == "error" for f in findings) else 0
 
@@ -254,6 +255,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--fix",
         action="store_true",
         help="write a starter forerunner.config.yaml if absent",
+    )
+    s_doctor.add_argument(
+        "--run-scripts",
+        dest="run_scripts",
+        action="store_true",
+        default=False,
+        help="allow executing Python scripts from the target repo to validate skill copies (off by default)",
     )
     s_doctor.set_defaults(func=cmd_doctor)
 

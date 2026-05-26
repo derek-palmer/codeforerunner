@@ -501,3 +501,28 @@ def test_generate_explicit_provider_no_key_still_errors(tmp_path, capsys, monkey
     cap = capsys.readouterr()
     assert rc == 3
     assert "missing API key" in cap.err
+
+
+def test_generate_stream_flag_yields_chunks(tmp_path, capsys, monkeypatch):
+    """--stream calls provider.stream() and writes chunks to stdout."""
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+    chunks = ["hello", " ", "world"]
+
+    class FakeProvider:
+        default_env_var = "FAKE_API_KEY"
+        default_model = "fake-stream"
+
+        def stream(self, *, prompt, model=None, api_key=None):
+            yield from chunks
+
+    from codeforerunner import providers
+
+    monkeypatch.setitem(providers.REGISTRY, "fake", FakeProvider)
+    monkeypatch.setenv("FAKE_API_KEY", "secret")
+
+    rc = main(["--repo", str(tmp_path), "generate", "--provider", "fake", "--stream", "readme"])
+    cap = capsys.readouterr()
+
+    assert rc == 0
+    assert cap.out == "hello world\n"

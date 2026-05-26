@@ -2,13 +2,14 @@
 # Enables drift rules that are relevant to this project's surface area.
 # R6/R6b/R6-no-docker/R6b-no-makefile intentionally excluded (no Docker or Makefile here).
 
-enabled_rules:
-  - R1-no-cli
-  - R2-no-pre-commit
-  - R3-no-ci
-  - R4-no-installer
-  - R5-no-python-package
-  - R7-no-mcp
-  - R8-no-marketplace
-
-ignore_paths: []
+tasks:
+  check:
+    enabled_rules:
+      - R1-no-cli
+      - R2-no-pre-commit
+      - R3-no-ci
+      - R4-no-installer
+      - R5-no-python-package
+      - R7-no-mcp
+      - R8-no-marketplace
+    ignore_paths: []

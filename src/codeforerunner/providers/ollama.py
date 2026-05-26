@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Iterator
 
@@ -12,11 +13,32 @@ from codeforerunner.providers.base import CompletionResult, ProviderError
 
 DEFAULT_HOST = "http://localhost:11434"
 
+_SAFE_LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+def _validate_ollama_base(base: str) -> None:
+    """Reject URLs that look like cloud metadata endpoints or use unexpected schemes."""
+    try:
+        parsed = urllib.parse.urlparse(base)
+    except Exception as e:
+        raise ValueError(f"OLLAMA_HOST: invalid URL: {e}") from e
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(
+            f"OLLAMA_HOST: scheme must be http or https, got {parsed.scheme!r}"
+        )
+    host = parsed.hostname or ""
+    if "169.254." in host:
+        raise ValueError(
+            f"OLLAMA_HOST: refusing connection to link-local address {host!r} "
+            "(looks like a cloud metadata endpoint)"
+        )
+
 
 def is_available(host: str | None = None) -> bool:
     """Return True if an Ollama instance is reachable at the configured host."""
     base = (host or os.environ.get("OLLAMA_HOST") or DEFAULT_HOST).rstrip("/")
     try:
+        _validate_ollama_base(base)
         urllib.request.urlopen(f"{base}/api/tags", timeout=2)
         return True
     except Exception:
@@ -38,6 +60,7 @@ class OllamaProvider:
         # api_key is interpreted as a base URL override; fall back to env then default.
         base = api_key or os.environ.get(self.default_env_var) or DEFAULT_HOST
         base = base.rstrip("/")
+        _validate_ollama_base(base)
         model = model or self.default_model
         url = f"{base}/api/generate"
         body = json.dumps(
@@ -50,7 +73,7 @@ class OllamaProvider:
             headers={"content-type": "application/json"},
         )
         try:
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req, timeout=120) as resp:
                 raw = resp.read()
         except urllib.error.HTTPError as e:
             snippet = (e.read() or b"")[:500].decode("utf-8", errors="replace")
@@ -75,6 +98,7 @@ class OllamaProvider:
     ) -> Iterator[str]:
         base = api_key or os.environ.get(self.default_env_var) or DEFAULT_HOST
         base = base.rstrip("/")
+        _validate_ollama_base(base)
         model = model or self.default_model
         url = f"{base}/api/generate"
         body = json.dumps(
@@ -87,7 +111,7 @@ class OllamaProvider:
             headers={"content-type": "application/json"},
         )
         try:
-            resp = urllib.request.urlopen(req)
+            resp = urllib.request.urlopen(req, timeout=120)
         except urllib.error.HTTPError as e:
             snippet = (e.read() or b"")[:500].decode("utf-8", errors="replace")
             raise ProviderError(f"HTTP {e.code}: {snippet}") from e

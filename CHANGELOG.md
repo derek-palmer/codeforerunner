@@ -5,6 +5,33 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **H1** — `forerunner doctor` no longer executes Python scripts from the target repo by default. Script-based checks (`skill-body-parity`, `codex-marketplace`) now emit `[warn] skipping script validation` unless `--run-scripts` is passed explicitly. (`doctor.py`, `cli.py`)
+- **H2** — `install.sh` and `install.ps1` now pin the npm package to `codeforerunner@0.4.1` and the GitHub fallback to `github:derek-palmer/codeforerunner#v0.4.1`, preventing arbitrary code execution in `curl|bash` one-liner installs.
+- **H3** — Added comment in `providers/google.py` documenting that the API key appears in the URL query string (Google REST API requirement; key may appear in proxy logs).
+- **M2** — MCP server `tools/call` validates that the tool `name` contains no path separators or `..` components, and checks the resolved path is inside `prompts/tasks/` before executing. (`mcp_server.py`)
+- **M7** — `OllamaProvider` and `is_available` now validate the base URL scheme (`http`/`https`) and reject `169.254.*` link-local addresses to prevent SSRF via `OLLAMA_HOST`. (`providers/ollama.py`)
+
+### Fixed
+
+- **M1** — `forerunner.config.yaml` and `_STARTER_CONFIG` in `doctor.py` had `enabled_rules` at the YAML root instead of under `tasks.check`. This was a functional bug causing the field to be silently ignored. Both the dogfood config and the `--fix` template are corrected.
+- **M3** — `cmd_generate` no longer swaps `sys.stdout` globally (thread-unsafe). Bundle resolution now goes through `_get_bundle()` which returns a string directly. (`cli.py`)
+- **M4** — All provider `urlopen` calls now pass `timeout=120` to prevent indefinite hangs. (`providers/anthropic.py`, `openai.py`, `google.py`, `ollama.py`)
+- **M5** — `install_all_skills` now correctly sets `any_error = True` when a source file is missing or a write fails, so install failures propagate to the return code. (`installer.py`)
+- **M6** — `int()` calls in `config.py` are now wrapped in `_to_int()` which raises `ConfigError` with a descriptive message instead of bare `ValueError`. (`config.py`)
+- **L1** — Replaced `assert span is not None` in `overlay()` with `RuntimeError`. (`installer.py`)
+- **L2** — Removed unused `output_dir`, `context_max_files`, `context_max_lines_per_file` fields from `ForerunnerConfig` and the YAML parser. (`config.py`)
+- **L3** — `_load_script_module` now uses a UUID-suffixed module name to prevent stale cached modules on repeated calls. (`doctor.py`)
+- **L4** — `_description_for` in MCP server now reads line-by-line instead of loading the entire file into memory. (`mcp_server.py`)
+- **L5** — `format_report` uses direct dict access (`counts['ok']`) instead of redundant `.get()` calls. (`doctor.py`)
+- **L6** — MCP server now enforces `initialize` as the first call; `tools/list` and `tools/call` before `initialize` return JSON-RPC error `-32002 Server not initialized`. (`mcp_server.py`)
+- **L7** — `vscodeExtPresent` and `cursorExtPresent` in `bin/install.js` now use `includes()` instead of `new RegExp(needle)`, preventing extension ID metacharacters from being interpreted as regex. (`bin/install.js`)
+- **L8** — Added unit test `test_generate_stream_flag_yields_chunks` covering the `--stream` branch of `cmd_generate`. (`tests/test_cli.py`)
+- **L9** — `find_prompts_root` now stops walking after 10 parent directories to avoid traversing to the filesystem root. (`bundle.py`)
+
 ## [0.4.1] — 2026-05-24
 
 ### Added

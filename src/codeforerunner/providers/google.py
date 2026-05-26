@@ -16,6 +16,8 @@ class GoogleProvider:
     default_env_var = "GOOGLE_API_KEY"
     default_model = "gemini-2.5-pro"
 
+    # Google REST API requires the key in the URL query string — this is the documented
+    # mechanism and cannot be changed. Be aware the key may appear in proxy/server logs.
     endpoint_template = (
         "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
     )
@@ -48,7 +50,7 @@ class GoogleProvider:
             headers={"content-type": "application/json"},
         )
         try:
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req, timeout=120) as resp:
                 raw = resp.read()
         except urllib.error.HTTPError as e:
             snippet = (e.read() or b"")[:500].decode("utf-8", errors="replace")
@@ -90,7 +92,7 @@ class GoogleProvider:
             headers={"content-type": "application/json"},
         )
         try:
-            resp = urllib.request.urlopen(req)
+            resp = urllib.request.urlopen(req, timeout=120)
         except urllib.error.HTTPError as e:
             snippet = (e.read() or b"")[:500].decode("utf-8", errors="replace")
             raise ProviderError(f"HTTP {e.code}: {snippet}") from e

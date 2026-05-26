@@ -43,7 +43,7 @@ class OpenAIProvider:
             },
         )
         try:
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req, timeout=120) as resp:
                 raw = resp.read()
         except urllib.error.HTTPError as e:
             snippet = (e.read() or b"")[:500].decode("utf-8", errors="replace")
@@ -86,7 +86,7 @@ class OpenAIProvider:
             },
         )
         try:
-            resp = urllib.request.urlopen(req)
+            resp = urllib.request.urlopen(req, timeout=120)
         except urllib.error.HTTPError as e:
             snippet = (e.read() or b"")[:500].decode("utf-8", errors="replace")
             raise ProviderError(f"HTTP {e.code}: {snippet}") from e

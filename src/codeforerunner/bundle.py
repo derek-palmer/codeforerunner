@@ -25,7 +25,8 @@ def find_prompts_root(repo_arg: str | Path | None = None) -> Path:
         )
 
     here = Path.cwd().resolve()
-    for candidate in [here, *here.parents]:
+    parents = list(here.parents)
+    for candidate in [here, *parents[:10]]:
         if (candidate / "prompts" / "tasks").is_dir():
             return candidate / "prompts"
 

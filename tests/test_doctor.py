@@ -46,7 +46,7 @@ def test_skill_body_drift_reported(tmp_path: Path):
     text = drifted.read_text(encoding="utf-8")
     drifted.write_text(text + "\n\nINJECTED DRIFT LINE\n", encoding="utf-8")
 
-    findings = run(repo)
+    findings = run(repo, run_scripts=True)
     parity_errors = [
         f for f in findings if f.check == "skill-body-parity" and f.severity == "error"
     ]
@@ -58,7 +58,7 @@ def test_marketplace_invalid_reported(tmp_path: Path):
     bad = repo / "plugins/codex/marketplace.json"
     bad.write_text(json.dumps({"marketplace": {"id": "x", "name": "x", "version": "1.0.0"}}), encoding="utf-8")
 
-    findings = run(repo)
+    findings = run(repo, run_scripts=True)
     mp_errors = [
         f for f in findings if f.check == "codex-marketplace" and f.severity == "error"
     ]
@@ -135,7 +135,7 @@ def test_main_exits_one_when_error_present(tmp_path: Path, capsys):
     drifted.write_text(
         drifted.read_text(encoding="utf-8") + "\nDRIFT\n", encoding="utf-8"
     )
-    rc = main(["--repo", str(repo)])
+    rc = main(["--repo", str(repo), "--run-scripts"])
     capsys.readouterr()
     assert rc == 1
 
