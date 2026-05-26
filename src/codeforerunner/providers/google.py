@@ -12,6 +12,8 @@ from codeforerunner.providers.base import CompletionResult, ProviderError
 
 
 class GoogleProvider:
+    """Google Gemini generateContent provider using stdlib HTTP."""
+
     name = "google"
     default_env_var = "GOOGLE_API_KEY"
     default_model = "gemini-2.5-pro"
@@ -33,6 +35,7 @@ class GoogleProvider:
         model: str | None = None,
         api_key: str | None = None,
     ) -> CompletionResult:
+        """Send *prompt* to the Gemini generateContent endpoint and return the full response."""
         if not api_key:
             raise ProviderError(f"missing API key (set ${self.default_env_var})")
         model = model or self.default_model
@@ -75,6 +78,7 @@ class GoogleProvider:
         model: str | None = None,
         api_key: str | None = None,
     ) -> Iterator[str]:
+        """Yield text chunks from the Gemini streaming generateContent endpoint."""
         if not api_key:
             raise ProviderError(f"missing API key (set ${self.default_env_var})")
         model = model or self.default_model

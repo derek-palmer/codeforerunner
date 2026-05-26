@@ -528,3 +528,142 @@ def test_ollama_is_available_uses_explicit_host():
 def test_ollama_available_exported_from_providers_package():
     from codeforerunner.providers import ollama_available
     assert callable(ollama_available)
+
+
+# ── Anthropic stream edge cases ───────────────────────────────────────────────
+
+def test_anthropic_stream_url_error_raises():
+    import urllib.error
+    def _opener(req, *args, **kwargs):
+        raise urllib.error.URLError("connection refused")
+    with patch("urllib.request.urlopen", side_effect=_opener):
+        with pytest.raises(ProviderError, match="network error"):
+            list(AnthropicProvider().stream(prompt="hi", api_key="sk"))
+
+
+def test_anthropic_stream_done_sentinel_stops_iteration():
+    lines = [
+        b'data: {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "a"}}\n',
+        b'data: [DONE]\n',
+        b'data: {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "b"}}\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(AnthropicProvider().stream(prompt="hi", api_key="sk"))
+    assert chunks == ["a"]
+
+
+def test_anthropic_stream_invalid_json_line_skipped():
+    lines = [
+        b'data: not-json\n',
+        b'data: {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "ok"}}\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(AnthropicProvider().stream(prompt="hi", api_key="sk"))
+    assert chunks == ["ok"]
+
+
+# ── OpenAI stream edge cases ──────────────────────────────────────────────────
+
+def test_openai_stream_url_error_raises():
+    import urllib.error
+    def _opener(req, *args, **kwargs):
+        raise urllib.error.URLError("refused")
+    with patch("urllib.request.urlopen", side_effect=_opener):
+        with pytest.raises(ProviderError, match="network error"):
+            list(OpenAIProvider().stream(prompt="hi", api_key="sk"))
+
+
+def test_openai_stream_non_data_line_skipped():
+    lines = [
+        b'event: ping\n',
+        b'data: {"choices": [{"delta": {"content": "x"}}]}\n',
+        b'data: [DONE]\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(OpenAIProvider().stream(prompt="hi", api_key="sk"))
+    assert chunks == ["x"]
+
+
+def test_openai_stream_invalid_json_line_skipped():
+    lines = [
+        b'data: bad-json\n',
+        b'data: {"choices": [{"delta": {"content": "ok"}}]}\n',
+        b'data: [DONE]\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(OpenAIProvider().stream(prompt="hi", api_key="sk"))
+    assert chunks == ["ok"]
+
+
+# ── Google stream edge cases ──────────────────────────────────────────────────
+
+def test_google_stream_url_error_raises():
+    import urllib.error
+    def _opener(req, *args, **kwargs):
+        raise urllib.error.URLError("refused")
+    with patch("urllib.request.urlopen", side_effect=_opener):
+        with pytest.raises(ProviderError, match="network error"):
+            list(GoogleProvider().stream(prompt="hi", api_key="g-key"))
+
+
+def test_google_stream_non_data_line_skipped():
+    lines = [
+        b'event: something\n',
+        b'data: {"candidates": [{"content": {"parts": [{"text": "hi"}]}}]}\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(GoogleProvider().stream(prompt="q", api_key="g-key"))
+    assert chunks == ["hi"]
+
+
+def test_google_stream_malformed_json_skipped():
+    lines = [
+        b'data: bad-json\n',
+        b'data: {"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(GoogleProvider().stream(prompt="q", api_key="g-key"))
+    assert chunks == ["ok"]
+
+
+# ── Ollama validate + stream edge cases ──────────────────────────────────────
+
+def test_validate_ollama_base_bad_scheme_raises():
+    from codeforerunner.providers.ollama import _validate_ollama_base
+    with pytest.raises(ValueError, match="scheme must be http or https"):
+        _validate_ollama_base("ftp://localhost:11434")
+
+
+def test_validate_ollama_base_link_local_raises():
+    from codeforerunner.providers.ollama import _validate_ollama_base
+    with pytest.raises(ValueError, match="link-local"):
+        _validate_ollama_base("http://169.254.169.254/latest/meta-data/")
+
+
+def test_ollama_stream_url_error_raises():
+    import urllib.error
+    def _opener(req, *args, **kwargs):
+        raise urllib.error.URLError("refused")
+    with patch("urllib.request.urlopen", side_effect=_opener):
+        with pytest.raises(ProviderError, match="network error"):
+            list(OllamaProvider().stream(prompt="hi"))
+
+
+def test_ollama_stream_empty_line_skipped():
+    lines = [
+        b'\n',
+        b'{"response": "hi", "done": true}\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(OllamaProvider().stream(prompt="hi"))
+    assert chunks == ["hi"]
+
+
+def test_ollama_stream_invalid_json_skipped():
+    lines = [
+        b'not-json\n',
+        b'{"response": "ok", "done": true}\n',
+    ]
+    with patch("urllib.request.urlopen", side_effect=_fake_stream_urlopen(lines)):
+        chunks = list(OllamaProvider().stream(prompt="hi"))
+    assert chunks == ["ok"]

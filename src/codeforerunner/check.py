@@ -11,6 +11,8 @@ from codeforerunner.config import CheckConfig
 
 @dataclass(frozen=True)
 class Violation:
+    """Single rule match: which doc, which line, which rule, and what it means."""
+
     path: Path
     line: int
     rule_id: str

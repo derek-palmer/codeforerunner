@@ -41,6 +41,8 @@ TASK_SKILL_SLUGS: tuple[str, ...] = (
 
 @dataclass(frozen=True)
 class Target:
+    """Resolved install destination: agent name + absolute path."""
+
     name: str
     path: Path
 
@@ -50,6 +52,7 @@ def _home() -> Path:
 
 
 def resolve_target(agent: str, override: Path | None) -> Target:
+    """Return the default install Target for the given agent, or use override path."""
     if agent == "generic":
         if override is None:
             raise ValueError("generic target requires --path PATH")
@@ -126,6 +129,7 @@ def install_all_skills(
 
 
 def resolve_marketplace_target(agent: str, override: Path | None) -> Target:
+    """Return the marketplace install Target for the given agent, or use override path."""
     if agent == "generic":
         if override is None:
             raise ValueError("generic marketplace target requires --path PATH")
@@ -181,6 +185,7 @@ def render(source_text: str, dest_existing: str | None, agent: str) -> str:
 
 
 def find_markers(text: str) -> tuple[int, int] | None:
+    """Return (start, end) byte offsets of the managed region, or None if absent."""
     a = text.find(MARKER_BEGIN)
     if a < 0:
         return None
@@ -202,12 +207,15 @@ def overlay(dest_text: str, source_body: str) -> str:
 
 @dataclass
 class Plan:
+    """Pending install action computed by plan_install or plan_marketplace."""
+
     action: str  # "create" | "update" | "skip" | "abort"
     reason: str
     target: Target
     new_content: str | None = None
 
     def write(self) -> None:
+        """Execute the plan: create or update the destination file."""
         if self.action in ("skip", "abort"):
             return
         assert self.new_content is not None
@@ -306,6 +314,7 @@ def install(
     out=None,
     err=None,
 ) -> int:
+    """Run one install operation (skill or marketplace). Returns an EXIT_* code."""
     out = out or sys.stdout
     err = err or sys.stderr
 
@@ -356,6 +365,7 @@ def install(
 
 
 def add_subparser(sub: argparse._SubParsersAction) -> None:
+    """Register the `forerunner install` subcommand onto *sub*."""
     p = sub.add_parser("install", help="install skill(s) into agent-specific directories (D.installer)")
     p.add_argument("agent", choices=["codex", "claude", "generic"], nargs="?",
                    help="target agent (omit with --all to install to all detected agents)")

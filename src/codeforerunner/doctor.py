@@ -33,6 +33,8 @@ _DEFAULT_PROVIDER_ENV = {
 
 @dataclass(frozen=True)
 class Finding:
+    """Single health-check result with severity, check name, and human message."""
+
     severity: str  # "ok" | "warn" | "error"
     check: str
     message: str
@@ -244,7 +246,7 @@ def _check_config_loadable(repo: Path) -> list[Finding]:
 
 
 def _skill_mode_active() -> bool:
-    """True if any installed skill destination has managed markers — agent IS the model."""
+    """Return True if any installed skill destination has managed markers (agent is the model)."""
     for dest in _installed_skill_destinations():
         if dest.exists():
             try:
@@ -345,10 +347,12 @@ tasks:
 
 
 def starter_config() -> str:
+    """Return the default forerunner.config.yaml content written by --fix."""
     return _STARTER_CONFIG
 
 
 def run(repo: Path, run_scripts: bool = False) -> list[Finding]:
+    """Run all health checks against *repo* and return findings."""
     repo = repo.resolve()
     findings: list[Finding] = []
     findings.extend(_check_skill_body_parity(repo, run_scripts=run_scripts))
@@ -360,6 +364,7 @@ def run(repo: Path, run_scripts: bool = False) -> list[Finding]:
 
 
 def format_report(findings: list[Finding]) -> str:
+    """Format findings as a human-readable report string with a summary line."""
     lines = [f"[{f.severity}] {f.check}: {f.message}" for f in findings]
     counts: dict[str, int] = {"ok": 0, "warn": 0, "error": 0}
     for f in findings:
@@ -370,6 +375,7 @@ def format_report(findings: list[Finding]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Entry point for `forerunner doctor`; returns 1 when any finding is an error."""
     parser = argparse.ArgumentParser(
         prog="forerunner doctor",
         description="Single-screen health report for codeforerunner repo.",

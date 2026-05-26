@@ -1,11 +1,13 @@
-"""Subprocess-based integration tests for the stdio MCP server."""
+"""MCP server tests: subprocess integration + direct unit tests."""
 
 from __future__ import annotations
 
+import io
 import json
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import codeforerunner
 import pytest
@@ -218,3 +220,212 @@ def test_tools_call_state_resets_per_process() -> None:
         assert resp["error"]["code"] == -32000
     finally:
         s2.close()
+
+
+# ── Unit tests (direct in-process; these count toward coverage) ──────────────
+
+from codeforerunner.mcp_server import (
+    PROTOCOL_VERSION,
+    _description_for,
+    _err,
+    _handle,
+    _list_tasks,
+    _ok,
+    _tools,
+    main as mcp_main,
+    serve,
+)
+
+
+def _state() -> dict:
+    return {"initialized": False, "scan_called": False}
+
+
+def _initialized_state() -> dict:
+    return {"initialized": True, "scan_called": False}
+
+
+# ── _ok / _err ────────────────────────────────────────────────────────────────
+
+def test_ok_shape():
+    r = _ok(1, {"x": 1})
+    assert r == {"jsonrpc": "2.0", "id": 1, "result": {"x": 1}}
+
+
+def test_err_shape():
+    r = _err(2, -32601, "not found")
+    assert r == {"jsonrpc": "2.0", "id": 2, "error": {"code": -32601, "message": "not found"}}
+
+
+# ── _list_tasks / _description_for / _tools ───────────────────────────────────
+
+def test_list_tasks_empty_when_no_tasks_dir(tmp_path):
+    assert _list_tasks(tmp_path) == []
+
+
+def test_list_tasks_returns_sorted_md_files(tmp_path):
+    (tmp_path / "tasks").mkdir()
+    (tmp_path / "tasks" / "beta.md").write_text("b")
+    (tmp_path / "tasks" / "alpha.md").write_text("a")
+    result = _list_tasks(tmp_path)
+    assert [p.name for p in result] == ["alpha.md", "beta.md"]
+
+
+def test_description_for_returns_first_nonempty_stripped(tmp_path):
+    f = tmp_path / "task.md"
+    f.write_text("\n## My Task\nBody\n")
+    assert _description_for(f) == "My Task"
+
+
+def test_description_for_empty_file_returns_stem(tmp_path):
+    f = tmp_path / "my-task.md"
+    f.write_text("\n\n")
+    assert _description_for(f) == "my-task"
+
+
+def test_tools_returns_list_with_correct_shape(tmp_path):
+    (tmp_path / "tasks").mkdir()
+    (tmp_path / "tasks" / "scan.md").write_text("# Scan\nBody\n")
+    tools = _tools(tmp_path)
+    assert len(tools) == 1
+    assert tools[0]["name"] == "scan"
+    assert tools[0]["description"] == "Scan"
+    assert tools[0]["inputSchema"] == {"type": "object", "properties": {}, "required": []}
+
+
+# ── _handle ───────────────────────────────────────────────────────────────────
+
+def test_handle_notifications_initialized_returns_none():
+    msg = {"jsonrpc": "2.0", "method": "notifications/initialized"}
+    assert _handle(PROMPTS, msg, _state()) is None
+
+
+def test_handle_notification_without_id_returns_none():
+    msg = {"jsonrpc": "2.0", "method": "notifications/foo"}
+    assert _handle(PROMPTS, msg, _state()) is None
+
+
+def test_handle_initialize_sets_state_and_returns_ok():
+    state = _state()
+    resp = _handle(PROMPTS, {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}, state)
+    assert state["initialized"] is True
+    assert resp["result"]["protocolVersion"] == PROTOCOL_VERSION
+    assert resp["result"]["serverInfo"]["name"] == "codeforerunner"
+
+
+def test_handle_not_initialized_returns_error():
+    resp = _handle(PROMPTS, {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}, _state())
+    assert resp["error"]["code"] == -32002
+
+
+def test_handle_tools_list_returns_tools():
+    resp = _handle(PROMPTS, {"jsonrpc": "2.0", "id": 2, "method": "tools/list"}, _initialized_state())
+    assert "tools" in resp["result"]
+    assert any(t["name"] == "scan" for t in resp["result"]["tools"])
+
+
+def test_handle_tools_call_invalid_name_slash():
+    resp = _handle(PROMPTS, {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "a/b"}}, _initialized_state())
+    assert resp["error"]["code"] == -32602
+
+
+def test_handle_tools_call_invalid_name_dotdot():
+    resp = _handle(PROMPTS, {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": ".."}}, _initialized_state())
+    assert resp["error"]["code"] == -32602
+
+
+def test_handle_tools_call_invalid_name_backslash():
+    resp = _handle(PROMPTS, {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "a\\b"}}, _initialized_state())
+    assert resp["error"]["code"] == -32602
+
+
+def test_handle_tools_call_unknown_tool():
+    resp = _handle(PROMPTS, {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "nonexistent-task"}}, _initialized_state())
+    assert resp["error"]["code"] == -32602
+
+
+def test_handle_tools_call_scan_first_required():
+    resp = _handle(PROMPTS, {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "readme"}}, _initialized_state())
+    assert resp["error"]["code"] == -32000
+    assert "scan-first" in resp["error"]["message"]
+
+
+def test_handle_tools_call_scan_sets_scan_called():
+    state = _initialized_state()
+    resp = _handle(PROMPTS, {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "scan"}}, state)
+    assert state["scan_called"] is True
+    assert resp["result"]["isError"] is False
+
+
+def test_handle_tools_call_init_agent_onboarding_exempt():
+    state = _initialized_state()
+    resp = _handle(PROMPTS, {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "init-agent-onboarding"}}, state)
+    assert "error" not in resp
+    assert resp["result"]["isError"] is False
+
+
+def test_handle_tools_call_allowed_after_scan():
+    state = _initialized_state()
+    _handle(PROMPTS, {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "scan"}}, state)
+    resp = _handle(PROMPTS, {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "readme"}}, state)
+    assert "error" not in resp
+    assert resp["result"]["isError"] is False
+
+
+def test_handle_unknown_method():
+    resp = _handle(PROMPTS, {"jsonrpc": "2.0", "id": 4, "method": "no/such"}, _initialized_state())
+    assert resp["error"]["code"] == -32601
+
+
+# ── serve ────────────────────────────────────────────────────────────────────
+
+def test_serve_invalid_json_returns_parse_error():
+    out = io.StringIO()
+    err = io.StringIO()
+    rc = serve(PROMPTS, stdin=["not-json\n"], stdout=out, stderr=err)
+    assert rc == 0
+    out.seek(0)
+    resp = json.loads(out.readline())
+    assert resp["error"]["code"] == -32700
+
+
+def test_serve_empty_line_produces_no_output():
+    out = io.StringIO()
+    rc = serve(PROMPTS, stdin=["  \n", "\n"], stdout=out, stderr=io.StringIO())
+    assert rc == 0
+    out.seek(0)
+    assert out.read() == ""
+
+
+def test_serve_notification_produces_no_output():
+    out = io.StringIO()
+    msg = json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n"
+    rc = serve(PROMPTS, stdin=[msg], stdout=out, stderr=io.StringIO())
+    assert rc == 0
+    out.seek(0)
+    assert out.read() == ""
+
+
+def test_serve_initialize_response_written():
+    out = io.StringIO()
+    msg = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}) + "\n"
+    serve(PROMPTS, stdin=[msg], stdout=out, stderr=io.StringIO())
+    out.seek(0)
+    resp = json.loads(out.readline())
+    assert resp["result"]["protocolVersion"] == PROTOCOL_VERSION
+
+
+# ── mcp_main ──────────────────────────────────────────────────────────────────
+
+def test_mcp_main_returns_2_when_prompts_not_found(tmp_path, capsys, monkeypatch):
+    with patch("codeforerunner.mcp_server.find_prompts_root", side_effect=FileNotFoundError("no prompts")):
+        rc = mcp_main()
+    assert rc == 2
+    assert "mcp_server:" in capsys.readouterr().err
+
+
+def test_mcp_main_calls_serve_with_resolved_root(capsys):
+    with patch("codeforerunner.mcp_server.serve", return_value=0) as mock_serve:
+        rc = mcp_main()
+    assert rc == 0
+    mock_serve.assert_called_once()

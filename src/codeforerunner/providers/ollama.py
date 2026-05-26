@@ -20,7 +20,7 @@ def _validate_ollama_base(base: str) -> None:
     """Reject URLs that look like cloud metadata endpoints or use unexpected schemes."""
     try:
         parsed = urllib.parse.urlparse(base)
-    except Exception as e:
+    except Exception as e:  # pragma: no cover - urlparse never raises
         raise ValueError(f"OLLAMA_HOST: invalid URL: {e}") from e
     if parsed.scheme not in ("http", "https"):
         raise ValueError(
@@ -46,6 +46,8 @@ def is_available(host: str | None = None) -> bool:
 
 
 class OllamaProvider:
+    """Ollama local provider using stdlib HTTP."""
+
     name = "ollama"
     default_env_var = "OLLAMA_HOST"
     default_model = "llama3"
@@ -57,6 +59,7 @@ class OllamaProvider:
         model: str | None = None,
         api_key: str | None = None,
     ) -> CompletionResult:
+        """Send *prompt* to the Ollama /api/generate endpoint and return the full response."""
         # api_key is interpreted as a base URL override; fall back to env then default.
         base = api_key or os.environ.get(self.default_env_var) or DEFAULT_HOST
         base = base.rstrip("/")
@@ -96,6 +99,7 @@ class OllamaProvider:
         model: str | None = None,
         api_key: str | None = None,
     ) -> Iterator[str]:
+        """Yield text chunks from the Ollama /api/generate streaming endpoint."""
         base = api_key or os.environ.get(self.default_env_var) or DEFAULT_HOST
         base = base.rstrip("/")
         _validate_ollama_base(base)
