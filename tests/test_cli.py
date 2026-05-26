@@ -163,7 +163,7 @@ def test_generate_calls_provider_with_resolved_bundle(tmp_path, capsys, monkeypa
         default_env_var = "FAKE_API_KEY"
         default_model = "fake-default"
 
-        def complete(self, *, prompt, model=None, api_key=None):
+        def generate(self, *, prompt, model=None, api_key=None):
             calls.append({"prompt": prompt, "model": model, "api_key": api_key})
             return CompletionResult(text="generated text", model=model or "fake-default")
 
@@ -195,7 +195,7 @@ def test_generate_missing_api_key_exits_three(tmp_path, capsys, monkeypatch):
         default_env_var = "FAKE_API_KEY"
         default_model = "fake-default"
 
-        def complete(self, *, prompt, model=None, api_key=None):  # pragma: no cover
+        def generate(self, *, prompt, model=None, api_key=None):  # pragma: no cover
             raise AssertionError("provider should not be called without API key")
 
     from codeforerunner import providers
@@ -220,7 +220,7 @@ def test_generate_provider_error_exits_four(tmp_path, capsys, monkeypatch):
         default_env_var = "FAKE_API_KEY"
         default_model = "fake-default"
 
-        def complete(self, *, prompt, model=None, api_key=None):
+        def generate(self, *, prompt, model=None, api_key=None):
             raise ProviderError("quota exceeded")
 
     monkeypatch.setitem(providers.REGISTRY, "fake", FakeProvider)
@@ -244,7 +244,7 @@ def test_generate_model_override(tmp_path, capsys, monkeypatch):
         default_env_var = "FAKE_API_KEY"
         default_model = "default-model"
 
-        def complete(self, *, prompt, model=None, api_key=None):
+        def generate(self, *, prompt, model=None, api_key=None):
             calls.append({"model": model})
             return CompletionResult(text="ok", model=model or "default-model")
 
@@ -291,7 +291,7 @@ def test_generate_uses_config_api_key_env_override(tmp_path, capsys, monkeypatch
         default_env_var = "ANTHROPIC_API_KEY"
         default_model = "fake-claude"
 
-        def complete(self, *, prompt, model=None, api_key=None):
+        def generate(self, *, prompt, model=None, api_key=None):
             calls.append({"model": model, "api_key": api_key})
             return CompletionResult(text="ok", model=model or "fake-claude")
 
@@ -323,7 +323,7 @@ def test_generate_falls_back_to_ollama_when_no_key_and_ollama_running(
         default_env_var = "OLLAMA_HOST"
         default_model = "llama3"
 
-        def complete(self, *, prompt, model=None, api_key=None):
+        def generate(self, *, prompt, model=None, api_key=None):
             calls.append({"model": model, "api_key": api_key})
             return CompletionResult(text="ollama output", model=model or "llama3")
 
@@ -354,7 +354,7 @@ def test_generate_no_fallback_when_provider_explicit_and_key_missing(
         default_env_var = "FAKE_API_KEY"
         default_model = "fake-default"
 
-        def complete(self, *, prompt, model=None, api_key=None):  # pragma: no cover
+        def generate(self, *, prompt, model=None, api_key=None):  # pragma: no cover
             raise AssertionError("should not be called")
 
     from codeforerunner import providers
@@ -422,7 +422,7 @@ def test_generate_ollama_fallback_uses_explicit_model(tmp_path, capsys, monkeypa
         default_env_var = "OLLAMA_HOST"
         default_model = "llama3"
 
-        def complete(self, *, prompt, model=None, api_key=None):
+        def generate(self, *, prompt, model=None, api_key=None):
             calls.append({"model": model})
             return CompletionResult(text="ok", model=model or "llama3")
 

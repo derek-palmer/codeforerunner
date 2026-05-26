@@ -110,7 +110,7 @@ def test_api_key_env_unknown_provider_raises(tmp_path):
 def test_require_type_raises_config_error(tmp_path):
     # tasks.check must be a dict; passing a string triggers _require_type
     _write(tmp_path / "forerunner.config.yaml", "tasks:\n  check: not-a-dict\n")
-    with pytest.raises(config.ConfigError, match="tasks.check"):
+    with pytest.raises(config.ConfigError, match=r"tasks\.check"):
         config.load_from_repo(tmp_path)
 
 
@@ -147,6 +147,20 @@ def test_api_key_env_non_string_value_raises(tmp_path):
         tmp_path / "forerunner.config.yaml",
         "api_key_env:\n  anthropic: 42\n",
     )
+    with pytest.raises(config.ConfigError, match="api_key_env"):
+        config.load_from_repo(tmp_path)
+
+
+def test_coerce_str_tuple_none_returns_empty(tmp_path):
+    # ignore_patterns: null -> None -> _coerce_str_tuple returns () (previously pragma: no cover)
+    _write(tmp_path / "forerunner.config.yaml", "ignore_patterns: null\n")
+    cfg = config.load_from_repo(tmp_path)
+    assert cfg.ignore_patterns == ()
+
+
+def test_parse_api_key_env_non_string_key_raises(tmp_path):
+    # YAML integer key -> non-str key -> _parse_api_key_env raises (previously pragma: no cover)
+    _write(tmp_path / "forerunner.config.yaml", "api_key_env:\n  1: MY_KEY\n")
     with pytest.raises(config.ConfigError, match="api_key_env"):
         config.load_from_repo(tmp_path)
 

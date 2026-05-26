@@ -52,7 +52,7 @@ class OllamaProvider:
     default_env_var = "OLLAMA_HOST"
     default_model = "llama3"
 
-    def complete(
+    def generate(
         self,
         *,
         prompt: str,

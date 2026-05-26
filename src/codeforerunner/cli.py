@@ -182,7 +182,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
         return 0
 
     try:
-        result = provider.complete(prompt=bundle, model=model, api_key=api_key)
+        result = provider.generate(prompt=bundle, model=model, api_key=api_key)
     except _providers.ProviderError as e:
         print(f"error: {provider_name} provider failed: {e}", file=sys.stderr)
         return 4
