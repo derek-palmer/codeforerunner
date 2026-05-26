@@ -12,6 +12,7 @@ jobs:
       name: npm
       url: https://www.npmjs.com/package/codeforerunner
     permissions:
+      contents: read
       id-token: write   # required for OIDC trusted publishing (tokenless)
     steps:
       - uses: actions/checkout@v6.0.2
