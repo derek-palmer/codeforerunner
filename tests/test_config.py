@@ -105,6 +105,43 @@ def test_api_key_env_unknown_provider_raises(tmp_path):
         config.load_from_repo(tmp_path)
 
 
+# ── Internal validator edge cases ─────────────────────────────────────────────
+
+def test_require_type_raises_config_error(tmp_path):
+    # tasks.check must be a dict; passing a string triggers _require_type
+    _write(tmp_path / "forerunner.config.yaml", "tasks:\n  check: not-a-dict\n")
+    with pytest.raises(config.ConfigError, match="tasks.check"):
+        config.load_from_repo(tmp_path)
+
+
+def test_coerce_str_tuple_not_list_raises(tmp_path):
+    _write(tmp_path / "forerunner.config.yaml", "ignore_patterns: 42\n")
+    with pytest.raises(config.ConfigError, match="ignore_patterns"):
+        config.load_from_repo(tmp_path)
+
+
+def test_coerce_str_tuple_non_string_item_raises(tmp_path):
+    _write(tmp_path / "forerunner.config.yaml", "ignore_patterns:\n  - 123\n")
+    with pytest.raises(config.ConfigError, match=r"ignore_patterns\[0\]"):
+        config.load_from_repo(tmp_path)
+
+
+def test_parse_api_key_env_not_dict_raises(tmp_path):
+    _write(tmp_path / "forerunner.config.yaml", "api_key_env: not-a-dict\n")
+    with pytest.raises(config.ConfigError, match="api_key_env"):
+        config.load_from_repo(tmp_path)
+
+
+def test_to_int_raises_config_error(tmp_path):
+    # version_audit.stale_after_days must be int-convertible
+    _write(
+        tmp_path / "forerunner.config.yaml",
+        "tasks:\n  version_audit:\n    stale_after_days: not-a-number\n",
+    )
+    with pytest.raises(config.ConfigError, match="stale_after_days"):
+        config.load_from_repo(tmp_path)
+
+
 def test_api_key_env_non_string_value_raises(tmp_path):
     _write(
         tmp_path / "forerunner.config.yaml",

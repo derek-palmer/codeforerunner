@@ -385,6 +385,69 @@ def test_rv1_not_run_when_excluded_from_enabled_rules(tmp_path):
     assert not any(v.rule_id == "RV1-version-drift" for v in run(tmp_path, cfg))
 
 
+# ── Version drift internals ────────────────────────────────────────────────────
+
+def test_rv1_skips_changelog_in_docs_dir(tmp_path):
+    # CHANGELOG.md inside docs/ is picked up by _scanned_docs but must be skipped
+    _seed(
+        tmp_path,
+        {
+            "docs/CHANGELOG.md": "codeforerunner==0.1.0\n",
+            "pyproject.toml": '[project]\nname = "codeforerunner"\nversion = "0.3.1"\n',
+        },
+    )
+    vs = [v for v in run(tmp_path) if v.rule_id == "RV1-version-drift"]
+    assert vs == []
+
+
+def test_rv1_skips_ignored_path(tmp_path):
+    from codeforerunner.config import CheckConfig
+    _seed(
+        tmp_path,
+        {
+            "docs/legacy.md": "codeforerunner==0.1.0\n",
+            "pyproject.toml": '[project]\nname = "codeforerunner"\nversion = "0.3.1"\n',
+        },
+    )
+    cfg = CheckConfig(ignore_paths=("docs/legacy.md",))
+    vs = [v for v in run(tmp_path, cfg) if v.rule_id == "RV1-version-drift"]
+    assert vs == []
+
+
+def test_rv1_skips_unreadable_doc(tmp_path):
+    import pathlib
+    from unittest.mock import MagicMock, patch
+    from codeforerunner.check import _check_version_drift
+
+    (tmp_path / "pyproject.toml").write_text('[project]\nversion = "1.0.0"\n', encoding="utf-8")
+    mock_doc = MagicMock()
+    mock_doc.name = "guide.md"
+    mock_doc.read_text.side_effect = OSError("permission denied")
+
+    violations = _check_version_drift(tmp_path, [mock_doc], (), None)
+    assert violations == []
+
+
+def test_path_ignored_doc_outside_repo():
+    from codeforerunner.check import _path_ignored
+    repo = Path("/tmp/some-repo")
+    doc = Path("/other/location/README.md")
+    # Should not crash; uses abs posix path matching
+    result = _path_ignored(repo, doc, ("*.md",))
+    assert isinstance(result, bool)
+
+
+def test_current_version_returns_none_on_oserror(tmp_path):
+    import pathlib
+    from unittest.mock import patch
+    from codeforerunner.check import _current_version
+
+    (tmp_path / "pyproject.toml").touch()
+    with patch.object(pathlib.Path, "read_text", side_effect=OSError("denied")):
+        result = _current_version(tmp_path)
+    assert result is None
+
+
 def test_workflows_lint_when_actionlint_available():
     import shutil
     import subprocess

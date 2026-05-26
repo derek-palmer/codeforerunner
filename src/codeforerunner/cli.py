@@ -61,7 +61,7 @@ def _doc_for(args: argparse.Namespace, task: str) -> int:
 
 
 def cmd_init(args: argparse.Namespace) -> int:
-    """Default + --agents-only = onboarding bundle only. --full prepends scan."""
+    """Emit onboarding bundle; prepend scan bundle when --full is given."""
     if getattr(args, "full", False):
         sys.stdout.write("<!-- forerunner init --full: section 1/2 (scan) -->\n")
         rc = _doc_for(args, "scan")
@@ -72,6 +72,7 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
+    """Emit the scan prompt bundle and hint about FORERUNNER_SCAN_DONE."""
     rc = _doc_for(args, "scan")
     if rc == 0:
         print(
@@ -102,6 +103,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def cmd_mcp_server(args: argparse.Namespace) -> int:
+    """Start the stdio MCP server exposing prompt bundles as tools."""
     from codeforerunner import mcp_server
     try:
         prompts_root = find_prompts_root(args.repo)
@@ -194,6 +196,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:
+    """Run health checks and print a single-screen report; exit 1 on errors."""
     from codeforerunner import doctor
     from codeforerunner.config import CONFIG_FILENAME
     root = Path(args.repo).resolve() if args.repo else Path.cwd()
@@ -210,6 +213,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build and return the top-level argument parser with all subcommands registered."""
     p = argparse.ArgumentParser(
         prog="forerunner",
         description="Prompt-first repo documentation tooling. Thin CLI; product logic in prompts/.",
@@ -286,6 +290,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Parse argv and dispatch to the appropriate subcommand handler."""
     parser = build_parser()
     args = parser.parse_args(argv)
     if not hasattr(args, "repo"):

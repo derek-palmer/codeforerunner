@@ -30,6 +30,7 @@ REGISTRY: dict[str, type] = {
 
 
 def get(name: str) -> type:
+    """Return the provider class for *name*, or raise ProviderError if unknown."""
     if name not in REGISTRY:
         raise ProviderError(
             f"unknown provider '{name}' (expected one of {sorted(REGISTRY)})"

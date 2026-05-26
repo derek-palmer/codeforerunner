@@ -11,6 +11,8 @@ from codeforerunner.providers.base import CompletionResult, ProviderError
 
 
 class OpenAIProvider:
+    """OpenAI chat completions provider using stdlib HTTP."""
+
     name = "openai"
     default_env_var = "OPENAI_API_KEY"
     default_model = "gpt-4o"
@@ -24,6 +26,7 @@ class OpenAIProvider:
         model: str | None = None,
         api_key: str | None = None,
     ) -> CompletionResult:
+        """Send *prompt* to the OpenAI chat completions endpoint and return the full response."""
         if not api_key:
             raise ProviderError(f"missing API key (set ${self.default_env_var})")
         model = model or self.default_model
@@ -66,6 +69,7 @@ class OpenAIProvider:
         model: str | None = None,
         api_key: str | None = None,
     ) -> Iterator[str]:
+        """Yield text chunks from the OpenAI streaming chat completions endpoint."""
         if not api_key:
             raise ProviderError(f"missing API key (set ${self.default_env_var})")
         model = model or self.default_model

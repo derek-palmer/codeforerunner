@@ -11,6 +11,8 @@ from codeforerunner.providers.base import CompletionResult, ProviderError
 
 
 class AnthropicProvider:
+    """Anthropic Messages API provider using stdlib HTTP."""
+
     name = "anthropic"
     default_env_var = "ANTHROPIC_API_KEY"
     default_model = "claude-opus-4-7"
@@ -24,6 +26,7 @@ class AnthropicProvider:
         model: str | None = None,
         api_key: str | None = None,
     ) -> CompletionResult:
+        """Send *prompt* to the Anthropic Messages API and return the full response."""
         if not api_key:
             raise ProviderError(f"missing API key (set ${self.default_env_var})")
         model = model or self.default_model
@@ -68,6 +71,7 @@ class AnthropicProvider:
         model: str | None = None,
         api_key: str | None = None,
     ) -> Iterator[str]:
+        """Yield text chunks from the Anthropic streaming Messages API."""
         if not api_key:
             raise ProviderError(f"missing API key (set ${self.default_env_var})")
         model = model or self.default_model

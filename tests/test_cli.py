@@ -527,3 +527,101 @@ def test_generate_stream_flag_yields_chunks(tmp_path, capsys, monkeypatch):
     assert rc == 0
     assert cap.out == "hello world\n"
 
+
+# ── Error / edge paths ────────────────────────────────────────────────────────
+
+def test_get_bundle_error_when_repo_has_no_prompts(tmp_path, capsys):
+    rc = main(["--repo", str(tmp_path), "doc", "scan"])
+    cap = capsys.readouterr()
+    assert rc == 2
+    assert "error:" in cap.err
+
+
+def test_get_bundle_catches_resolve_bundle_error(tmp_path, capsys, monkeypatch):
+    from unittest.mock import patch
+    _seed_repo_with_config(tmp_path)
+    with patch("codeforerunner.cli._resolve_bundle", side_effect=FileNotFoundError("gone")):
+        rc = main(["--repo", str(tmp_path), "doc", "readme"])
+    cap = capsys.readouterr()
+    assert rc == 2
+    assert "error:" in cap.err
+
+
+def test_cmd_init_full_exits_when_scan_fails(tmp_path, capsys):
+    # no prompts/tasks in tmp_path → scan bundle lookup fails → early return
+    rc = main(["--repo", str(tmp_path), "init", "--full"])
+    capsys.readouterr()
+    assert rc == 2
+
+
+def test_cmd_mcp_server_bad_repo_exits_two(tmp_path, capsys):
+    rc = main(["--repo", str(tmp_path), "mcp-server"])
+    cap = capsys.readouterr()
+    assert rc == 2
+    assert "mcp_server:" in cap.err
+
+
+def test_cmd_mcp_server_success_path(capsys):
+    from unittest.mock import patch
+    with patch("codeforerunner.mcp_server.serve", return_value=0) as mock_serve:
+        rc = main(["mcp-server"])
+    capsys.readouterr()
+    assert rc == 0
+    mock_serve.assert_called_once()
+
+
+def test_generate_exits_when_bundle_not_found(tmp_path, capsys, monkeypatch):
+    # no prompts in tmp_path → _get_bundle returns rc=2
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    rc = main(["--repo", str(tmp_path), "generate", "readme"])
+    capsys.readouterr()
+    assert rc == 2
+
+
+def test_generate_stream_error_exits_four(tmp_path, capsys, monkeypatch):
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+    from codeforerunner import providers
+    from codeforerunner.providers import ProviderError
+
+    class FakeProvider:
+        default_env_var = "FAKE_API_KEY"
+        default_model = "fake-stream"
+
+        def stream(self, *, prompt, model=None, api_key=None):
+            raise ProviderError("stream failed")
+
+    monkeypatch.setitem(providers.REGISTRY, "fake", FakeProvider)
+    monkeypatch.setenv("FAKE_API_KEY", "secret")
+
+    rc = main(["--repo", str(tmp_path), "generate", "--provider", "fake", "--stream", "readme"])
+    cap = capsys.readouterr()
+    assert rc == 4
+    assert "stream failed" in cap.err
+
+
+def test_generate_skill_mode_tty_prints_info(tmp_path, monkeypatch):
+    import io as _io
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    fake_out = _io.StringIO()
+    fake_err = _io.StringIO()
+
+    class _FakeTTYStdout:
+        def write(self, s):
+            fake_out.write(s)
+        def isatty(self):
+            return True
+        def flush(self):
+            pass
+
+    from unittest.mock import patch
+    with patch("codeforerunner.providers.ollama_available", return_value=False), \
+         patch("sys.stdout", _FakeTTYStdout()), \
+         patch("sys.stderr", fake_err):
+        rc = main(["--repo", str(tmp_path), "generate", "readme"])
+
+    assert rc == 0
+    assert "info:" in fake_err.getvalue()

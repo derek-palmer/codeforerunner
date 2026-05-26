@@ -230,3 +230,232 @@ def test_provider_api_key_ollama_config_shows_local_mode(tmp_path: Path, monkeyp
     assert len(matches) == 1
     assert matches[0].severity == "ok"
     assert "local mode" in matches[0].message
+
+
+# ── skill-body-parity edge cases ──────────────────────────────────────────────
+
+def test_skill_body_parity_canonical_missing(tmp_path: Path):
+    from codeforerunner.doctor import _check_skill_body_parity
+    repo = _copy_repo_layout(tmp_path)
+    (repo / "agent" / "codeforerunner.skill.md").unlink()
+
+    findings = _check_skill_body_parity(repo, run_scripts=True)
+    assert any(f.severity == "error" and "canonical skill missing" in f.message for f in findings)
+
+
+def test_skill_body_parity_copy_missing(tmp_path: Path):
+    from codeforerunner.doctor import _check_skill_body_parity
+    repo = _copy_repo_layout(tmp_path)
+    (repo / "skills" / "codeforerunner" / "SKILL.md").unlink()
+
+    findings = _check_skill_body_parity(repo, run_scripts=True)
+    assert any(f.severity == "error" and "copy missing" in f.message for f in findings)
+
+
+# ── _check_installed_destinations edge cases ──────────────────────────────────
+
+def test_installed_destinations_oserror(tmp_path: Path):
+    import pathlib
+    from unittest.mock import patch
+    from codeforerunner.doctor import _check_installed_destinations
+
+    skill_dest = tmp_path / "SKILL.md"
+    skill_dest.write_text("content", encoding="utf-8")
+    mp_dest = tmp_path / "nomp.json"
+
+    original_read_text = pathlib.Path.read_text
+
+    def _selective_raise(self, *args, **kwargs):
+        if self == skill_dest:
+            raise OSError("denied")
+        return original_read_text(self, *args, **kwargs)
+
+    with patch("codeforerunner.doctor._installed_skill_destinations", return_value=[skill_dest]), \
+         patch("codeforerunner.doctor._installed_marketplace_destination", return_value=mp_dest), \
+         patch.object(pathlib.Path, "read_text", _selective_raise):
+        findings = _check_installed_destinations(tmp_path)
+
+    assert any("unreadable" in f.message for f in findings)
+
+
+def test_installed_destinations_with_markers_ok(tmp_path: Path):
+    from unittest.mock import patch
+    from codeforerunner.doctor import MARKER_BEGIN, MARKER_END, _check_installed_destinations
+
+    skill_dest = tmp_path / "SKILL.md"
+    skill_dest.write_text(f"{MARKER_BEGIN}\nbody\n{MARKER_END}\n", encoding="utf-8")
+    mp_dest = tmp_path / "nomp.json"
+
+    with patch("codeforerunner.doctor._installed_skill_destinations", return_value=[skill_dest]), \
+         patch("codeforerunner.doctor._installed_marketplace_destination", return_value=mp_dest):
+        findings = _check_installed_destinations(tmp_path)
+
+    assert any(f.severity == "ok" and "managed" in f.message for f in findings)
+
+
+def test_installed_destinations_without_markers(tmp_path: Path):
+    from unittest.mock import patch
+    from codeforerunner.doctor import _check_installed_destinations
+
+    skill_dest = tmp_path / "SKILL.md"
+    skill_dest.write_text("# user file, no markers", encoding="utf-8")
+    mp_dest = tmp_path / "nomp.json"
+
+    with patch("codeforerunner.doctor._installed_skill_destinations", return_value=[skill_dest]), \
+         patch("codeforerunner.doctor._installed_marketplace_destination", return_value=mp_dest):
+        findings = _check_installed_destinations(tmp_path)
+
+    assert any("without managed-region markers" in f.message for f in findings)
+
+
+def test_installed_destinations_marketplace_matches(tmp_path: Path):
+    from unittest.mock import patch
+    from codeforerunner.doctor import _check_installed_destinations
+
+    skill_dest = tmp_path / "SKILL.md"
+    skill_dest.write_text("# no markers")
+
+    mp_content = '{"marketplace": {"id": "test"}}'
+    mp_src = tmp_path / "plugins" / "codex" / "marketplace.json"
+    mp_src.parent.mkdir(parents=True)
+    mp_src.write_text(mp_content, encoding="utf-8")
+
+    mp_dest = tmp_path / "mp.json"
+    mp_dest.write_text(mp_content, encoding="utf-8")
+
+    with patch("codeforerunner.doctor._installed_skill_destinations", return_value=[skill_dest]), \
+         patch("codeforerunner.doctor._installed_marketplace_destination", return_value=mp_dest):
+        findings = _check_installed_destinations(tmp_path)
+
+    assert any(f.severity == "ok" and "matches" in f.message for f in findings)
+
+
+def test_installed_destinations_marketplace_drifted(tmp_path: Path):
+    from unittest.mock import patch
+    from codeforerunner.doctor import _check_installed_destinations
+
+    skill_dest = tmp_path / "SKILL.md"
+    skill_dest.write_text("# no markers")
+
+    mp_src = tmp_path / "plugins" / "codex" / "marketplace.json"
+    mp_src.parent.mkdir(parents=True)
+    mp_src.write_text('{"id": "canonical"}', encoding="utf-8")
+
+    mp_dest = tmp_path / "mp.json"
+    mp_dest.write_text('{"id": "old"}', encoding="utf-8")
+
+    with patch("codeforerunner.doctor._installed_skill_destinations", return_value=[skill_dest]), \
+         patch("codeforerunner.doctor._installed_marketplace_destination", return_value=mp_dest):
+        findings = _check_installed_destinations(tmp_path)
+
+    assert any("drifted" in f.message for f in findings)
+
+
+def test_installed_destinations_marketplace_oserror(tmp_path: Path):
+    import pathlib
+    from unittest.mock import patch
+    from codeforerunner.doctor import _check_installed_destinations
+
+    skill_dest = tmp_path / "SKILL.md"
+    skill_dest.write_text("# no markers")
+
+    mp_dest = tmp_path / "mp.json"
+    mp_dest.write_text("{}", encoding="utf-8")
+
+    original_read_text = pathlib.Path.read_text
+
+    def _raise_for_mp(self, *args, **kwargs):
+        if self == mp_dest:
+            raise OSError("denied")
+        return original_read_text(self, *args, **kwargs)
+
+    with patch("codeforerunner.doctor._installed_skill_destinations", return_value=[skill_dest]), \
+         patch("codeforerunner.doctor._installed_marketplace_destination", return_value=mp_dest), \
+         patch.object(pathlib.Path, "read_text", _raise_for_mp):
+        findings = _check_installed_destinations(tmp_path)
+
+    assert any("unreadable" in f.message for f in findings)
+
+
+# ── _check_config_loadable error path ─────────────────────────────────────────
+
+def test_check_config_loadable_reports_error_on_invalid_config(tmp_path: Path):
+    from codeforerunner.doctor import _check_config_loadable
+    (tmp_path / "forerunner.config.yaml").write_text("provider: bad_unknown_provider\n", encoding="utf-8")
+    findings = _check_config_loadable(tmp_path)
+    assert any(f.severity == "error" for f in findings)
+
+
+# ── _skill_mode_active edge cases ─────────────────────────────────────────────
+
+def test_skill_mode_active_returns_true_when_markers_present(tmp_path: Path):
+    from unittest.mock import patch
+    from codeforerunner.doctor import MARKER_BEGIN, MARKER_END, _skill_mode_active
+
+    dest = tmp_path / "SKILL.md"
+    dest.write_text(f"{MARKER_BEGIN}\ncontent\n{MARKER_END}\n", encoding="utf-8")
+
+    with patch("codeforerunner.doctor._installed_skill_destinations", return_value=[dest]):
+        assert _skill_mode_active() is True
+
+
+def test_skill_mode_active_returns_false_when_no_markers(tmp_path: Path):
+    from unittest.mock import patch
+    from codeforerunner.doctor import _skill_mode_active
+
+    dest = tmp_path / "SKILL.md"
+    dest.write_text("# user file", encoding="utf-8")
+
+    with patch("codeforerunner.doctor._installed_skill_destinations", return_value=[dest]):
+        assert _skill_mode_active() is False
+
+
+def test_skill_mode_active_handles_oserror(tmp_path: Path):
+    import pathlib
+    from unittest.mock import patch
+    from codeforerunner.doctor import _skill_mode_active
+
+    dest = tmp_path / "SKILL.md"
+    dest.write_text("content", encoding="utf-8")
+
+    original_read_text = pathlib.Path.read_text
+
+    def _raise(self, *args, **kwargs):
+        if self == dest:
+            raise OSError("denied")
+        return original_read_text(self, *args, **kwargs)
+
+    with patch("codeforerunner.doctor._installed_skill_destinations", return_value=[dest]), \
+         patch.object(pathlib.Path, "read_text", _raise):
+        assert _skill_mode_active() is False
+
+
+# ── _check_provider_api_key with unparseable config ───────────────────────────
+
+def test_provider_api_key_config_error_returns_ok(tmp_path: Path):
+    from unittest.mock import patch
+    from codeforerunner.config import ConfigError
+    from codeforerunner.doctor import _check_provider_api_key
+
+    (tmp_path / "forerunner.config.yaml").write_text("provider: bad\n", encoding="utf-8")
+
+    with patch("codeforerunner.doctor.load_from_repo", side_effect=ConfigError("bad")):
+        findings = _check_provider_api_key(tmp_path)
+
+    assert len(findings) == 1
+    assert findings[0].severity == "ok"
+    assert "config unparseable" in findings[0].message
+
+
+def test_provider_api_key_skill_mode_active_no_config(tmp_path: Path):
+    from unittest.mock import patch
+    from codeforerunner.doctor import _check_provider_api_key
+
+    # no config file; no Ollama; skill mode active
+    with patch("codeforerunner.providers.ollama.is_available", return_value=False), \
+         patch("codeforerunner.doctor._skill_mode_active", return_value=True):
+        findings = _check_provider_api_key(tmp_path)
+
+    assert len(findings) == 1
+    assert findings[0].severity == "ok"
+    assert "skill mode" in findings[0].message

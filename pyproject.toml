@@ -54,3 +54,9 @@ codeforerunner = ["py.typed", "prompts/**/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pydocstyle>=6.3.0",
+    "pytest-cov>=7.1.0",
+]

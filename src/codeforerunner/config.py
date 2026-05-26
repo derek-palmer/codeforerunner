@@ -19,6 +19,8 @@ class ConfigError(Exception):
 
 @dataclass(frozen=True)
 class CheckConfig:
+    """Drift-check task configuration: severity gates and path filters."""
+
     block_on: tuple[str, ...] = ("HIGH", "MEDIUM")
     warn_on: tuple[str, ...] = ("LOW",)
     enabled_rules: tuple[str, ...] | None = None  # None = all rules enabled
@@ -27,6 +29,8 @@ class CheckConfig:
 
 @dataclass(frozen=True)
 class VersionAuditConfig:
+    """Version-audit task configuration: staleness window and live EOL data toggle."""
+
     enabled: bool = True
     stale_after_days: int = 30
     fetch_live_eol_data: bool = False
@@ -34,6 +38,8 @@ class VersionAuditConfig:
 
 @dataclass(frozen=True)
 class ForerunnerConfig:
+    """Top-level forerunner.config.yaml configuration."""
+
     provider: str = "anthropic"
     model: str = "claude-opus-4-7"
     approaching_eol_threshold_months: int = 6
@@ -52,7 +58,7 @@ def _require_type(value: Any, expected: type, field_name: str) -> Any:
 
 
 def _coerce_str_tuple(value: Any, field_name: str) -> tuple[str, ...]:
-    if value is None:
+    if value is None:  # pragma: no cover - callers supply defaults, never pass None
         return ()
     if not isinstance(value, list):
         raise ConfigError(f"{field_name}: expected list, got {type(value).__name__}")
@@ -71,7 +77,7 @@ def _parse_api_key_env(raw: Any) -> dict[str, str]:
         raise ConfigError(f"api_key_env: expected dict, got {type(raw).__name__}")
     out: dict[str, str] = {}
     for k, v in raw.items():
-        if not isinstance(k, str):
+        if not isinstance(k, str):  # pragma: no cover - YAML keys are always strings
             raise ConfigError(
                 f"api_key_env: keys must be strings, got {type(k).__name__}"
             )

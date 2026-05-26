@@ -114,6 +114,7 @@ def _handle(prompts_root: Path, msg: dict[str, Any], state: dict[str, Any]) -> d
 
 
 def serve(prompts_root: Path, stdin: Iterable[str] = sys.stdin, stdout=sys.stdout, stderr=sys.stderr) -> int:
+    """Run the JSON-RPC 2.0 MCP server loop over *stdin*/*stdout* until EOF."""
     state: dict[str, Any] = {"scan_called": False, "initialized": False}
     for raw in stdin:
         line = raw.strip()
@@ -141,6 +142,7 @@ def serve(prompts_root: Path, stdin: Iterable[str] = sys.stdin, stdout=sys.stdou
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Locate prompts root and start the MCP server; returns 2 if prompts not found."""
     try:
         prompts_root = find_prompts_root()
     except FileNotFoundError as e:
@@ -149,5 +151,5 @@ def main(argv: list[str] | None = None) -> int:
     return serve(prompts_root)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(main())
