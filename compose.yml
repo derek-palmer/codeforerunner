@@ -1,0 +1,16 @@
+services:
+  forerunner:
+    build:
+      context: .
+    image: codeforerunner-local
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY-}
+      OLLAMA_HOST: ${OLLAMA_HOST-}
+    entrypoint: ["forerunner"]
+    command: ["doctor"]
+
