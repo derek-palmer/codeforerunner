@@ -315,16 +315,13 @@ def _check_provider_api_key(repo: Path) -> list[Finding]:
     env_var = cfg.api_key_env.get(provider) or _DEFAULT_PROVIDER_ENV.get(provider, "")
     if os.environ.get(env_var):
         return [Finding("ok", "provider-api-key", f"{provider}: {env_var} is set")]
+    # Emit the same warning regardless of skill mode: an explicit provider in config
+    # means the user intends to use that provider, so a missing key is always a real problem.
     return [
         Finding(
             "warn",
             "provider-api-key",
-            f"{provider}: ${env_var} is not set; `forerunner generate` will refuse to run"
-            + (
-                " (use `--prompt-only` for key-free bundle output)"
-                if _skill_mode_active()
-                else ""
-            ),
+            f"{provider}: ${env_var} is not set; `forerunner generate` will refuse to run",
         )
     ]
 
@@ -366,7 +363,7 @@ def format_report(findings: list[Finding]) -> str:
     lines = [f"[{f.severity}] {f.check}: {f.message}" for f in findings]
     counts: dict[str, int] = {"ok": 0, "warn": 0, "error": 0}
     for f in findings:
-        counts[f.severity] = counts.get(f.severity, 0) + 1
+        counts[f.severity] += 1
     summary = f"summary: {counts['ok']} ok, {counts['warn']} warn, {counts['error']} error"
     lines.append(summary)
     return "\n".join(lines)
