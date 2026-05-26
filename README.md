@@ -149,11 +149,33 @@ forerunner check               # run any time or as pre-commit hook
 
 ## GitHub Action
 
+Add doc-drift detection to any repo's CI — fails the PR if docs contradict repo state.
+
 ```yaml
-- uses: derek-palmer/codeforerunner@v0.4.3
+# .github/workflows/doc-check.yml
+name: Doc Check
+on: [push, pull_request]
+
+jobs:
+  doc-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: derek-palmer/codeforerunner@v0.4.3
+        with:
+          fail-on-drift: "true"   # set "false" to warn-only
 ```
 
-No-op when `forerunner.config.yaml` is absent.
+No-op when `forerunner.config.yaml` is absent — safe to add before configuring rules.
+
+**Inputs**
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `version` | `latest` | `codeforerunner` version to install |
+| `python-version` | `3.11` | Python version |
+| `repo` | workspace root | Path to check |
+| `fail-on-drift` | `true` | Exit non-zero on drift |
 
 ## Configuration
 
