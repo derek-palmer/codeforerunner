@@ -197,7 +197,7 @@ def test_refresh_emits_all_task_bundles(tmp_path, capsys):
     assert rc == 0
     for name in task_names:
         assert f"<!-- task: {name}.md -->" in cap.out
-    assert cap.out.count("\n---\n") == len(task_names)
+    assert cap.out.count("\n---\n") == len(task_names) - 1
 
 
 def test_refresh_exits_nonzero_on_missing_task(tmp_path, capsys):

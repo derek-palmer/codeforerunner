@@ -9,6 +9,7 @@ Runs a full documentation refresh cycle: scan, check staleness, then generate or
 3. **Generate / update** — For each stale or missing doc, run the corresponding task bundle in this order:
    `readme` → `api-docs` → `stack-docs` → `diagrams` → `flows` → `version-audit`
    Skip any task whose check status is `CURRENT`.
+   Note: `audit`, `changelog`, and `review` are on-demand tasks and are intentionally excluded from the automated refresh cycle.
 
 ## Rules
 

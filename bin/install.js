@@ -317,6 +317,7 @@ async function promptGlobalOrLocal(c) {
 
   return new Promise((resolve) => {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.on('SIGINT', () => { rl.close(); resolve('global'); });
     process.stdout.write('\nInstall location:\n');
     process.stdout.write(`  [g] global — available in all projects ${c.dim('(recommended)')}\n`);
     process.stdout.write('  [l] local  — this directory only\n\n');
@@ -336,13 +337,20 @@ async function fetchSkill(slug, repoRoot) {
     try { return fs.readFileSync(p, 'utf8'); } catch (_) { return null; }
   }
   return new Promise((resolve) => {
-    const url = `${RAW_BASE}/skills/${slug}/SKILL.md`;
-    https.get(url, (res) => {
-      if (res.statusCode !== 200) { resolve(null); return; }
-      let data = '';
-      res.on('data', d => { data += d; });
-      res.on('end', () => resolve(data));
-    }).on('error', () => resolve(null));
+    const get = (url) => {
+      https.get(url, (res) => {
+        if (res.statusCode === 301 || res.statusCode === 302) {
+          get(res.headers.location);
+          res.resume();
+          return;
+        }
+        if (res.statusCode !== 200) { resolve(null); return; }
+        let data = '';
+        res.on('data', d => { data += d; });
+        res.on('end', () => resolve(data));
+      }).on('error', () => resolve(null));
+    };
+    get(`${RAW_BASE}/skills/${slug}/SKILL.md`);
   });
 }
 
@@ -382,7 +390,6 @@ async function writeSkillsLocal(opts, results, c) {
       }
     }
     results.installed.push(slug);
-    results.detected++;
   }
 }
 

@@ -117,12 +117,13 @@ def cmd_refresh(args: argparse.Namespace) -> int:
     """Emit scan + check + all doc-task bundles to stdout for a full doc refresh."""
     tasks = ["scan", "check", "readme", "api-docs", "stack-docs",
              "diagrams", "flows", "version-audit"]
-    for task in tasks:
+    for i, task in enumerate(tasks):
         ns = argparse.Namespace(repo=getattr(args, "repo", None), task=task)
         rc = cmd_doc(ns)
         if rc != 0:
             return rc
-        sys.stdout.write("\n---\n\n")
+        if i < len(tasks) - 1:
+            sys.stdout.write("\n---\n\n")
     return 0
 
 
