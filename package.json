@@ -4,8 +4,8 @@
   "description": "Model-agnostic repository documentation tooling — installs /forerunner-* slash commands into 30+ agent CLIs",
   "main": "./bin/install.js",
   "bin": {
-    "codeforerunner": "./bin/install.js",
-    "codeforerunner-install": "./bin/install.js"
+    "codeforerunner": "bin/install.js",
+    "codeforerunner-install": "bin/install.js"
   },
   "files": [
     "bin/",
@@ -34,7 +34,7 @@
   "license": "SEE LICENSE IN LICENSE.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/derek-palmer/codeforerunner.git"
+    "url": "https://github.com/derek-palmer/codeforerunner.git"
   },
   "homepage": "https://github.com/derek-palmer/codeforerunner",
   "bugs": {

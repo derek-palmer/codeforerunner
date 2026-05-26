@@ -17,10 +17,15 @@ Install forerunner's prompt pack as skills into your agent CLI. Each documentati
 # One-liner (auto-detects Claude Code, Codex, Gemini CLI)
 curl -fsSL https://raw.githubusercontent.com/derek-palmer/codeforerunner/main/install.sh | bash
 
+# npm
+npx -y codeforerunner
+npm install -g codeforerunner
+
 # Windows
 irm https://raw.githubusercontent.com/derek-palmer/codeforerunner/main/install.ps1 | iex
 
-# Via forerunner CLI (after pip install)
+# Via Python CLI
+pip install codeforerunner
 forerunner install --all claude
 forerunner install --all codex
 ```
@@ -90,6 +95,9 @@ pip install codeforerunner
 ```bash
 # Install skills into Claude Code
 curl -fsSL https://raw.githubusercontent.com/derek-palmer/codeforerunner/main/install.sh | bash
+
+# Or via npm
+# npx -y codeforerunner
 
 # In Claude Code:
 # /forerunner-scan     → scans your repo
