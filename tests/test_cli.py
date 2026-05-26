@@ -526,3 +526,4 @@ def test_generate_stream_flag_yields_chunks(tmp_path, capsys, monkeypatch):
 
     assert rc == 0
     assert cap.out == "hello world\n"
+

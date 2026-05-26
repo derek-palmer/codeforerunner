@@ -206,6 +206,19 @@ def test_provider_api_key_hint_when_ollama_absent_no_config(tmp_path: Path):
     assert "prompt-only" in matches[0].message
 
 
+def test_provider_api_key_warn_even_in_skill_mode_when_provider_explicit(tmp_path: Path, monkeypatch):
+    from unittest.mock import patch
+    repo = _copy_repo_layout(tmp_path)
+    (repo / "forerunner.config.yaml").write_text("provider: anthropic\n", encoding="utf-8")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    # Skill mode active but provider is explicitly configured → must still warn
+    with patch("codeforerunner.doctor._skill_mode_active", return_value=True):
+        findings = run(repo)
+    matches = [f for f in findings if f.check == "provider-api-key"]
+    assert len(matches) == 1
+    assert matches[0].severity == "warn"
+
+
 def test_provider_api_key_ollama_config_shows_local_mode(tmp_path: Path, monkeypatch):
     repo = _copy_repo_layout(tmp_path)
     (repo / "forerunner.config.yaml").write_text(

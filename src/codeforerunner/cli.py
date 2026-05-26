@@ -133,6 +133,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
     if rc != 0:
         return rc
 
+
     explicit_provider = args.provider or (cfg.provider if cfg else None)
     provider_name = explicit_provider or "anthropic"
     model = args.model or (cfg.model if cfg else None)
