@@ -1,31 +1,50 @@
-name: 'Forerunner Check'
-description: >
-  Run forerunner drift-detection rules against tracked docs.
-  No-op when forerunner.config.yaml is absent.
-author: 'derek-palmer'
+name: "CodeForerunner Doc Check"
+description: "Detect documentation drift — finds docs that contradict actual repo state. No-op without forerunner.config.yaml."
+author: "derek-palmer"
+
+branding:
+  icon: "book-open"
+  color: "blue"
 
 inputs:
-  version:
-    description: 'codeforerunner version to install (empty = latest)'
+  python-version:
+    description: "Python version to use"
     required: false
-    default: ''
+    default: "3.11"
+  version:
+    description: "codeforerunner version to install (default: latest)"
+    required: false
+    default: "latest"
+  repo:
+    description: "Path to the repository to check"
+    required: false
+    default: ${{ github.workspace }}
+  fail-on-drift:
+    description: "Exit non-zero if drift is detected"
+    required: false
+    default: "true"
 
 runs:
-  using: 'composite'
+  using: composite
   steps:
+    - uses: actions/setup-python@v6.2.0
+      with:
+        python-version: ${{ inputs.python-version }}
+
     - name: Install codeforerunner
       shell: bash
       run: |
-        if [ -n "${{ inputs.version }}" ]; then
-          pip install "codeforerunner==${{ inputs.version }}"
-        else
+        if [ "${{ inputs.version }}" = "latest" ]; then
           pip install codeforerunner
+        else
+          pip install "codeforerunner==${{ inputs.version }}"
         fi
 
     - name: Run forerunner check
       shell: bash
-      run: forerunner check
-
-branding:
-  icon: 'check-circle'
-  color: 'blue'
+      run: |
+        if [ "${{ inputs.fail-on-drift }}" = "true" ]; then
+          forerunner check --repo "${{ inputs.repo }}"
+        else
+          forerunner check --repo "${{ inputs.repo }}" || true
+        fi
