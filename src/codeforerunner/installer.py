@@ -95,6 +95,7 @@ def install_all_skills(
         src_path = repo_root / "plugins" / "codeforerunner" / "skills" / slug / "SKILL.md"
         if not src_path.is_file():
             print(f"warning: skill source not found: {src_path}", file=err)
+            any_error = True
             continue
         try:
             target = resolve_skill_target(agent, slug)
@@ -116,7 +117,11 @@ def install_all_skills(
         print(f"{prefix}{action}: {dest}", file=out)
         if not check_only:
             dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_bytes(src_path.read_bytes())
+            try:
+                dest.write_bytes(src_path.read_bytes())
+            except OSError as e:
+                print(f"error: failed to write {dest}: {e}", file=err)
+                any_error = True
     return EXIT_OK if not any_error else EXIT_BODY_MISMATCH
 
 
@@ -188,7 +193,8 @@ def find_markers(text: str) -> tuple[int, int] | None:
 def overlay(dest_text: str, source_body: str) -> str:
     """Replace managed region in-place. Caller has verified markers exist."""
     span = find_markers(dest_text)
-    assert span is not None
+    if span is None:
+        raise RuntimeError("overlay: span is None — this is a bug")
     a, b = span
     managed = f"{MARKER_BEGIN}\n{source_body}\n{MARKER_END}"
     return dest_text[:a] + managed + dest_text[b:]

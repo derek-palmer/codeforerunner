@@ -14,8 +14,11 @@
 
 set -euo pipefail
 
-NPM_PKG="codeforerunner"
+# Security: pinned to a specific version so curl|bash one-liners don't silently
+# execute whatever the npm registry or GitHub currently serves as "latest".
+NPM_PKG="codeforerunner@0.4.1"
 REPO="derek-palmer/codeforerunner"
+REPO_TAG="v0.4.1"
 
 # Locate bin/install.js relative to this script (works even when piped through bash)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-install.sh}")" 2>/dev/null && pwd || echo "")"
@@ -26,9 +29,9 @@ if [[ -n "$SCRIPT_DIR" && -f "$LOCAL_JS" ]]; then
 else
   # Primary: npm registry. Fallback: GitHub source (in case npm is down).
   # Probe the registry with a HEAD request to avoid running npx twice.
-  if curl -sf --head "https://registry.npmjs.org/${NPM_PKG}/latest" &>/dev/null; then
+  if curl -sf --head "https://registry.npmjs.org/codeforerunner/latest" &>/dev/null; then
     exec npx --yes "${NPM_PKG}" -- "$@"
   else
-    exec npx --yes "github:${REPO}" -- "$@"
+    exec npx --yes "github:${REPO}#${REPO_TAG}" -- "$@"
   fi
 fi

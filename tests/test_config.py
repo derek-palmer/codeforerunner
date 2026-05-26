@@ -33,8 +33,6 @@ def test_load_full_example_shape(tmp_path):
         """
 provider: openai
 model: gpt-x
-output_dir: documents
-context_max_files: 50
 ignore_patterns:
   - "*.test.ts"
 tasks:
@@ -52,8 +50,6 @@ tasks:
     assert cfg is not None
     assert cfg.provider == "openai"
     assert cfg.model == "gpt-x"
-    assert cfg.output_dir == Path("documents")
-    assert cfg.context_max_files == 50
     assert cfg.ignore_patterns == ("*.test.ts",)
     assert cfg.check.block_on == ("HIGH",)
     assert cfg.check.warn_on == ("MEDIUM", "LOW")

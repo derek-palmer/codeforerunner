@@ -127,7 +127,8 @@ def test_tools_call_unknown(server: _Server) -> None:
 
 
 def test_unknown_method(server: _Server) -> None:
-    resp = server.request({"jsonrpc": "2.0", "id": 1, "method": "no/such/method", "params": {}})
+    server.request({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+    resp = server.request({"jsonrpc": "2.0", "id": 2, "method": "no/such/method", "params": {}})
     assert "error" in resp
     assert resp["error"]["code"] == -32601
 
