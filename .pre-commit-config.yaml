@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: forerunner-check
+        name: forerunner check
+        entry: forerunner check
+        language: system
+        pass_filenames: false
+        always_run: true

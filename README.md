@@ -2,7 +2,7 @@
 
 # codeForerunner
 
-[![Socket Badge](https://badge.socket.dev/npm/package/codeforerunner/0.4.3)](https://badge.socket.dev/npm/package/codeforerunner/0.4.3)
+[![Socket Badge](https://badge.socket.dev/npm/package/codeforerunner/0.4.4)](https://badge.socket.dev/npm/package/codeforerunner/0.4.4)
 
 Model-agnostic repository documentation tooling. Ships a prompt pack for codebase analysis and doc generation, a thin Python CLI, an MCP server, drift-detection rules that keep docs honest — and native slash-command skills for Claude Code, Codex, Gemini CLI, and other agent CLIs.
 
@@ -112,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.2
-      - uses: derek-palmer/codeforerunner@v0.4.3
+      - uses: derek-palmer/codeforerunner@v0.4.4
         with:
           fail-on-drift: "true"   # set "false" to warn-only
 ```
