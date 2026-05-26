@@ -44,8 +44,7 @@ gh api \
         "required_approving_review_count": 1,
         "dismiss_stale_reviews_on_push": true,
         "require_code_owner_review": false,
-        "require_last_push_approval": false,
-        "allowed_merge_methods": ["merge", "squash", "rebase"]
+        "require_last_push_approval": false
       }
     },
     {
