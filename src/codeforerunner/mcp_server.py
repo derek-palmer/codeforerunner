@@ -27,11 +27,12 @@ def _list_tasks(prompts_root: Path) -> list[Path]:
 
 def _description_for(task_path: Path) -> str:
     """First non-empty markdown line, stripped of leading '#' and whitespace."""
-    for raw in task_path.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line:
-            continue
-        return line.lstrip("#").strip()
+    with task_path.open(encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line:
+                continue
+            return line.lstrip("#").strip()
     return task_path.stem
 
 
@@ -68,6 +69,7 @@ def _handle(prompts_root: Path, msg: dict[str, Any], state: dict[str, Any]) -> d
         return None
 
     if method == "initialize":
+        state["initialized"] = True
         return _ok(
             req_id,
             {
@@ -77,13 +79,19 @@ def _handle(prompts_root: Path, msg: dict[str, Any], state: dict[str, Any]) -> d
             },
         )
 
+    if not state.get("initialized"):
+        return _err(req_id, -32002, "Server not initialized")
+
     if method == "tools/list":
         return _ok(req_id, {"tools": _tools(prompts_root)})
 
     if method == "tools/call":
         name = params.get("name")
+        if not isinstance(name, str) or "/" in name or "\\" in name or ".." in name:
+            return _err(req_id, -32602, f"invalid tool name: {name!r}")
         task_path = prompts_root / "tasks" / f"{name}.md"
-        if not isinstance(name, str) or not task_path.is_file():
+        tasks_root = (prompts_root / "tasks").resolve()
+        if not task_path.resolve().is_relative_to(tasks_root) or not task_path.is_file():
             return _err(req_id, -32602, f"unknown tool: {name!r}")
         if name not in SCAN_EXEMPT_TOOLS and not state.get("scan_called"):
             return _err(
@@ -106,7 +114,7 @@ def _handle(prompts_root: Path, msg: dict[str, Any], state: dict[str, Any]) -> d
 
 
 def serve(prompts_root: Path, stdin: Iterable[str] = sys.stdin, stdout=sys.stdout, stderr=sys.stderr) -> int:
-    state: dict[str, Any] = {"scan_called": False}
+    state: dict[str, Any] = {"scan_called": False, "initialized": False}
     for raw in stdin:
         line = raw.strip()
         if not line:

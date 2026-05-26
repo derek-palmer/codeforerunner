@@ -19,7 +19,7 @@ User asks to: review docs impact, summarize documentation changes, check what do
 
 ## Execute
 
-Run `forerunner doc review` to compose the full prompt with system rules, then execute it.
+Run `forerunner generate --prompt-only review` — outputs the assembled prompt bundle to stdout. Read this output and execute the documentation task it describes.
 
 Without CLI, get the prompt from:
 - `src/codeforerunner/prompts/tasks/review.md`

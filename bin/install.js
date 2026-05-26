@@ -172,11 +172,11 @@ function vscodeExtPresent(needle) {
     path.join(os.homedir(), '.cursor/extensions'),
     path.join(os.homedir(), '.windsurf/extensions'),
   ];
-  const re = new RegExp(needle, 'i');
+  const lc = needle.toLowerCase();
   for (const r of roots) {
     if (!fs.existsSync(r)) continue;
     let entries; try { entries = fs.readdirSync(r); } catch (_) { continue; }
-    if (entries.some(e => re.test(e))) return true;
+    if (entries.some(e => e.toLowerCase().includes(lc))) return true;
   }
   return false;
 }
@@ -184,8 +184,8 @@ function vscodeExtPresent(needle) {
 function cursorExtPresent(needle) {
   const dir = path.join(os.homedir(), '.cursor/extensions');
   if (!fs.existsSync(dir)) return false;
-  const re = new RegExp(needle, 'i');
-  try { return fs.readdirSync(dir).some(e => re.test(e)); } catch (_) { return false; }
+  const lc = needle.toLowerCase();
+  try { return fs.readdirSync(dir).some(e => e.toLowerCase().includes(lc)); } catch (_) { return false; }
 }
 
 function walkDir(root, depth) {

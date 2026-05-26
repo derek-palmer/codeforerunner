@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
 import yaml
@@ -37,9 +36,6 @@ class VersionAuditConfig:
 class ForerunnerConfig:
     provider: str = "anthropic"
     model: str = "claude-opus-4-7"
-    output_dir: Path = field(default_factory=lambda: Path("docs"))
-    context_max_files: int = 30
-    context_max_lines_per_file: int = 300
     approaching_eol_threshold_months: int = 6
     ignore_patterns: tuple[str, ...] = ()
     api_key_env: dict[str, str] = field(default_factory=dict)
@@ -117,13 +113,20 @@ def _parse_check(raw: Any) -> CheckConfig:
     )
 
 
+def _to_int(value: Any, field_name: str) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError) as e:
+        raise ConfigError(f"{field_name}: expected integer, got {value!r}") from e
+
+
 def _parse_version_audit(raw: Any) -> VersionAuditConfig:
     if raw is None:
         return VersionAuditConfig()
     _require_type(raw, dict, "tasks.version_audit")
     return VersionAuditConfig(
         enabled=bool(raw.get("enabled", True)),
-        stale_after_days=int(raw.get("stale_after_days", 30)),
+        stale_after_days=_to_int(raw.get("stale_after_days", 30), "tasks.version_audit.stale_after_days"),
         fetch_live_eol_data=bool(raw.get("fetch_live_eol_data", False)),
     )
 
@@ -147,10 +150,9 @@ def parse(raw: dict[str, Any] | None) -> ForerunnerConfig:
     return ForerunnerConfig(
         provider=provider,
         model=_require_type(raw.get("model", "claude-opus-4-7"), str, "model"),
-        output_dir=Path(_require_type(raw.get("output_dir", "docs"), str, "output_dir")),
-        context_max_files=int(raw.get("context_max_files", 30)),
-        context_max_lines_per_file=int(raw.get("context_max_lines_per_file", 300)),
-        approaching_eol_threshold_months=int(raw.get("approaching_eol_threshold_months", 6)),
+        approaching_eol_threshold_months=_to_int(
+            raw.get("approaching_eol_threshold_months", 6), "approaching_eol_threshold_months"
+        ),
         ignore_patterns=_coerce_str_tuple(raw.get("ignore_patterns", []), "ignore_patterns"),
         api_key_env=_parse_api_key_env(raw.get("api_key_env")),
         check=_parse_check(tasks.get("check")),

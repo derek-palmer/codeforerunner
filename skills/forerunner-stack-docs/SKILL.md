@@ -20,7 +20,7 @@ User asks to: generate developer docs, document the stack, write technical docum
 
 ## Execute
 
-Run `forerunner doc stack-docs` to compose the full prompt with system rules, then execute it.
+Run `forerunner generate --prompt-only stack-docs` — outputs the assembled prompt bundle to stdout. Read this output and execute the documentation task it describes.
 
 Without CLI, get the prompt from:
 - `src/codeforerunner/prompts/tasks/stack-docs.md`

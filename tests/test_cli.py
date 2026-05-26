@@ -392,10 +392,11 @@ def test_generate_no_fallback_when_config_provider_set_and_key_missing(
     assert "missing API key" in cap.err
 
 
-def test_generate_missing_key_includes_ollama_hint_when_ollama_absent(
+def test_generate_no_key_no_ollama_no_explicit_provider_emits_bundle(
     tmp_path, capsys, monkeypatch
 ):
-    """No explicit provider, no API key, Ollama not running → error + Ollama hint."""
+    """No explicit provider, no API key, Ollama not running → skill-mode auto-detect:
+    emit bundle to stdout and return 0 (the calling agent is the model)."""
     _seed_repo_with_config(tmp_path)
     (tmp_path / "forerunner.config.yaml").unlink()
 
@@ -407,9 +408,8 @@ def test_generate_missing_key_includes_ollama_hint_when_ollama_absent(
         rc = main(["--repo", str(tmp_path), "generate", "readme"])
 
     cap = capsys.readouterr()
-    assert rc == 3
-    assert "missing API key" in cap.err
-    assert "Ollama" in cap.err
+    assert rc == 0
+    assert "system: base.md" in cap.out
 
 
 def test_generate_ollama_fallback_uses_explicit_model(tmp_path, capsys, monkeypatch):
@@ -437,3 +437,92 @@ def test_generate_ollama_fallback_uses_explicit_model(tmp_path, capsys, monkeypa
 
     assert rc == 0
     assert calls[0]["model"] == "llama3.2"
+
+
+# ── --prompt-only and skill-mode auto-detect ─────────────────────────────────
+
+def test_generate_prompt_only_outputs_bundle_without_api_call(tmp_path, capsys, monkeypatch):
+    """--prompt-only emits the bundle and returns 0; no model is invoked."""
+    _seed_repo_with_config(tmp_path)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("FORERUNNER_SCAN_DONE", "1")  # silence scan-first warning
+
+    rc = main(["--repo", str(tmp_path), "generate", "--prompt-only", "readme"])
+
+    cap = capsys.readouterr()
+    assert rc == 0
+    assert "system: base.md" in cap.out
+    assert "missing API key" not in cap.err  # no provider error messages
+
+
+def test_generate_prompt_only_scan_task(tmp_path, capsys, monkeypatch):
+    """--prompt-only works for the scan task (scan is exempt from scan-first warning)."""
+    _seed_repo_with_config(tmp_path)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    rc = main(["--repo", str(tmp_path), "generate", "--prompt-only", "scan"])
+
+    cap = capsys.readouterr()
+    assert rc == 0
+    assert "scan task" in cap.out  # stub scan.md content present
+
+
+def test_generate_skill_mode_autodetect_no_tty(tmp_path, capsys, monkeypatch):
+    """No key + no Ollama + no explicit provider + non-TTY stdout → bundle emitted cleanly."""
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+
+    from unittest.mock import patch
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    with patch("codeforerunner.providers.ollama_available", return_value=False):
+        rc = main(["--repo", str(tmp_path), "generate", "readme"])
+
+    cap = capsys.readouterr()
+    assert rc == 0
+    assert "system: base.md" in cap.out
+    # Non-TTY: no "info:" message on stderr
+    assert "info:" not in cap.err
+
+
+def test_generate_explicit_provider_no_key_still_errors(tmp_path, capsys, monkeypatch):
+    """Explicit --provider with no key → error (not silent bundle output)."""
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+
+    from unittest.mock import patch
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    with patch("codeforerunner.providers.ollama_available", return_value=False):
+        rc = main(["--repo", str(tmp_path), "generate", "--provider", "anthropic", "readme"])
+
+    cap = capsys.readouterr()
+    assert rc == 3
+    assert "missing API key" in cap.err
+
+
+def test_generate_stream_flag_yields_chunks(tmp_path, capsys, monkeypatch):
+    """--stream calls provider.stream() and writes chunks to stdout."""
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "forerunner.config.yaml").unlink()
+    chunks = ["hello", " ", "world"]
+
+    class FakeProvider:
+        default_env_var = "FAKE_API_KEY"
+        default_model = "fake-stream"
+
+        def stream(self, *, prompt, model=None, api_key=None):
+            yield from chunks
+
+    from codeforerunner import providers
+
+    monkeypatch.setitem(providers.REGISTRY, "fake", FakeProvider)
+    monkeypatch.setenv("FAKE_API_KEY", "secret")
+
+    rc = main(["--repo", str(tmp_path), "generate", "--provider", "fake", "--stream", "readme"])
+    cap = capsys.readouterr()
+
+    assert rc == 0
+    assert cap.out == "hello world\n"

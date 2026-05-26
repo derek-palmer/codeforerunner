@@ -7,7 +7,9 @@ description: Routes a coding agent through the tracked codeforerunner prompt pac
 
 The authoritative canonical source for this skill body is `agent/codeforerunner.skill.md` (see the `SPEC.md` I.agent-skill entry). Distribution copies are not independent sources; maintainers should edit the canonical file, then sync the post-frontmatter body into Codex and Claude copies. Downstream packages must preserve this post-frontmatter Markdown content verbatim (`SPEC.md` V10); per-agent YAML frontmatter may differ, but the body cannot.
 
-This skill does not bundle a runtime. It routes the host agent into the codeforerunner prompt pack (`src/codeforerunner/prompts/` in the source repo, or retrieved via `forerunner doc <task>` from the installed CLI). The `forerunner` CLI, MCP server, pre-commit hook, CI workflow, and PyPI package are all live. Docker image and Makefile are not present.
+This skill does not bundle a runtime. It routes the host agent into the codeforerunner prompt pack (`src/codeforerunner/prompts/` in the source repo, or retrieved via `forerunner generate --prompt-only <task>` from the installed CLI). The `forerunner` CLI, MCP server, pre-commit hook, CI workflow, and PyPI package are all live. Docker image and Makefile are not present.
+
+**Skill mode:** When invoked via a host agent (Claude Code, Codex, Gemini CLI, etc.), the agent itself is the model — no API key or external provider is needed. Use `forerunner generate --prompt-only <task>` to output the assembled prompt bundle, then act on it directly. Reserve `forerunner generate <task>` (without `--prompt-only`) for standalone CLI use with a configured provider.
 
 ## When To Activate
 
@@ -40,7 +42,7 @@ If inputs are missing, the host agent may ask once **before starting** a task to
 
 ## Context Layers
 
-These compose once into the prompt sent to the host model. They are not per-task steps. Retrieve each via `forerunner doc <task>` or read directly from `src/codeforerunner/prompts/`.
+These compose once into the prompt sent to the host model. They are not per-task steps. Retrieve each via `forerunner generate --prompt-only <task>` or read directly from `src/codeforerunner/prompts/`.
 
 - **System rules.** `system/base.md` — governing role and accuracy contract. Every output must obey it.
 - **Context shape.** `partials/context-format.md` — target-repo context shape and file-selection rules.
@@ -51,11 +53,11 @@ These compose once into the prompt sent to the host model. They are not per-task
 
 Per-run, in this order:
 
-1. **Scan first.** Run `forerunner doc scan` (or use the `scan` task prompt directly) and capture its YAML output. All documentation-generation and check workflows depend on the scan result. **Exception:** `init-agent-onboarding` may run without a prior scan because it derives onboarding guidance directly from repo evidence and existing instruction files.
-2. **Run the matching task prompt.** See `docs/prompt-guide.md` section 3 for the authoritative task → input → output table. Pick the task that matches the user's request and pass the scan result plus any task-specific inputs.
+1. **Scan first.** Run `forerunner generate --prompt-only scan` and capture its YAML output. All documentation-generation and check workflows depend on the scan result. **Exception:** `init-agent-onboarding` may run without a prior scan because it derives onboarding guidance directly from repo evidence and existing instruction files.
+2. **Run the matching task prompt.** See `docs/prompt-guide.md` section 3 for the authoritative task → input → output table. Run `forerunner generate --prompt-only <task>` to get the assembled prompt bundle, then execute it. Pass the scan result plus any task-specific inputs.
 3. **Honor task output contracts.** When a task prompt specifies `<!-- output: path/to/file.md -->`, write the artifact to that path. When it does not, return Markdown for the user to place. Append a `## Gaps` section whenever evidence was insufficient — never silently invent content.
 
-Call a provider directly with `forerunner generate <task>` (add `--stream` for token-by-token output). Check drift using `forerunner check`. Get a health report via `forerunner doctor`.
+In skill mode the host agent handles generation — no API key needed. For standalone CLI use with a configured provider: `forerunner generate <task>` (add `--stream` for streaming). Check drift with `forerunner check`. Health report via `forerunner doctor`.
 
 ## Safety And Scope Rules
 

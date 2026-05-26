@@ -21,7 +21,7 @@ User asks to: scan a repo, analyze the codebase before generating docs, collect 
 
 ## Execute
 
-Run `forerunner doc scan` to compose the full prompt with system rules, then execute it.
+Run `forerunner generate --prompt-only scan` — outputs the assembled prompt bundle to stdout. Read this output and execute the documentation task it describes.
 
 Without CLI, get the prompt from:
 - `src/codeforerunner/prompts/tasks/scan.md`

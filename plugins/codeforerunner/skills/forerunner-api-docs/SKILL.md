@@ -21,7 +21,7 @@ User asks to: document the API, generate API reference, write endpoint docs, cre
 
 ## Execute
 
-Run `forerunner doc api-docs` to compose the full prompt with system rules, then execute it.
+Run `forerunner generate --prompt-only api-docs` — outputs the assembled prompt bundle to stdout. Read this output and execute the documentation task it describes.
 
 Without CLI, get the prompt from:
 - `src/codeforerunner/prompts/tasks/api-docs.md`

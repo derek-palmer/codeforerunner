@@ -21,7 +21,7 @@ User asks to: generate a README, write the README, refresh or update README.md, 
 
 ## Execute
 
-Run `forerunner doc readme` to compose the full prompt with system rules, then execute it.
+Run `forerunner generate --prompt-only readme` — outputs the assembled prompt bundle to stdout. Read this output and execute the documentation task it describes.
 
 Without CLI, get the prompt from:
 - `src/codeforerunner/prompts/tasks/readme.md`

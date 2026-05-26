@@ -21,7 +21,7 @@ User asks to: audit the repo, run a security check, check for vulnerabilities, r
 
 ## Execute
 
-Run `forerunner doc audit` to compose the full prompt with system rules, then execute it.
+Run `forerunner generate --prompt-only audit` — outputs the assembled prompt bundle to stdout. Read this output and execute the documentation task it describes.
 
 Without CLI, get the prompt from:
 - `src/codeforerunner/prompts/tasks/audit.md`

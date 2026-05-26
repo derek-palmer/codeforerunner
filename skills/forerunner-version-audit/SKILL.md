@@ -21,7 +21,7 @@ User asks to: audit versions, check for EOL software, find outdated dependencies
 
 ## Execute
 
-Run `forerunner doc version-audit` to compose the full prompt with system rules, then execute it.
+Run `forerunner generate --prompt-only version-audit` — outputs the assembled prompt bundle to stdout. Read this output and execute the documentation task it describes.
 
 Without CLI, get the prompt from:
 - `src/codeforerunner/prompts/tasks/version-audit.md`
