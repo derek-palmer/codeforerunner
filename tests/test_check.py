@@ -428,10 +428,10 @@ def test_rv1_skips_unreadable_doc(tmp_path):
     assert violations == []
 
 
-def test_path_ignored_doc_outside_repo():
+def test_path_ignored_doc_outside_repo(tmp_path):
     from codeforerunner.check import _path_ignored
-    repo = Path("/tmp/some-repo")
-    doc = Path("/other/location/README.md")
+    repo = tmp_path / "some-repo"
+    doc = tmp_path / "other-location" / "README.md"
     # Should not crash; uses abs posix path matching
     result = _path_ignored(repo, doc, ("*.md",))
     assert isinstance(result, bool)

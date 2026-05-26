@@ -58,7 +58,7 @@ def _require_type(value: Any, expected: type, field_name: str) -> Any:
 
 
 def _coerce_str_tuple(value: Any, field_name: str) -> tuple[str, ...]:
-    if value is None:  # pragma: no cover - callers supply defaults, never pass None
+    if value is None:
         return ()
     if not isinstance(value, list):
         raise ConfigError(f"{field_name}: expected list, got {type(value).__name__}")
@@ -77,7 +77,7 @@ def _parse_api_key_env(raw: Any) -> dict[str, str]:
         raise ConfigError(f"api_key_env: expected dict, got {type(raw).__name__}")
     out: dict[str, str] = {}
     for k, v in raw.items():
-        if not isinstance(k, str):  # pragma: no cover - YAML keys are always strings
+        if not isinstance(k, str):
             raise ConfigError(
                 f"api_key_env: keys must be strings, got {type(k).__name__}"
             )

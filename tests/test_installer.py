@@ -250,8 +250,9 @@ def test_resolve_target_claude_default():
     assert ".claude" in str(t.path)
 
 
-def test_resolve_target_with_override():
-    override = Path("/tmp/override.md")
+def test_resolve_target_with_override(tmp_path):
+    override = tmp_path / "override.md"
+    override.touch()
     t = installer.resolve_target("claude", override)
     assert t.path == override.resolve()
 
@@ -441,8 +442,9 @@ def test_resolve_marketplace_target_generic_no_path_raises():
         installer.resolve_marketplace_target("generic", None)
 
 
-def test_resolve_marketplace_target_with_override():
-    override = Path("/tmp/mp.json")
+def test_resolve_marketplace_target_with_override(tmp_path):
+    override = tmp_path / "mp.json"
+    override.touch()
     t = installer.resolve_marketplace_target("generic", override)
     assert t.path == override.resolve()
 
@@ -547,12 +549,10 @@ def test_install_skill_canonical_not_found(tmp_path, capsys):
 
 # ── _cli_entry paths ──────────────────────────────────────────────────────────
 
-def test_cli_entry_all_flag(tmp_path, capsys):
+def test_cli_entry_all_flag(tmp_path, capsys, monkeypatch):
     from codeforerunner.cli import main as cli_main
-    rc = cli_main(["--repo", str(REPO), "install", "--all"])
-    # returns OK (check_only=False with real repo — check-only not passed, so writes may happen;
-    # but since check=False and dest paths are in user home which may not exist, some may fail).
-    # Just assert it ran without exception.
+    monkeypatch.setenv("HOME", str(tmp_path))
+    rc = cli_main(["--repo", str(REPO), "install", "--all", "--check"])
     capsys.readouterr()
     assert isinstance(rc, int)
 

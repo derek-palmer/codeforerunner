@@ -52,7 +52,7 @@ def test_anthropic_builds_request_correctly():
         "usage": {"input_tokens": 5, "output_tokens": 2},
     }
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
-        result = AnthropicProvider().complete(prompt="hi", api_key="sk-test")
+        result = AnthropicProvider().generate(prompt="hi", api_key="sk-test")
     assert captured["url"] == "https://api.anthropic.com/v1/messages"
     # urllib lowercases header names via header_items keys preservation; compare case-insensitively.
     lower = {k.lower(): v for k, v in captured["headers"].items()}
@@ -69,7 +69,7 @@ def test_anthropic_builds_request_correctly():
 
 def test_anthropic_missing_api_key_raises():
     with pytest.raises(ProviderError):
-        AnthropicProvider().complete(prompt="hi", api_key=None)
+        AnthropicProvider().generate(prompt="hi", api_key=None)
 
 
 def test_openai_builds_request_correctly():
@@ -80,7 +80,7 @@ def test_openai_builds_request_correctly():
         "usage": {"prompt_tokens": 3, "completion_tokens": 2},
     }
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
-        result = OpenAIProvider().complete(prompt="ping", api_key="sk-openai")
+        result = OpenAIProvider().generate(prompt="ping", api_key="sk-openai")
     assert captured["url"] == "https://api.openai.com/v1/chat/completions"
     lower = {k.lower(): v for k, v in captured["headers"].items()}
     assert lower["authorization"] == "Bearer sk-openai"
@@ -93,7 +93,7 @@ def test_openai_builds_request_correctly():
 
 def test_openai_missing_api_key_raises():
     with pytest.raises(ProviderError):
-        OpenAIProvider().complete(prompt="hi", api_key=None)
+        OpenAIProvider().generate(prompt="hi", api_key=None)
 
 
 def test_google_builds_request_correctly():
@@ -105,7 +105,7 @@ def test_google_builds_request_correctly():
         "modelVersion": "gemini-2.5-pro",
     }
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
-        result = GoogleProvider().complete(prompt="q", api_key="g-key")
+        result = GoogleProvider().generate(prompt="q", api_key="g-key")
     assert "generativelanguage.googleapis.com" in captured["url"]
     assert "gemini-2.5-pro:generateContent" in captured["url"]
     assert "key=g-key" in captured["url"]
@@ -115,7 +115,7 @@ def test_google_builds_request_correctly():
 
 def test_google_missing_api_key_raises():
     with pytest.raises(ProviderError):
-        GoogleProvider().complete(prompt="hi", api_key=None)
+        GoogleProvider().generate(prompt="hi", api_key=None)
 
 
 def test_ollama_builds_request_correctly_with_default_host(monkeypatch):
@@ -123,7 +123,7 @@ def test_ollama_builds_request_correctly_with_default_host(monkeypatch):
     captured: dict = {}
     fake = {"response": "local response", "model": "llama3"}
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
-        result = OllamaProvider().complete(prompt="hello")
+        result = OllamaProvider().generate(prompt="hello")
     assert captured["url"] == "http://localhost:11434/api/generate"
     assert captured["body"] == {"model": "llama3", "prompt": "hello", "stream": False}
     assert result.text == "local response"
@@ -135,7 +135,7 @@ def test_ollama_respects_host_override(monkeypatch):
     captured: dict = {}
     fake = {"response": "x"}
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
-        OllamaProvider().complete(prompt="hi")
+        OllamaProvider().generate(prompt="hi")
     assert captured["url"] == "http://other:9999/api/generate"
 
 
@@ -143,7 +143,7 @@ def test_anthropic_malformed_response_raises():
     captured: dict = {}
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen({"bogus": True}, captured)):
         with pytest.raises(ProviderError):
-            AnthropicProvider().complete(prompt="hi", api_key="sk")
+            AnthropicProvider().generate(prompt="hi", api_key="sk")
 
 
 def _fake_http_error(code: int):
@@ -172,20 +172,20 @@ def _fake_url_error():
 def test_anthropic_http_error_raises():
     with patch("urllib.request.urlopen", side_effect=_fake_http_error(401)):
         with pytest.raises(ProviderError, match="HTTP 401"):
-            AnthropicProvider().complete(prompt="hi", api_key="sk")
+            AnthropicProvider().generate(prompt="hi", api_key="sk")
 
 
 def test_anthropic_url_error_raises():
     with patch("urllib.request.urlopen", side_effect=_fake_url_error()):
         with pytest.raises(ProviderError, match="network error"):
-            AnthropicProvider().complete(prompt="hi", api_key="sk")
+            AnthropicProvider().generate(prompt="hi", api_key="sk")
 
 
 def test_anthropic_uses_default_model_when_none():
     fake = {"content": [{"text": "ok"}], "model": AnthropicProvider.default_model}
     captured: dict = {}
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
-        result = AnthropicProvider().complete(prompt="hi", model=None, api_key="sk")
+        result = AnthropicProvider().generate(prompt="hi", model=None, api_key="sk")
     assert captured["body"]["model"] == AnthropicProvider.default_model
     assert result.model == AnthropicProvider.default_model
 
@@ -196,19 +196,19 @@ def test_openai_malformed_response_raises():
     captured: dict = {}
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen({"bad": True}, captured)):
         with pytest.raises(ProviderError):
-            OpenAIProvider().complete(prompt="hi", api_key="sk")
+            OpenAIProvider().generate(prompt="hi", api_key="sk")
 
 
 def test_openai_http_error_raises():
     with patch("urllib.request.urlopen", side_effect=_fake_http_error(429)):
         with pytest.raises(ProviderError, match="HTTP 429"):
-            OpenAIProvider().complete(prompt="hi", api_key="sk")
+            OpenAIProvider().generate(prompt="hi", api_key="sk")
 
 
 def test_openai_url_error_raises():
     with patch("urllib.request.urlopen", side_effect=_fake_url_error()):
         with pytest.raises(ProviderError, match="network error"):
-            OpenAIProvider().complete(prompt="hi", api_key="sk")
+            OpenAIProvider().generate(prompt="hi", api_key="sk")
 
 
 def test_openai_uses_default_model_when_none():
@@ -218,7 +218,7 @@ def test_openai_uses_default_model_when_none():
     }
     captured: dict = {}
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
-        result = OpenAIProvider().complete(prompt="hi", model=None, api_key="sk")
+        result = OpenAIProvider().generate(prompt="hi", model=None, api_key="sk")
     assert captured["body"]["model"] == OpenAIProvider.default_model
     assert result.model == OpenAIProvider.default_model
 
@@ -229,26 +229,26 @@ def test_google_malformed_response_raises():
     captured: dict = {}
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen({"bad": True}, captured)):
         with pytest.raises(ProviderError):
-            GoogleProvider().complete(prompt="hi", api_key="g-key")
+            GoogleProvider().generate(prompt="hi", api_key="g-key")
 
 
 def test_google_http_error_raises():
     with patch("urllib.request.urlopen", side_effect=_fake_http_error(403)):
         with pytest.raises(ProviderError, match="HTTP 403"):
-            GoogleProvider().complete(prompt="hi", api_key="g-key")
+            GoogleProvider().generate(prompt="hi", api_key="g-key")
 
 
 def test_google_url_error_raises():
     with patch("urllib.request.urlopen", side_effect=_fake_url_error()):
         with pytest.raises(ProviderError, match="network error"):
-            GoogleProvider().complete(prompt="hi", api_key="g-key")
+            GoogleProvider().generate(prompt="hi", api_key="g-key")
 
 
 def test_google_falls_back_to_model_when_modelversion_absent():
     fake = {"candidates": [{"content": {"parts": [{"text": "reply"}]}}]}
     captured: dict = {}
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
-        result = GoogleProvider().complete(prompt="hi", model="gemini-test", api_key="k")
+        result = GoogleProvider().generate(prompt="hi", model="gemini-test", api_key="k")
     assert result.model == "gemini-test"
 
 
@@ -258,19 +258,19 @@ def test_ollama_malformed_response_raises():
     captured: dict = {}
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen({"bad": True}, captured)):
         with pytest.raises(ProviderError):
-            OllamaProvider().complete(prompt="hi")
+            OllamaProvider().generate(prompt="hi")
 
 
 def test_ollama_http_error_raises():
     with patch("urllib.request.urlopen", side_effect=_fake_http_error(500)):
         with pytest.raises(ProviderError, match="HTTP 500"):
-            OllamaProvider().complete(prompt="hi")
+            OllamaProvider().generate(prompt="hi")
 
 
 def test_ollama_url_error_raises():
     with patch("urllib.request.urlopen", side_effect=_fake_url_error()):
         with pytest.raises(ProviderError, match="network error"):
-            OllamaProvider().complete(prompt="hi")
+            OllamaProvider().generate(prompt="hi")
 
 
 def test_ollama_usage_extracted_when_present():
@@ -283,7 +283,7 @@ def test_ollama_usage_extracted_when_present():
     }
     captured: dict = {}
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
-        result = OllamaProvider().complete(prompt="hi")
+        result = OllamaProvider().generate(prompt="hi")
     assert result.usage == {"prompt_eval_count": 10, "eval_count": 5, "total_duration": 123456789}
 
 
@@ -291,7 +291,7 @@ def test_ollama_usage_none_when_keys_absent():
     fake = {"response": "text", "model": "llama3"}
     captured: dict = {}
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
-        result = OllamaProvider().complete(prompt="hi")
+        result = OllamaProvider().generate(prompt="hi")
     assert result.usage is None
 
 
@@ -300,7 +300,7 @@ def test_ollama_api_key_used_as_base_url(monkeypatch):
     captured: dict = {}
     fake = {"response": "ok", "model": "llama3"}
     with patch("urllib.request.urlopen", side_effect=_fake_urlopen(fake, captured)):
-        OllamaProvider().complete(prompt="hi", api_key="http://custom:8888")
+        OllamaProvider().generate(prompt="hi", api_key="http://custom:8888")
     assert captured["url"] == "http://custom:8888/api/generate"
 
 

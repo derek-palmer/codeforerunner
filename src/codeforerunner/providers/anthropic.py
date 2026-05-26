@@ -19,7 +19,7 @@ class AnthropicProvider:
 
     endpoint = "https://api.anthropic.com/v1/messages"
 
-    def complete(
+    def generate(
         self,
         *,
         prompt: str,

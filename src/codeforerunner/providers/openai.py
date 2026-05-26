@@ -19,7 +19,7 @@ class OpenAIProvider:
 
     endpoint = "https://api.openai.com/v1/chat/completions"
 
-    def complete(
+    def generate(
         self,
         *,
         prompt: str,

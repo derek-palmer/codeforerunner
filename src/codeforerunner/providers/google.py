@@ -28,7 +28,7 @@ class GoogleProvider:
         "?key={key}&alt=sse"
     )
 
-    def complete(
+    def generate(
         self,
         *,
         prompt: str,

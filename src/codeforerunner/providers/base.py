@@ -22,7 +22,7 @@ class Provider(Protocol):
     default_env_var: str  # e.g. "ANTHROPIC_API_KEY"
     default_model: str  # provider's recommended default
 
-    def complete(
+    def generate(
         self,
         *,
         prompt: str,
