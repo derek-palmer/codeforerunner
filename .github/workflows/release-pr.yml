@@ -13,6 +13,8 @@ jobs:
   validate-build:
     if: startsWith(github.head_ref, 'release/') || contains(github.event.pull_request.labels.*.name, 'release-prerelease')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: actions/setup-python@v6.2.0
