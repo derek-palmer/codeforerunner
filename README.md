@@ -2,6 +2,8 @@
 
 # codeForerunner
 
+[![Socket Badge](https://badge.socket.dev/npm/package/codeforerunner/0.4.3)](https://badge.socket.dev/npm/package/codeforerunner/0.4.3)
+
 Model-agnostic repository documentation tooling. Ships a prompt pack for codebase analysis and doc generation, a thin Python CLI, an MCP server, drift-detection rules that keep docs honest — and native slash-command skills for Claude Code, Codex, Gemini CLI, and other agent CLIs.
 
 ## Two modes
@@ -148,7 +150,7 @@ forerunner check               # run any time or as pre-commit hook
 ## GitHub Action
 
 ```yaml
-- uses: derek-palmer/codeforerunner@v0.4.2
+- uses: derek-palmer/codeforerunner@v0.4.3
 ```
 
 No-op when `forerunner.config.yaml` is absent.
