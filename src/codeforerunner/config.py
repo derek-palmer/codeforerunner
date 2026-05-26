@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 import yaml
 
 CONFIG_FILENAME = "forerunner.config.yaml"
 
-_KNOWN_PROVIDERS = {"anthropic", "openai", "google", "ollama"}
 _KNOWN_SEVERITIES = {"HIGH", "MEDIUM", "LOW"}
 
 
@@ -40,11 +40,8 @@ class VersionAuditConfig:
 class ForerunnerConfig:
     """Top-level forerunner.config.yaml configuration."""
 
-    provider: str = "anthropic"
-    model: str = "claude-opus-4-7"
     approaching_eol_threshold_months: int = 6
     ignore_patterns: tuple[str, ...] = ()
-    api_key_env: dict[str, str] = field(default_factory=dict)
     check: CheckConfig = field(default_factory=CheckConfig)
     version_audit: VersionAuditConfig = field(default_factory=VersionAuditConfig)
 
@@ -68,29 +65,6 @@ def _coerce_str_tuple(value: Any, field_name: str) -> tuple[str, ...]:
             raise ConfigError(f"{field_name}[{i}]: expected string, got {type(item).__name__}")
         out.append(item)
     return tuple(out)
-
-
-def _parse_api_key_env(raw: Any) -> dict[str, str]:
-    if raw is None:
-        return {}
-    if not isinstance(raw, dict):
-        raise ConfigError(f"api_key_env: expected dict, got {type(raw).__name__}")
-    out: dict[str, str] = {}
-    for k, v in raw.items():
-        if not isinstance(k, str):
-            raise ConfigError(
-                f"api_key_env: keys must be strings, got {type(k).__name__}"
-            )
-        if k not in _KNOWN_PROVIDERS:
-            raise ConfigError(
-                f"api_key_env: unknown provider '{k}' (expected one of {sorted(_KNOWN_PROVIDERS)})"
-            )
-        if not isinstance(v, str) or not v:
-            raise ConfigError(
-                f"api_key_env[{k}]: expected non-empty string, got {type(v).__name__}"
-            )
-        out[k] = v
-    return out
 
 
 def _parse_check(raw: Any) -> CheckConfig:
@@ -143,24 +117,14 @@ def parse(raw: dict[str, Any] | None) -> ForerunnerConfig:
         return ForerunnerConfig()
     _require_type(raw, dict, "<root>")
 
-    provider = raw.get("provider", "anthropic")
-    _require_type(provider, str, "provider")
-    if provider not in _KNOWN_PROVIDERS:
-        raise ConfigError(
-            f"provider: unknown '{provider}' (expected one of {sorted(_KNOWN_PROVIDERS)})"
-        )
-
     tasks = raw.get("tasks") or {}
     _require_type(tasks, dict, "tasks")
 
     return ForerunnerConfig(
-        provider=provider,
-        model=_require_type(raw.get("model", "claude-opus-4-7"), str, "model"),
         approaching_eol_threshold_months=_to_int(
             raw.get("approaching_eol_threshold_months", 6), "approaching_eol_threshold_months"
         ),
         ignore_patterns=_coerce_str_tuple(raw.get("ignore_patterns", []), "ignore_patterns"),
-        api_key_env=_parse_api_key_env(raw.get("api_key_env")),
         check=_parse_check(tasks.get("check")),
         version_audit=_parse_version_audit(tasks.get("version_audit")),
     )

@@ -113,85 +113,16 @@ def cmd_mcp_server(args: argparse.Namespace) -> int:
     return mcp_server.serve(prompts_root)
 
 
-def cmd_generate(args: argparse.Namespace) -> int:
-    """Resolve the bundle for <task> and send it to the configured provider.
-
-    With --prompt-only (or when no provider/key/Ollama is reachable), outputs
-    the assembled prompt bundle to stdout for the calling agent to process.
-    """
-    from codeforerunner import providers as _providers
-    from codeforerunner.config import load_from_repo
-
-    repo_root = Path(args.repo).resolve() if args.repo else Path.cwd()
-    cfg = load_from_repo(repo_root)
-
-    ns = argparse.Namespace(repo=getattr(args, "repo", None), task=args.task)
-
-    # --prompt-only: output the bundle and stop; the calling agent is the model.
-    if getattr(args, "prompt_only", False):
-        return cmd_doc(ns)
-
-    bundle, rc = _get_bundle(ns)
-    if rc != 0:
-        return rc
-
-
-    explicit_provider = args.provider or (cfg.provider if cfg else None)
-    provider_name = explicit_provider or "anthropic"
-    model = args.model or (cfg.model if cfg else None)
-    provider_cls = _providers.get(provider_name)
-    provider = provider_cls()
-    model = model or provider.default_model
-
-    env_var = (cfg.api_key_env.get(provider_name) if cfg else None) or provider.default_env_var
-    api_key = os.environ.get(env_var)
-    if api_key is None and provider_name != "ollama":
-        if explicit_provider is None and _providers.ollama_available():
-            provider_name = "ollama"
-            provider_cls = _providers.get("ollama")
-            provider = provider_cls()
-            if not args.model:
-                model = provider.default_model
-            print("info: no API key; falling back to Ollama (local mode)", file=sys.stderr)
-        elif explicit_provider is None:
-            # Skill-mode auto-detect: no provider configured, no Ollama — output
-            # the prompt bundle for the calling agent to process directly.
-            sys.stdout.write(bundle)
-            if sys.stdout.isatty():
-                print(
-                    "\ninfo: no provider configured and Ollama not running.\n"
-                    "      Prompt bundle written above — paste into your agent,\n"
-                    "      or run: forerunner generate --prompt-only "
-                    f"{args.task}",
-                    file=sys.stderr,
-                )
-            return 0
-        else:
-            print("error: missing API key; set the configured API key environment variable", file=sys.stderr)
-            return 3
-
-    if getattr(args, "stream", False):
-        try:
-            for chunk in provider.stream(prompt=bundle, model=model, api_key=api_key):
-                sys.stdout.write(chunk)
-                sys.stdout.flush()
-        except _providers.ProviderError as e:
-            print(f"error: {provider_name} provider failed: {e}", file=sys.stderr)
-            return 4
-        sys.stdout.write("\n")
-        return 0
-
-    try:
-        result = provider.generate(prompt=bundle, model=model, api_key=api_key)
-    except _providers.ProviderError as e:
-        print(f"error: {provider_name} provider failed: {e}", file=sys.stderr)
-        return 4
-
-    sys.stdout.write(result.text.rstrip() + "\n")
-    print(
-        f"# {provider_name} {result.model} {result.usage or ''}".rstrip(),
-        file=sys.stderr,
-    )
+def cmd_refresh(args: argparse.Namespace) -> int:
+    """Emit scan + check + all doc-task bundles to stdout for a full doc refresh."""
+    tasks = ["scan", "check", "readme", "api-docs", "stack-docs",
+             "diagrams", "flows", "version-audit"]
+    for task in tasks:
+        ns = argparse.Namespace(repo=getattr(args, "repo", None), task=task)
+        rc = cmd_doc(ns)
+        if rc != 0:
+            return rc
+        sys.stdout.write("\n---\n\n")
     return 0
 
 
@@ -270,18 +201,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     s_doctor.set_defaults(func=cmd_doctor)
 
-    s_gen = sub.add_parser("generate", help="resolve bundle for <task> and call the configured provider")
-    s_gen.add_argument("task", help="task basename under prompts/tasks/")
-    s_gen.add_argument("--provider", help="override config provider")
-    s_gen.add_argument("--model", help="override config model")
-    s_gen.add_argument("--stream", action="store_true", help="stream output token-by-token")
-    s_gen.add_argument(
-        "--prompt-only",
-        dest="prompt_only",
-        action="store_true",
-        help="output the assembled prompt bundle to stdout; do not call a model (skill mode)",
-    )
-    s_gen.set_defaults(func=cmd_generate)
+    s_refresh = sub.add_parser("refresh", help="output all doc-refresh bundles in sequence (scan + check + all tasks)")
+    s_refresh.set_defaults(func=cmd_refresh)
 
     from codeforerunner import installer
     installer.add_subparser(sub)

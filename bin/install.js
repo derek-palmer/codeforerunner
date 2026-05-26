@@ -16,12 +16,32 @@
 'use strict';
 
 const fs             = require('fs');
+const https          = require('https');
 const os             = require('os');
 const path           = require('path');
+const readline       = require('readline');
 const child_process  = require('child_process');
 
 const REPO     = 'derek-palmer/codeforerunner';
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/main`;
+
+// All skill slugs written during a local install.
+const TASK_SKILL_SLUGS = [
+  'codeforerunner',
+  'forerunner-api-docs',
+  'forerunner-audit',
+  'forerunner-changelog',
+  'forerunner-check',
+  'forerunner-diagrams',
+  'forerunner-flows',
+  'forerunner-init',
+  'forerunner-readme',
+  'forerunner-review',
+  'forerunner-scan',
+  'forerunner-stack-docs',
+  'forerunner-version-audit',
+  'forerunner-refresh',
+];
 
 // ── Argv ──────────────────────────────────────────────────────────────────
 
@@ -30,19 +50,23 @@ function parseArgs(argv) {
     dryRun: false, force: false, skipSkills: false,
     all: false, minimal: false, listOnly: false, noColor: false,
     only: [], uninstall: false, help: false,
+    global: false, local: false, nonInteractive: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     switch (a) {
-      case '--dry-run':   opts.dryRun   = true;  break;
-      case '--force':     opts.force    = true;  break;
-      case '--skip-skills': opts.skipSkills = true; break;
-      case '--all':       opts.all      = true;  break;
-      case '--minimal':   opts.minimal  = true;  break;
-      case '--list':      opts.listOnly = true;  break;
-      case '--no-color':  opts.noColor  = true;  break;
+      case '--dry-run':        opts.dryRun         = true; break;
+      case '--force':          opts.force           = true; break;
+      case '--skip-skills':    opts.skipSkills      = true; break;
+      case '--all':            opts.all             = true; break;
+      case '--minimal':        opts.minimal         = true; break;
+      case '--list':           opts.listOnly        = true; break;
+      case '--no-color':       opts.noColor         = true; break;
+      case '--global':         opts.global          = true; break;
+      case '--local':          opts.local           = true; break;
+      case '--non-interactive': opts.nonInteractive = true; break;
       case '--uninstall': case '-u': opts.uninstall = true; break;
-      case '-h': case '--help': opts.help = true; break;
+      case '-h': case '--help': opts.help           = true; break;
       case '--': break; // npx may forward a literal --
       case '--only': {
         const v = argv[++i];
@@ -54,7 +78,8 @@ function parseArgs(argv) {
         die(`error: unknown flag: ${a}\nrun with --help for usage`);
     }
   }
-  if (opts.all && opts.minimal) die('error: --all and --minimal are mutually exclusive');
+  if (opts.global && opts.local)   die('error: --global and --local are mutually exclusive');
+  if (opts.all && opts.minimal)    die('error: --all and --minimal are mutually exclusive');
   if (opts.only.length) {
     const known = new Set(PROVIDERS.map(p => p.id));
     for (const id of opts.only) {
@@ -284,6 +309,83 @@ function detectRepoRoot() {
   return null;
 }
 
+// ── Global/local prompt ───────────────────────────────────────────────────
+
+async function promptGlobalOrLocal(c) {
+  // Non-TTY (curl|bash pipe) → silently default to global.
+  if (!process.stdin.isTTY || !process.stdout.isTTY) return 'global';
+
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    process.stdout.write('\nInstall location:\n');
+    process.stdout.write(`  [g] global — available in all projects ${c.dim('(recommended)')}\n`);
+    process.stdout.write('  [l] local  — this directory only\n\n');
+    rl.question('? (default: g) ', (answer) => {
+      rl.close();
+      const a = (answer || '').trim().toLowerCase();
+      resolve(a === 'l' || a === 'local' ? 'local' : 'global');
+    });
+  });
+}
+
+// ── Local install helpers ─────────────────────────────────────────────────
+
+async function fetchSkill(slug, repoRoot) {
+  if (repoRoot) {
+    const p = path.join(repoRoot, 'skills', slug, 'SKILL.md');
+    try { return fs.readFileSync(p, 'utf8'); } catch (_) { return null; }
+  }
+  return new Promise((resolve) => {
+    const url = `${RAW_BASE}/skills/${slug}/SKILL.md`;
+    https.get(url, (res) => {
+      if (res.statusCode !== 200) { resolve(null); return; }
+      let data = '';
+      res.on('data', d => { data += d; });
+      res.on('end', () => resolve(data));
+    }).on('error', () => resolve(null));
+  });
+}
+
+async function writeSkillsLocal(opts, results, c) {
+  const repoRoot = detectRepoRoot();
+  const cwd = process.cwd();
+
+  // Claude Code natively recognises .claude/skills/<slug>/SKILL.md.
+  const claudeBase = path.join(cwd, '.claude', 'skills');
+  // All other agents use .agents/skills/<slug>/SKILL.md.
+  const agentsBase = path.join(cwd, '.agents', 'skills');
+
+  process.stdout.write(c.bold('\ncodeforerunner') + c.dim(' — local install\n'));
+  process.stdout.write(c.dim(`  target: ${cwd}\n`));
+  if (opts.dryRun) process.stdout.write(c.yellow('  (dry-run — no files written)\n'));
+
+  for (const slug of TASK_SKILL_SLUGS) {
+    process.stdout.write(`\n${c.bold(`→ ${slug}`)}\n`);
+    const content = await fetchSkill(slug, repoRoot);
+    if (!content) {
+      process.stdout.write(`  ${c.red('✗')} could not fetch skill content\n`);
+      results.failed.push({ id: slug, why: 'fetch failed' });
+      continue;
+    }
+
+    const dests = [
+      path.join(claudeBase, slug, 'SKILL.md'),
+      path.join(agentsBase, slug, 'SKILL.md'),
+    ];
+    for (const dest of dests) {
+      if (opts.dryRun) {
+        process.stdout.write(`  ${c.dim('would write:')} ${dest}\n`);
+      } else {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, content, 'utf8');
+        process.stdout.write(`  ${c.green('✓')} ${dest}\n`);
+      }
+    }
+    results.installed.push(slug);
+    results.detected++;
+  }
+}
+
 // ── Per-provider install logic ────────────────────────────────────────────
 
 function installClaude(opts, results, c) {
@@ -341,17 +443,24 @@ codeforerunner installer — adds /forerunner-* slash commands to agent CLIs
 Usage:
   node bin/install.js [flags]
 
-Flags:
-  --all            Install to every detected agent (default mode)
-  --minimal        Install without any extras
-  --only <id>      Install to a specific agent only (repeatable)
-  --force          Reinstall even if already installed
-  --skip-skills    Skip the npx skills add step
-  --dry-run        Print what would run; write nothing
-  --list           Show all supported agents and detection status
-  --no-color       Disable colored output
-  --uninstall, -u  Remove codeforerunner from detected agents
-  -h, --help       Show this help
+Install location:
+  --global           Install to global agent dirs, available in all projects (default)
+  --local            Install to .claude/skills/ and .agents/skills/ in the current directory
+  --non-interactive  Skip prompt and default to global (useful in CI / curl|bash)
+
+If none of the above are given and stdin+stdout are TTYs, an interactive prompt appears.
+
+Other flags:
+  --all              Install to every detected agent (default mode)
+  --minimal          Install without any extras
+  --only <id>        Install to a specific agent only (repeatable)
+  --force            Reinstall even if already installed
+  --skip-skills      Skip the npx skills add step
+  --dry-run          Print what would run; write nothing
+  --list             Show all supported agents and detection status
+  --no-color         Disable colored output
+  --uninstall, -u    Remove codeforerunner from detected agents
+  -h, --help         Show this help
 
 Agents (${PROVIDERS.length}):
 ${PROVIDERS.map(p => `  ${p.id.padEnd(14)} ${p.label}`).join('\n')}
@@ -395,8 +504,15 @@ function uninstall(opts, c) {
 
 // ── Summary ───────────────────────────────────────────────────────────────
 
-function printSummary(results, c) {
+function printSummary(results, c, installMode) {
   process.stdout.write('\n─────────────────────────────────\n');
+  if (installMode === 'local') {
+    const cwd = process.cwd();
+    process.stdout.write(c.dim(`  local install paths:\n`));
+    process.stdout.write(c.dim(`    .claude/skills/<slug>/SKILL.md  (Claude Code)\n`));
+    process.stdout.write(c.dim(`    .agents/skills/<slug>/SKILL.md  (all others)\n`));
+    process.stdout.write(c.dim(`  root: ${cwd}\n`));
+  }
   if (results.installed.length) {
     process.stdout.write(c.green(`✓ installed: ${results.installed.join(', ')}\n`));
   }
@@ -420,16 +536,36 @@ function printSummary(results, c) {
 
 // ── Main ──────────────────────────────────────────────────────────────────
 
-function main() {
-  const opts    = parseArgs(process.argv.slice(2));
-  const c       = makeChalk(opts.noColor);
+async function main() {
+  const opts = parseArgs(process.argv.slice(2));
+  const c    = makeChalk(opts.noColor);
 
   if (opts.help)     { printHelp();       return; }
   if (opts.listOnly) { printList(c);      return; }
   if (opts.uninstall){ uninstall(opts,c); return; }
 
+  // Resolve install mode: explicit flags first, then prompt when TTY, else global.
+  let installMode;
+  if (opts.global) {
+    installMode = 'global';
+  } else if (opts.local) {
+    installMode = 'local';
+  } else if (opts.nonInteractive || !process.stdin.isTTY || !process.stdout.isTTY) {
+    installMode = 'global';
+  } else {
+    installMode = await promptGlobalOrLocal(c);
+  }
+
   const results = { detected: 0, installed: [], skipped: [], failed: [] };
 
+  if (installMode === 'local') {
+    await writeSkillsLocal(opts, results, c);
+    printSummary(results, c, installMode);
+    if (results.failed.length) process.exit(1);
+    return;
+  }
+
+  // Global install: existing agent-detection logic.
   process.stdout.write(c.bold('codeforerunner') + c.dim(' — installing skills into detected agents\n'));
   if (opts.dryRun) process.stdout.write(c.yellow('  (dry-run — no files written)\n'));
 
@@ -449,8 +585,8 @@ function main() {
     if (prov.profile)          { installViaSkills(prov, opts, results, c); continue; }
   }
 
-  printSummary(results, c);
+  printSummary(results, c, installMode);
   if (results.failed.length) process.exit(1);
 }
 
-main();
+main().catch(err => { process.stderr.write(err.stack + '\n'); process.exit(2); });
