@@ -62,7 +62,7 @@ The skill should tell agents to:
 - use `prompts/system/base.md` as the governing instruction source,
 - assemble repo context using `prompts/partials/context-format.md`,
 - run `prompts/tasks/scan.md` before downstream task prompts,
-- use task prompts from `prompts/tasks/` for README, API docs, stack docs, diagrams, flows, version audits, checks, and reviews,
+- use task prompts from `prompts/tasks/` for README, API docs, stack docs, diagrams, flows, architecture reviews, version audits, checks, and reviews,
 - respect `forerunner.config.yaml` as the canonical config name (schema loaded by `src/codeforerunner/config.py`),
 - report generated file changes and stale-doc failures clearly,
 - avoid sending excluded or secret paths to external model providers,

@@ -48,6 +48,7 @@ Then in your agent:
 | `/forerunner-api-docs` | `api-docs` | Generate API reference docs |
 | `/forerunner-diagrams` | `diagrams` | Generate Mermaid architecture diagrams |
 | `/forerunner-flows` | `flows` | Document system flows |
+| `/forerunner-arch-review` | `arch-review` | Rank architecture improvement candidates, inspired by Matt Pocock's [`/improve-codebase-architecture`](https://github.com/mattpocock/skills/tree/main/skills/engineering/improve-codebase-architecture) |
 | `/forerunner-stack-docs` | `stack-docs` | Stack-specific developer docs |
 | `/forerunner-version-audit` | `version-audit` | Audit pinned versions vs EOL |
 | `/forerunner-check` | `check` | Check docs for staleness |
@@ -205,7 +206,8 @@ prompts/
     ├── scan.md          api-docs.md    audit.md
     ├── readme.md        diagrams.md    changelog.md
     ├── check.md         flows.md       version-audit.md
-    ├── review.md        stack-docs.md  refresh.md
+    ├── review.md        stack-docs.md  arch-review.md
+    ├── refresh.md
     └── init-agent-onboarding.md
 ```
 

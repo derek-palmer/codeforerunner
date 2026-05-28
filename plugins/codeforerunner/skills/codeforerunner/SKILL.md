@@ -18,6 +18,7 @@ Trigger this skill when the user asks for any of:
 - Generate or refresh API documentation.
 - Generate or refresh stack / runtime / dependency documentation.
 - Produce or refresh architecture or flow Mermaid diagrams.
+- Produce an Architecture Review with ranked Deepening Opportunities before refactor planning.
 - Audit pinned versions across manifests, lockfiles, Dockerfiles, IaC, workflows.
 - Check whether existing docs are stale relative to current code.
 - Review a doc-change diff for accuracy and over-claiming.
@@ -25,7 +26,7 @@ Trigger this skill when the user asks for any of:
 - Run a security and dependency audit.
 - Generate a Keep-a-Changelog entry from git history.
 
-Do not activate for general coding assistance, refactoring, bug fixing, or non-documentation tasks.
+Do not activate for general coding assistance, implementing refactors, bug fixing, or non-documentation tasks.
 
 ## Required Inputs
 

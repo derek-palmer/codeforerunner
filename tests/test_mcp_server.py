@@ -90,6 +90,7 @@ def test_tools_list_contains_scan(server: _Server) -> None:
     assert len(tools) >= 1
     names = [t["name"] for t in tools]
     assert "scan" in names
+    assert "arch-review" in names
     for t in tools:
         assert "name" in t
         assert "description" in t and isinstance(t["description"], str) and t["description"]
@@ -150,6 +151,20 @@ def test_tools_call_blocks_without_scan(server: _Server) -> None:
     msg = resp["error"]["message"]
     assert "scan-first" in msg
     assert "V2" in msg
+
+
+def test_tools_call_arch_review_blocks_without_scan(server: _Server) -> None:
+    server.request({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+    resp = server.request(
+        {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {"name": "arch-review", "arguments": {}},
+        }
+    )
+    assert "error" in resp
+    assert resp["error"]["code"] == -32000
 
 
 def test_tools_call_exempt_init_agent_onboarding(server: _Server) -> None:

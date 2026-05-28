@@ -36,6 +36,15 @@ def test_doc_scan_emits_task_body(capsys):
     assert "<!-- task: scan.md -->" in out
 
 
+def test_doc_arch_review_emits_task_body(capsys):
+    rc = main(["doc", "arch-review"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "<!-- task: arch-review.md -->" in out
+    assert "Architecture Review" in out
+    assert "Matt Pocock" in out
+
+
 def test_doc_unknown_task_exits_nonzero(capsys):
     rc = main(["doc", "definitely-not-a-task"])
     err = capsys.readouterr().err
@@ -103,6 +112,16 @@ def test_doc_non_exempt_with_config_warns_without_env(tmp_path, capsys, monkeypa
     assert rc == 0
     assert "scan-first" in cap.err
     assert "FORERUNNER_SCAN_DONE" in cap.err
+
+
+def test_doc_arch_review_with_config_warns_without_env(tmp_path, capsys, monkeypatch):
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / "prompts/tasks/arch-review.md").write_text("# arch review task\n", encoding="utf-8")
+    monkeypatch.delenv("FORERUNNER_SCAN_DONE", raising=False)
+    rc = main(["--repo", str(tmp_path), "doc", "arch-review"])
+    cap = capsys.readouterr()
+    assert rc == 0
+    assert "scan-first" in cap.err
 
 
 def test_doc_non_exempt_with_env_set_no_warning(tmp_path, capsys, monkeypatch):
@@ -198,6 +217,7 @@ def test_refresh_emits_all_task_bundles(tmp_path, capsys):
     import re
     markers = re.findall(r'<!-- task: ([\w-]+)\.md -->', cap.out)
     assert markers == task_names
+    assert "arch-review" not in markers
     assert cap.out.count("\n---\n") == len(task_names) - 1
 
 

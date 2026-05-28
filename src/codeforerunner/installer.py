@@ -27,6 +27,7 @@ TASK_SKILL_SLUGS: tuple[str, ...] = (
     "forerunner-scan",
     "forerunner-readme",
     "forerunner-api-docs",
+    "forerunner-arch-review",
     "forerunner-audit",
     "forerunner-changelog",
     "forerunner-check",

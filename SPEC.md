@@ -22,6 +22,7 @@ I.config: `forerunner.config.yaml.example` → example config only; no loader ye
 I.agent-configs: `agent-configs/*.md` → copyable editor-agent instructions.
 I.docs: `docs/*.md` → human setup, prompt guide, editor setup, roadmap.
 I.spec: `SPEC.md` → canonical phase/task tracker.
+I.arch-review: `prompts/tasks/arch-review.md` → scan-first Architecture Review task that emits `.forerunner/arch-review.md` with ranked Deepening Opportunities; it reads `CONTEXT.md`/ADRs when present, suggests glossary additions when useful, and does not implement changes or propose final interfaces.
 I.agent-skill: `agent/codeforerunner.skill.md` → canonical skill instruction source; its post-frontmatter Markdown content is consumed verbatim by Codex/Claude packages and `forerunner install` (per-agent frontmatter may differ; body cannot). See V10.
 I.skill-plugin: skill/plugin packages = Codex (`plugins/codeforerunner/`) + Claude (`.claude-plugin/`, `skills/codeforerunner/`); install via `forerunner install <agent>` (I.installer).
 I.validation: `scripts/validate_skill_copies.py` → local SPEC V10 body parity check for canonical and distributed skill files.
@@ -61,6 +62,7 @@ P9|x|tool ergonomics|`--version`, `forerunner doctor`, workflow lint, initial CH
 P10|x|model runtime|provider abstraction + `forerunner generate` + config + doctor wiring
 P11|x|release|PyPI publish workflow + install docs
 P12|x|MCP example|usable Claude Desktop / mcp-cli example wiring
+P13|x|architecture review|`arch-review` prompt + skill distribution surface for ranked Deepening Opportunities
 
 ## T Tasks
 
@@ -106,6 +108,7 @@ T38|x|P10|provider abstraction (`src/codeforerunner/providers/`) + `forerunner g
 T39|x|P10|extend `forerunner.config.yaml` schema with per-provider `api_key_env` override; `forerunner doctor` reports missing key when provider configured|I.cli,I.installer,V12
 T40|x|P11|add `.github/workflows/publish.yml` (publish on `v*.*.*` tag via OIDC); document `pipx`/`pip` install in README + CHANGELOG|I.hooks,I.docs,V5
 T41|x|P12|add `examples/mcp/` with Claude Desktop config snippet + README showing how to wire `forerunner mcp-server`|I.mcp,I.docs
+T42|x|P13|add `arch-review` task + `/forerunner-arch-review` skill surface; update Agent Onboarding to maintain `CONTEXT.md` when stable terms exist|I.arch-review,I.init-onboarding,I.skill-plugin,V2,V10
 
 ## Init-Onboarding
 
