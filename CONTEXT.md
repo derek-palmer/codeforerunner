@@ -28,6 +28,14 @@ _Avoid_: Package list, artifact list
 The release path that makes the Node installer package available through npm-compatible registries. codeforerunner treats npmjs publishing, GitHub Packages publishing, and pinned installer shims as related but separately fixable release surfaces.
 _Avoid_: JavaScript release, package upload
 
+**Release Surface Manifest**:
+A catalog of release surfaces, versions, registry targets, authentication modes, and validation expectations for codeforerunner releases. npm Publishing uses it to keep npmjs, GitHub Packages, installer shims, and release PR checks aligned.
+_Avoid_: Release checklist, publish config
+
+**Package Contents Inspector**:
+A release validation module that checks the packed npm artifact before publish, including required files, executable entrypoints, skill payloads, lock metadata, and shim pins. It treats the package artifact as the test surface.
+_Avoid_: npm pack script, file list check
+
 **Agent Onboarding**:
 A task that creates or refreshes the instructions and domain vocabulary a coding agent needs before working in a repo. Agent Onboarding may create or update `CONTEXT.md` with conservative glossary terms inferred from stable repo evidence.
 _Avoid_: Init docs, setup docs
@@ -57,3 +65,7 @@ Domain expert: "In the Distribution Inventory, so installer, doctor, and validat
 Dev: "Fix npm publishing."
 
 Domain expert: "Treat npm Publishing as three release surfaces: npmjs trusted publish, GitHub Packages publish, and installer shim pins."
+
+Dev: "How do we keep release workflows aligned?"
+
+Domain expert: "Use a Release Surface Manifest, then validate packed npm artifacts with a Package Contents Inspector before publish."
