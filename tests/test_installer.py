@@ -284,6 +284,12 @@ def test_resolve_skill_target_unsupported_raises():
         installer.resolve_skill_target("generic", "my-skill")
 
 
+def test_task_skill_slugs_include_arch_review():
+    assert "forerunner-arch-review" in installer.TASK_SKILL_SLUGS
+    assert (REPO / "plugins/codeforerunner/skills/forerunner-arch-review/SKILL.md").is_file()
+    assert (REPO / "skills/forerunner-arch-review/SKILL.md").is_file()
+
+
 # ── install_all_skills ────────────────────────────────────────────────────────
 
 def test_install_all_skills_check_only(tmp_path):

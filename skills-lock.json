@@ -25,6 +25,12 @@
       "skillPath": "skills/forerunner-api-docs/SKILL.md",
       "computedHash": "9cb7636fe715e7b3024273f5dfe064fa57a35b09e1016b5692c68cdd9f7a9d43"
     },
+    "forerunner-arch-review": {
+      "source": "plugins/codeforerunner/skills/forerunner-arch-review/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-arch-review/SKILL.md",
+      "computedHash": "5d135f1b2321c1746313309651873de1559221ddc4aca54bc1bf4e01a43ddde5"
+    },
     "forerunner-audit": {
       "source": "plugins/codeforerunner/skills/forerunner-audit/SKILL.md",
       "sourceType": "local",

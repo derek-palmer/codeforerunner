@@ -25,12 +25,13 @@ Use it for every run.
 | Task | Input | Output |
 | --- | --- | --- |
 | `scan.md` | File tree, manifests, entrypoints, config | YAML repo scan |
-| `init-agent-onboarding.md` | File tree, key configs/docs, instruction files; scan not required | `AGENTS.md` update |
+| `init-agent-onboarding.md` | File tree, key configs/docs, instruction files, domain vocabulary files; scan not required | `AGENTS.md` update; `CONTEXT.md` update when stable terms exist |
 | `readme.md` | Scan result, README, key files | `README.md` |
 | `api-docs.md` | Scan result, route/interface files | API docs |
 | `stack-docs.md` | Scan result, stack files | Stack docs |
 | `diagrams.md` | Scan result, architecture files | Mermaid diagrams |
 | `flows.md` | Scan result, flow-relevant files | Flow docs |
+| `arch-review.md` | Scan result, key modules, tests, optional `CONTEXT.md`/ADRs | `.forerunner/arch-review.md` |
 | `version-audit.md` | Manifests, lockfiles, Dockerfiles, workflows, IaC | Version audit |
 | `check.md` | Fresh scan, docs, optional diff | Staleness report |
 | `review.md` | Check report, diff, scan | Review summary |

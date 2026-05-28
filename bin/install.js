@@ -29,6 +29,7 @@ const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/main`;
 const TASK_SKILL_SLUGS = [
   'codeforerunner',
   'forerunner-api-docs',
+  'forerunner-arch-review',
   'forerunner-audit',
   'forerunner-changelog',
   'forerunner-check',

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from codeforerunner.check import Violation, format_violations, run
 
-REPO = Path("/Users/derek/code/codeforerunner")
+REPO = Path(__file__).resolve().parents[1]
 
 
 def test_real_repo_has_no_drift():
@@ -456,8 +456,9 @@ def test_workflows_lint_when_actionlint_available():
 
     if not shutil.which("actionlint"):
         pytest.skip("actionlint not installed")
+    workflow_files = sorted(str(p.relative_to(REPO)) for p in (REPO / ".github/workflows").glob("*.yml"))
     proc = subprocess.run(
-        ["actionlint", ".github/workflows"],
+        ["actionlint", *workflow_files],
         capture_output=True,
         text=True,
         cwd=REPO,

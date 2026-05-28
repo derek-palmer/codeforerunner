@@ -1,19 +1,20 @@
-# Issue tracker: Local Markdown
+# Issue tracker: GitHub Issues
 
-Issues and PRDs for this repo live as markdown files in `.scratch/`.
+Issues and PRDs for this repo live in GitHub Issues:
+`https://github.com/derek-palmer/codeforerunner/issues`
 
 ## Conventions
 
-- One feature per directory: `.scratch/<feature-slug>/`
-- The PRD is `.scratch/<feature-slug>/PRD.md`
-- Implementation issues are `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01`
-- Triage state is recorded as a `Status:` line near the top of each issue file (see `triage-labels.md` for the role strings)
-- Comments and conversation history append to the bottom of the file under a `## Comments` heading
+- One PRD or implementation slice per GitHub issue.
+- Use the repo's canonical triage labels from `triage-labels.md`.
+- Put PRD content directly in the issue body.
+- Put follow-up discussion in issue comments.
+- Prefer local `gh api` calls for issue creation and updates when available.
 
 ## When a skill says "publish to the issue tracker"
 
-Create a new file under `.scratch/<feature-slug>/` (creating the directory if needed).
+Create a GitHub issue in `derek-palmer/codeforerunner`.
 
 ## When a skill says "fetch the relevant ticket"
 
-Read the file at the referenced path. The user will normally pass the path or the issue number directly.
+Read the referenced GitHub issue. The user will normally pass the issue URL or issue number.
