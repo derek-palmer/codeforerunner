@@ -63,11 +63,11 @@
 
 ### Issue tracker
 
-Local markdown under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+GitHub Issues in `derek-palmer/codeforerunner`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Default canonical labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), applied via a `Status:` line in each issue file. See `docs/agents/triage-labels.md`.
+Default canonical labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) applied as GitHub issue labels. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
