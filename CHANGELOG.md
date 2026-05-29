@@ -5,6 +5,29 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.5] — 2026-05-29
+
+### Added
+
+- **Task Registry** (`src/codeforerunner/tasks.json`) — single source of truth for task identity, scan-exemption policy, the refresh sequence, and installable skill slugs. (#66)
+- Node installer (`bin/install.js`) now reads installable skill slugs from the Task Registry instead of a hardcoded list, backed by a Node↔Python parity test and a `node --test` suite wired into CI. (#70)
+- Scan-first gate persists across restarts via `.forerunner/` session state and is enforced consistently across the CLI and MCP server. (#56, #68)
+- `arch-review` task and skill surface.
+
+### Fixed
+
+- **npm publishing** — the publish workflow now upgrades the npm CLI before publishing. Node 22 bundles npm 10.x, which lacks OIDC trusted-publishing support and silently falls back to anonymous publish (registry returns `404`); OIDC trusted publishing requires npm ≥ 11.5.1. (`.github/workflows/npm-publish.yml`)
+- Socket badge version stays in sync on release. (#67)
+- Installer shim pins corrected, with future-drift detection.
+- Docker login credentials in the publish workflow. (#41)
+- `package.json` paths and README install instructions. (#40)
+
+### Changed
+
+- Retired `SPEC.md`; GitHub Issues now own work tracking.
+- `CONTEXT.md` and agent docs: added npm release and GitHub Issues glossary terms.
+- CodeRabbit automatic review disabled.
+
 ## [0.4.4] — 2026-05-26
 
 ### Added
@@ -164,7 +187,9 @@ Initial release-ready surface around the prompt pack.
 - `init` and `scan` are honest wrappers over the prompt pack; they emit bundled prompt text to stdout for the calling agent to act on.
 - Model invocation is out of scope; `provider` / `model` config fields are honored only by future wrappers.
 
-[Unreleased]: https://github.com/derek-palmer/codeforerunner/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/derek-palmer/codeforerunner/compare/v0.4.5...HEAD
+[0.4.5]: https://github.com/derek-palmer/codeforerunner/compare/v0.4.4...v0.4.5
+[0.4.4]: https://github.com/derek-palmer/codeforerunner/compare/v0.4.3...v0.4.4
 [0.3.2]: https://github.com/derek-palmer/codeforerunner/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/derek-palmer/codeforerunner/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/derek-palmer/codeforerunner/compare/v0.2.0...v0.3.0

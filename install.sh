@@ -16,9 +16,9 @@ set -euo pipefail
 
 # Security: pinned to a specific version so curl|bash one-liners don't silently
 # execute whatever the npm registry or GitHub currently serves as "latest".
-NPM_PKG="codeforerunner@0.4.4"
+NPM_PKG="codeforerunner@0.4.5"
 REPO="derek-palmer/codeforerunner"
-REPO_TAG="v0.4.4"
+REPO_TAG="v0.4.5"
 
 # Locate bin/install.js relative to this script (works even when piped through bash)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-install.sh}")" 2>/dev/null && pwd || echo "")"
