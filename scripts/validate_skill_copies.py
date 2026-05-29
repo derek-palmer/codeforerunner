@@ -7,11 +7,18 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-CANONICAL = Path("agent/codeforerunner.skill.md")
-COPIES = [
-    Path("plugins/codeforerunner/skills/codeforerunner/SKILL.md"),
-    Path("skills/codeforerunner/SKILL.md"),
-]
+
+# Source the canonical/copy paths from the Distribution Inventory so packaging
+# changes are a single edit. Add src/ to the path for standalone runs (no
+# installed package required).
+sys.path.insert(0, str(ROOT / "src"))
+from codeforerunner.distribution import (  # noqa: E402
+    CANONICAL_SKILL_REL,
+    DISTRIBUTED_SKILL_COPIES_REL,
+)
+
+CANONICAL = CANONICAL_SKILL_REL
+COPIES = list(DISTRIBUTED_SKILL_COPIES_REL)
 
 
 def strip_frontmatter(text: str) -> str:

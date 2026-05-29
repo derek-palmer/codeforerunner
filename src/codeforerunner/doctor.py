@@ -11,17 +11,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from codeforerunner import distribution as _dist
 from codeforerunner.config import CONFIG_FILENAME, ConfigError, load_from_repo
 
-CANONICAL_REL = Path("agent/codeforerunner.skill.md")
-SKILL_COPIES_REL: tuple[Path, ...] = (
-    Path("plugins/codeforerunner/skills/codeforerunner/SKILL.md"),
-    Path("skills/codeforerunner/SKILL.md"),
-)
-MARKETPLACE_REL = Path("plugins/codex/marketplace.json")
+# Distribution artifact identity and markers come from the Distribution
+# Inventory; re-exported here for callers/tests that import them off doctor.
+CANONICAL_REL = _dist.CANONICAL_SKILL_REL
+SKILL_COPIES_REL: tuple[Path, ...] = _dist.DISTRIBUTED_SKILL_COPIES_REL
+MARKETPLACE_REL = _dist.MARKETPLACE_MANIFEST_REL
 
-MARKER_BEGIN = "<!-- forerunner:begin managed=codeforerunner.skill -->"
-MARKER_END = "<!-- forerunner:end -->"
+MARKER_BEGIN = _dist.MARKER_BEGIN
+MARKER_END = _dist.MARKER_END
 
 
 @dataclass(frozen=True)
@@ -37,14 +37,14 @@ def _installed_skill_destinations() -> list[Path]:
     """Return default install paths for the codeforerunner skill across supported agents."""
     home = Path(os.path.expanduser("~"))
     return [
-        home / ".codex/skills/codeforerunner/SKILL.md",
-        home / ".claude/plugins/codeforerunner/skills/codeforerunner/SKILL.md",
+        _dist.skill_destination(agent, "codeforerunner", home)
+        for agent in _dist.SKILL_DEST_AGENTS
     ]
 
 
 def _installed_marketplace_destination() -> Path:
     """Return default install path for the Codex marketplace manifest."""
-    return Path(os.path.expanduser("~")) / ".codex/marketplaces/codeforerunner.json"
+    return _dist.marketplace_destination(Path(os.path.expanduser("~")))
 
 
 def _load_script_module(repo: Path, relpath: str, module_name: str):

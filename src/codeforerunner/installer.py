@@ -10,13 +10,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Literal
 
+from codeforerunner import distribution as _dist
 from codeforerunner.tasks import installable_slugs as _installable_slugs
 
-MARKER_BEGIN = "<!-- forerunner:begin managed=codeforerunner.skill -->"
-MARKER_END = "<!-- forerunner:end -->"
+# Distribution artifact identity and markers come from the Distribution
+# Inventory; re-exported here for callers/tests that import them off installer.
+MARKER_BEGIN = _dist.MARKER_BEGIN
+MARKER_END = _dist.MARKER_END
 
-CANONICAL_REL = Path("agent/codeforerunner.skill.md")
-MARKETPLACE_REL = Path("plugins/codex/marketplace.json")
+CANONICAL_REL = _dist.CANONICAL_SKILL_REL
+MARKETPLACE_REL = _dist.MARKETPLACE_MANIFEST_REL
 
 EXIT_OK = 0
 EXIT_USAGE = 2
@@ -48,10 +51,8 @@ def resolve_target(agent: str, override: Path | None) -> Target:
     if override is not None:
         return Target(agent, override.expanduser().resolve())
     home = _home()
-    if agent == "codex":
-        return Target(agent, home / ".codex/skills/codeforerunner/SKILL.md")
-    if agent == "claude":
-        return Target(agent, home / ".claude/plugins/codeforerunner/skills/codeforerunner/SKILL.md")
+    if agent in _dist.SKILL_DEST_AGENTS:
+        return Target(agent, _dist.skill_destination(agent, "codeforerunner", home))
     if agent == "gemini":
         raise ValueError(
             "gemini install is handled via `gemini extensions install`; "
@@ -63,10 +64,8 @@ def resolve_target(agent: str, override: Path | None) -> Target:
 def resolve_skill_target(agent: str, slug: str) -> Target:
     """Return install target for a per-task skill slug."""
     home = _home()
-    if agent == "codex":
-        return Target(agent, home / f".codex/skills/{slug}/SKILL.md")
-    if agent == "claude":
-        return Target(agent, home / f".claude/plugins/codeforerunner/skills/{slug}/SKILL.md")
+    if agent in _dist.SKILL_DEST_AGENTS:
+        return Target(agent, _dist.skill_destination(agent, slug, home))
     raise ValueError(f"install_all not supported for agent '{agent}' (expected: codex, claude)")
 
 
