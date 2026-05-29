@@ -108,11 +108,34 @@ def test_docker_publish_workflow_uses_version_tag_and_ghcr():
         step for step in steps
         if isinstance(step, dict) and step.get("uses") == "docker/login-action@v3"
     ]
-    assert any(step.get("with", {}).get("registry") == "dhi.io" for step in login_steps)
+    # Publishes to GHCR (registry ghcr.io) and Docker Hub (login-action with no
+    # `registry`, which defaults to docker.io). The distroless DHI base was
+    # dropped (#72), so there must be no dhi.io login left. Compare registry
+    # values with equality (not substring `in`) to avoid host-substring checks.
+    registries = [step.get("with", {}).get("registry") for step in login_steps]
+    assert any(r == "ghcr.io" for r in registries), (
+        f"expected a ghcr.io login, got {registries!r}"
+    )
+    assert any(r is None or r == "docker.io" for r in registries), (
+        f"expected a Docker Hub login (no registry / docker.io), got {registries!r}"
+    )
+    assert all(r != "dhi.io" for r in registries), "dhi.io login should be removed (#72)"
+
     steps_text = "\n".join(str(step) for step in publish.get("steps", []))
     assert "docker/login-action" in steps_text
     assert "docker/build-push-action" in steps_text
     assert "scripts/check_versions.py" in steps_text
+
+    # Both publish targets must appear in the image metadata. Parse the
+    # metadata-action `images` list and match full image refs exactly.
+    meta_step = next(
+        step for step in steps
+        if isinstance(step, dict) and str(step.get("uses", "")).startswith("docker/metadata-action")
+    )
+    images = [ln.strip() for ln in str(meta_step["with"]["images"]).splitlines() if ln.strip()]
+    expected_ghcr = "ghcr.io/${{ github.repository_owner }}/codeforerunner"
+    assert expected_ghcr in images, f"expected GHCR image, got {images!r}"
+    assert "heyderekp/codeforerunner" in images, f"expected Docker Hub image, got {images!r}"
 
 
 def test_release_pr_workflow_requires_release_signal_and_uploads_artifacts():
