@@ -42,8 +42,10 @@ pyproject_path = root / "pyproject.toml"
 package_path = root / "package.json"
 marketplace_path = root / "plugins" / "codex" / "marketplace.json"
 readme_path = root / "README.md"
+install_sh_path = root / "install.sh"
+install_ps1_path = root / "install.ps1"
 
-for path in (pyproject_path, package_path, marketplace_path, readme_path):
+for path in (pyproject_path, package_path, marketplace_path, readme_path, install_sh_path, install_ps1_path):
     if not path.is_file():
         print(f"error: missing required file: {path}", file=sys.stderr)
         raise SystemExit(1)
@@ -72,6 +74,8 @@ if current_pyproject is None or pyproject_line is None:
 package_data = json.loads(package_path.read_text())
 marketplace_data = json.loads(marketplace_path.read_text())
 readme_text = readme_path.read_text()
+install_sh_text = install_sh_path.read_text()
+install_ps1_text = install_ps1_path.read_text()
 
 try:
     current_package = package_data["version"]
@@ -123,10 +127,40 @@ new_readme_text = re.sub(
     new_readme_text,
 )
 
+new_install_sh_text = re.sub(
+    rf'(NPM_PKG="codeforerunner@){re.escape(current_pyproject)}(")',
+    rf"\g<1>{version}\g<2>",
+    install_sh_text,
+)
+new_install_sh_text = re.sub(
+    rf'(REPO_TAG="v){re.escape(current_pyproject)}(")',
+    rf"\g<1>{version}\g<2>",
+    new_install_sh_text,
+)
+new_install_ps1_text = re.sub(
+    rf'(\$NpmPkg\s*=\s*"codeforerunner@){re.escape(current_pyproject)}(")',
+    rf"\g<1>{version}\g<2>",
+    install_ps1_text,
+)
+new_install_ps1_text = re.sub(
+    rf'(\$RepoTag\s*=\s*"v){re.escape(current_pyproject)}(")',
+    rf"\g<1>{version}\g<2>",
+    new_install_ps1_text,
+)
+
+if new_install_sh_text == install_sh_text:
+    print("error: failed to update install.sh", file=sys.stderr)
+    raise SystemExit(1)
+if new_install_ps1_text == install_ps1_text:
+    print("error: failed to update install.ps1", file=sys.stderr)
+    raise SystemExit(1)
+
 pyproject_path.write_text(new_pyproject_text)
-package_path.write_text(json.dumps(package_data, indent=2) + "\n")
-marketplace_path.write_text(json.dumps(marketplace_data, indent=2) + "\n")
+package_path.write_text(json.dumps(package_data, indent=2, ensure_ascii=False) + "\n")
+marketplace_path.write_text(json.dumps(marketplace_data, indent=2, ensure_ascii=False) + "\n")
 readme_path.write_text(new_readme_text)
+install_sh_path.write_text(new_install_sh_text)
+install_ps1_path.write_text(new_install_ps1_text)
 
 print(f"bumped version {current_pyproject} -> {version}")
 PY
