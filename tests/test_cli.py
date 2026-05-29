@@ -273,7 +273,7 @@ def test_get_bundle_catches_resolve_bundle_error(tmp_path, capsys, monkeypatch):
     monkeypatch.delenv("FORERUNNER_SCAN_DONE", raising=False)
     (tmp_path / ".forerunner").mkdir()
     (tmp_path / ".forerunner" / "scan.md").write_text("scan: {}\n", encoding="utf-8")
-    with patch("codeforerunner.cli._resolve_bundle", side_effect=FileNotFoundError("gone")):
+    with patch("codeforerunner.prompt_session.resolve_bundle", side_effect=FileNotFoundError("gone")):
         rc = main(["--repo", str(tmp_path), "doc", "readme"])
     cap = capsys.readouterr()
     assert rc == 2

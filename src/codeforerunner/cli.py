@@ -8,11 +8,19 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-from codeforerunner.bundle import find_prompts_root, resolve_bundle as _resolve_bundle
-from codeforerunner.tasks import get as _get_task
+from codeforerunner.bundle import find_prompts_root
+from codeforerunner.prompt_session import Denial, PromptSession
 from codeforerunner.tasks import refresh_tasks as _refresh_tasks
-from codeforerunner.tasks import scan_exempt_names as _scan_exempt_names
 SCAN_DONE_ENV = "FORERUNNER_SCAN_DONE"
+
+
+def _scan_satisfied(repo_root: Path) -> bool:
+    """CLI scan-first signal: scan artifact present, env override set, or no config to gate."""
+    return (
+        (repo_root / ".forerunner" / "scan.md").is_file()
+        or bool(os.environ.get(SCAN_DONE_ENV))
+        or not (repo_root / "forerunner.config.yaml").is_file()
+    )
 
 
 def _get_bundle(args: argparse.Namespace) -> tuple[str, int]:
@@ -23,19 +31,13 @@ def _get_bundle(args: argparse.Namespace) -> tuple[str, int]:
         print(f"error: {e}", file=sys.stderr)
         return "", 2
 
-    try:
-        _get_task(args.task)
-    except KeyError:
-        print(f"error: unknown task '{args.task}'", file=sys.stderr)
-        return "", 2
-
     repo_root = Path(args.repo).resolve() if args.repo else Path.cwd()
-    if (
-        args.task not in _scan_exempt_names()
-        and (repo_root / "forerunner.config.yaml").is_file()
-        and not (repo_root / ".forerunner" / "scan.md").is_file()
-        and not os.environ.get(SCAN_DONE_ENV)
-    ):
+    session = PromptSession(prompts_root, _scan_satisfied(repo_root))
+    decision = session.can_run(args.task)
+    if not decision.allowed:
+        if decision.reason is Denial.UNKNOWN_TASK:
+            print(f"error: unknown task '{args.task}'", file=sys.stderr)
+            return "", 2
         print(
             f"error: scan-first required — run `forerunner scan` first "
             f"(writes .forerunner/scan.md). Set {SCAN_DONE_ENV}=1 to skip.",
@@ -44,7 +46,7 @@ def _get_bundle(args: argparse.Namespace) -> tuple[str, int]:
         return "", 1
 
     try:
-        return _resolve_bundle(prompts_root, args.task), 0
+        return session.bundle_for(args.task), 0
     except FileNotFoundError as e:
         print(f"error: {e}", file=sys.stderr)
         return "", 2
