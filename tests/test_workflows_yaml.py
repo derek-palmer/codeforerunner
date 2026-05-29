@@ -91,6 +91,29 @@ def test_pypi_publish_workflow_uses_version_tag_and_oidc():
     assert "pypa/gh-action-pypi-publish" in steps_text
 
 
+def test_npm_publish_workflow_uses_oidc_trusted_publishing():
+    wf = WORKFLOWS_DIR / "npm-publish.yml"
+    text = wf.read_text()
+    doc = yaml.safe_load(text)
+    trigger = _trigger(doc)
+    assert isinstance(trigger, dict), "trigger must be a mapping"
+    assert "v*.*.*" in trigger.get("push", {}).get("tags", [])
+
+    publish = doc["jobs"].get("publish")
+    assert isinstance(publish, dict), "missing publish job"
+    # OIDC trusted publishing is tokenless: id-token write, no NPM_TOKEN.
+    assert publish.get("permissions", {}).get("id-token") == "write"
+    steps_text = "\n".join(str(step) for step in publish.get("steps", []))
+    assert "--provenance" in steps_text
+    assert "--access public" in steps_text
+
+    # The npmjs publish job must not reuse a long-lived token; that would
+    # silently bypass OIDC trusted publishing.
+    publish_only = yaml.dump(publish)
+    assert "NPM_TOKEN" not in publish_only
+    assert "NODE_AUTH_TOKEN" not in publish_only
+
+
 def test_docker_publish_workflow_uses_version_tag_and_ghcr():
     wf = WORKFLOWS_DIR / "docker-publish.yml"
     doc = yaml.safe_load(wf.read_text())
