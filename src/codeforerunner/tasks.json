@@ -1,0 +1,30 @@
+{
+  "canonical_skill_slug": "codeforerunner",
+  "refresh_sequence": [
+    "scan",
+    "check",
+    "readme",
+    "api-docs",
+    "stack-docs",
+    "diagrams",
+    "flows",
+    "version-audit",
+    "audit"
+  ],
+  "tasks": [
+    {"name": "scan",                  "scan_exempt": true,  "skill_slug": "forerunner-scan"},
+    {"name": "init-agent-onboarding", "scan_exempt": true,  "skill_slug": "forerunner-init"},
+    {"name": "readme",                "scan_exempt": false, "skill_slug": "forerunner-readme"},
+    {"name": "api-docs",              "scan_exempt": false, "skill_slug": "forerunner-api-docs"},
+    {"name": "arch-review",           "scan_exempt": false, "skill_slug": "forerunner-arch-review"},
+    {"name": "audit",                 "scan_exempt": false, "skill_slug": "forerunner-audit"},
+    {"name": "changelog",             "scan_exempt": false, "skill_slug": "forerunner-changelog"},
+    {"name": "check",                 "scan_exempt": false, "skill_slug": "forerunner-check"},
+    {"name": "diagrams",              "scan_exempt": false, "skill_slug": "forerunner-diagrams"},
+    {"name": "flows",                 "scan_exempt": false, "skill_slug": "forerunner-flows"},
+    {"name": "refresh",               "scan_exempt": false, "skill_slug": "forerunner-refresh"},
+    {"name": "review",                "scan_exempt": false, "skill_slug": "forerunner-review"},
+    {"name": "stack-docs",            "scan_exempt": false, "skill_slug": "forerunner-stack-docs"},
+    {"name": "version-audit",         "scan_exempt": false, "skill_slug": "forerunner-version-audit"}
+  ]
+}

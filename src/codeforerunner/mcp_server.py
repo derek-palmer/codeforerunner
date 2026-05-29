@@ -12,18 +12,12 @@ from typing import Any, Iterable
 
 from codeforerunner import __version__ as _pkg_version
 from codeforerunner.bundle import find_prompts_root, resolve_bundle
+from codeforerunner.tasks import all_tasks as _all_tasks
+from codeforerunner.tasks import scan_exempt_names as _scan_exempt_names
 
 PROTOCOL_VERSION = "2025-03-26"
 SERVER_NAME = "codeforerunner"
 SERVER_VERSION = _pkg_version
-
-
-def _list_tasks(prompts_root: Path) -> list[Path]:
-    """Return sorted list of task *.md paths under prompts_root/tasks/."""
-    tasks_dir = prompts_root / "tasks"
-    if not tasks_dir.is_dir():
-        return []
-    return sorted(tasks_dir.glob("*.md"))
 
 
 def _description_for(task_path: Path) -> str:
@@ -38,14 +32,14 @@ def _description_for(task_path: Path) -> str:
 
 
 def _tools(prompts_root: Path) -> list[dict[str, Any]]:
-    """Build MCP tools/list payload from all task files in prompts_root."""
+    """Build MCP tools/list payload from registered tasks."""
     return [
         {
-            "name": p.stem,
-            "description": _description_for(p),
+            "name": task.name,
+            "description": _description_for(prompts_root / "tasks" / f"{task.name}.md"),
             "inputSchema": {"type": "object", "properties": {}, "required": []},
         }
-        for p in _list_tasks(prompts_root)
+        for task in _all_tasks()
     ]
 
 
@@ -57,9 +51,6 @@ def _ok(req_id: Any, result: Any) -> dict[str, Any]:
 def _err(req_id: Any, code: int, message: str) -> dict[str, Any]:
     """Return a JSON-RPC 2.0 error response."""
     return {"jsonrpc": "2.0", "id": req_id, "error": {"code": code, "message": message}}
-
-
-SCAN_EXEMPT_TOOLS = frozenset({"init-agent-onboarding", "scan"})
 
 
 def _handle(prompts_root: Path, msg: dict[str, Any], state: dict[str, Any]) -> dict[str, Any] | None:
@@ -98,7 +89,7 @@ def _handle(prompts_root: Path, msg: dict[str, Any], state: dict[str, Any]) -> d
         tasks_root = (prompts_root / "tasks").resolve()
         if not task_path.resolve().is_relative_to(tasks_root) or not task_path.is_file():
             return _err(req_id, -32602, f"unknown tool: {name!r}")
-        if name not in SCAN_EXEMPT_TOOLS and not state.get("scan_called"):
+        if name not in _scan_exempt_names() and not state.get("scan_called"):
             return _err(
                 req_id,
                 -32000,
