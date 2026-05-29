@@ -36,7 +36,8 @@ def test_doc_scan_emits_task_body(capsys):
     assert "<!-- task: scan.md -->" in out
 
 
-def test_doc_arch_review_emits_task_body(capsys):
+def test_doc_arch_review_emits_task_body(capsys, monkeypatch):
+    monkeypatch.setenv("FORERUNNER_SCAN_DONE", "1")
     rc = main(["doc", "arch-review"])
     out = capsys.readouterr().out
     assert rc == 0
@@ -104,24 +105,35 @@ def _seed_repo_with_config(tmp_path):
     (tmp_path / "forerunner.config.yaml").write_text("", encoding="utf-8")
 
 
-def test_doc_non_exempt_with_config_warns_without_env(tmp_path, capsys, monkeypatch):
+def test_doc_non_exempt_with_config_errors_without_scan_artifact(tmp_path, capsys, monkeypatch):
     _seed_repo_with_config(tmp_path)
     monkeypatch.delenv("FORERUNNER_SCAN_DONE", raising=False)
     rc = main(["--repo", str(tmp_path), "doc", "readme"])
     cap = capsys.readouterr()
-    assert rc == 0
+    assert rc == 1
     assert "scan-first" in cap.err
     assert "FORERUNNER_SCAN_DONE" in cap.err
 
 
-def test_doc_arch_review_with_config_warns_without_env(tmp_path, capsys, monkeypatch):
+def test_doc_arch_review_with_config_errors_without_scan_artifact(tmp_path, capsys, monkeypatch):
     _seed_repo_with_config(tmp_path)
     (tmp_path / "prompts/tasks/arch-review.md").write_text("# arch review task\n", encoding="utf-8")
     monkeypatch.delenv("FORERUNNER_SCAN_DONE", raising=False)
     rc = main(["--repo", str(tmp_path), "doc", "arch-review"])
     cap = capsys.readouterr()
-    assert rc == 0
+    assert rc == 1
     assert "scan-first" in cap.err
+
+
+def test_doc_non_exempt_with_scan_artifact_no_error(tmp_path, capsys, monkeypatch):
+    _seed_repo_with_config(tmp_path)
+    monkeypatch.delenv("FORERUNNER_SCAN_DONE", raising=False)
+    (tmp_path / ".forerunner").mkdir()
+    (tmp_path / ".forerunner" / "scan.md").write_text("scan: {}\n", encoding="utf-8")
+    rc = main(["--repo", str(tmp_path), "doc", "readme"])
+    cap = capsys.readouterr()
+    assert rc == 0
+    assert "scan-first" not in cap.err
 
 
 def test_doc_non_exempt_with_env_set_no_warning(tmp_path, capsys, monkeypatch):
@@ -161,10 +173,11 @@ def test_version_flag_prints_package_version(capsys):
     assert __version__ in cap.out
 
 
-def test_scan_prints_env_hint(capsys):
+def test_scan_prints_artifact_hint(capsys):
     rc = main(["scan"])
     cap = capsys.readouterr()
     assert rc == 0
+    assert ".forerunner/scan.md" in cap.err
     assert "FORERUNNER_SCAN_DONE" in cap.err
 
 
@@ -240,6 +253,9 @@ def test_get_bundle_error_when_repo_has_no_prompts(tmp_path, capsys):
 
 def test_get_bundle_catches_resolve_bundle_error(tmp_path, capsys, monkeypatch):
     _seed_repo_with_config(tmp_path)
+    monkeypatch.delenv("FORERUNNER_SCAN_DONE", raising=False)
+    (tmp_path / ".forerunner").mkdir()
+    (tmp_path / ".forerunner" / "scan.md").write_text("scan: {}\n", encoding="utf-8")
     with patch("codeforerunner.cli._resolve_bundle", side_effect=FileNotFoundError("gone")):
         rc = main(["--repo", str(tmp_path), "doc", "readme"])
     cap = capsys.readouterr()

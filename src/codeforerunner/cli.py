@@ -31,13 +31,15 @@ def _get_bundle(args: argparse.Namespace) -> tuple[str, int]:
     if (
         args.task not in SCAN_EXEMPT_TASKS
         and (repo_root / "forerunner.config.yaml").is_file()
+        and not (repo_root / ".forerunner" / "scan.md").is_file()
         and not os.environ.get(SCAN_DONE_ENV)
     ):
         print(
-            f"warning: SPEC V2 scan-first — run `forerunner scan` first, "
-            f"then export {SCAN_DONE_ENV}=1 to silence this warning.",
+            f"error: scan-first required — run `forerunner scan` first "
+            f"(writes .forerunner/scan.md). Set {SCAN_DONE_ENV}=1 to skip.",
             file=sys.stderr,
         )
+        return "", 1
 
     try:
         return _resolve_bundle(prompts_root, args.task), 0
@@ -73,12 +75,12 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
-    """Emit the scan prompt bundle and hint about FORERUNNER_SCAN_DONE."""
+    """Emit the scan prompt bundle and hint about scan artifact."""
     rc = _doc_for(args, "scan")
     if rc == 0:
         print(
-            f"hint: export {SCAN_DONE_ENV}=1 in this shell to silence "
-            "scan-first warnings on follow-up `forerunner doc`/`init` calls.",
+            "hint: write the scan result to .forerunner/scan.md to satisfy the "
+            f"scan-first gate on follow-up calls. Or set {SCAN_DONE_ENV}=1 to skip.",
             file=sys.stderr,
         )
     return rc
@@ -111,7 +113,8 @@ def cmd_mcp_server(args: argparse.Namespace) -> int:
     except FileNotFoundError as e:
         print(f"mcp_server: {e}", file=sys.stderr)
         return 2
-    return mcp_server.serve(prompts_root)
+    repo_root = Path(args.repo).resolve() if args.repo else Path.cwd()
+    return mcp_server.serve(prompts_root, repo_root=repo_root)
 
 
 def cmd_refresh(args: argparse.Namespace) -> int:

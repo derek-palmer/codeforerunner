@@ -444,3 +444,39 @@ def test_mcp_main_calls_serve_with_resolved_root(capsys):
         rc = mcp_main()
     assert rc == 0
     mock_serve.assert_called_once()
+
+
+# ── serve re-hydration from scan artifact ────────────────────────────────────
+
+def _rpc(*msgs: dict) -> list[str]:
+    return [json.dumps(m) + "\n" for m in msgs]
+
+
+def test_serve_allows_non_exempt_when_scan_artifact_present(tmp_path):
+    (tmp_path / ".forerunner").mkdir()
+    (tmp_path / ".forerunner" / "scan.md").write_text("# scan result\n", encoding="utf-8")
+    out = io.StringIO()
+    msgs = _rpc(
+        {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "readme"}},
+    )
+    serve(PROMPTS, repo_root=tmp_path, stdin=msgs, stdout=out, stderr=io.StringIO())
+    out.seek(0)
+    out.readline()  # initialize response
+    resp = json.loads(out.readline())
+    assert "error" not in resp
+    assert resp["result"]["isError"] is False
+
+
+def test_serve_blocks_non_exempt_when_scan_artifact_absent(tmp_path):
+    out = io.StringIO()
+    msgs = _rpc(
+        {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "readme"}},
+    )
+    serve(PROMPTS, repo_root=tmp_path, stdin=msgs, stdout=out, stderr=io.StringIO())
+    out.seek(0)
+    out.readline()  # initialize response
+    resp = json.loads(out.readline())
+    assert "error" in resp
+    assert resp["error"]["code"] == -32000
