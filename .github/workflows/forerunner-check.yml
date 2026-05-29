@@ -1,4 +1,4 @@
-# SPEC.md §D.hooks — CI mirror of pre-commit `forerunner check`.
+# CI mirror of pre-commit `forerunner check`.
 # forerunner check exits 0 when forerunner.config.yaml is absent, so no job-level gate needed.
 name: forerunner check
 

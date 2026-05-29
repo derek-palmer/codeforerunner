@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate SPEC.md V10 skill-copy body parity."""
+"""Validate V10 skill-copy body parity."""
 
 from __future__ import annotations
 
@@ -43,13 +43,13 @@ def main() -> int:
             failures.append(copy)
 
     if failures:
-        print("SPEC.md V10 violation: distributed skill body drift detected.", file=sys.stderr)
+        print("V10 violation: distributed skill body drift detected.", file=sys.stderr)
         print_checked_files(stream=sys.stderr)
         for path in failures:
             print(f"mismatch:  {path}", file=sys.stderr)
         return 1
 
-    print("SPEC.md V10 OK: skill copy bodies match.")
+    print("V10 OK: skill copy bodies match.")
     print_checked_files()
     return 0
 

@@ -1,4 +1,4 @@
-"""Idempotent skill installer. See SPEC.md §D.installer (cites V8, V10, V11, V12)."""
+"""Idempotent skill installer. Re-run safe (V12); body-parity enforced (V10)."""
 
 from __future__ import annotations
 

@@ -4,7 +4,7 @@ description: Routes a coding agent through the tracked codeforerunner prompt pac
 ---
 # codeforerunner Skill
 
-The authoritative canonical source for this skill body is `agent/codeforerunner.skill.md` (see the `SPEC.md` I.agent-skill entry). Distribution copies are not independent sources; maintainers should edit the canonical file, then sync the post-frontmatter body into Codex and Claude copies. Downstream packages must preserve this post-frontmatter Markdown content verbatim (`SPEC.md` V10); per-agent YAML frontmatter may differ, but the body cannot.
+The authoritative canonical source for this skill body is `agent/codeforerunner.skill.md`. Distribution copies are not independent sources; maintainers should edit the canonical file, then sync the post-frontmatter body into Codex and Claude copies. Downstream packages must preserve this post-frontmatter Markdown content verbatim (V10); per-agent YAML frontmatter may differ, but the body cannot.
 
 This skill does not bundle a runtime. It routes the host agent into the codeforerunner prompt pack (`src/codeforerunner/prompts/` in the source repo, or retrieved via `forerunner doc <task>` from the installed CLI). The `forerunner` CLI, MCP server, pre-commit hook, CI workflow, and PyPI package are all live. Docker image and Makefile are not present.
 
@@ -84,4 +84,4 @@ The canonical file owns the skill's instruction content. Generated or copied ski
 - Add only agent-specific metadata around it.
 - Stay routed to the tracked prompt pack — never embed a second copy of product logic.
 
-See `docs/agent-distribution-design.md` for the full packaging and installer design, the `SPEC.md` I.agent-skill entry that pins this file as canonical and the V10 verbatim-preservation rule.
+See `docs/agent-distribution-design.md` for the full packaging and installer design and the V10 verbatim-preservation rule.

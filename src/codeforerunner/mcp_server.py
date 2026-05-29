@@ -1,4 +1,4 @@
-"""Minimal stdio MCP server exposing prompt bundles as tools. See SPEC.md §D.mcp.
+"""Minimal stdio MCP server exposing prompt bundles as tools.
 
 Hand-rolled JSON-RPC 2.0 over line-delimited stdio. Stdlib only.
 """

@@ -1,4 +1,4 @@
-"""Tests for `forerunner doctor`. See SPEC.md §T35."""
+"""Tests for `forerunner doctor`."""
 
 from __future__ import annotations
 

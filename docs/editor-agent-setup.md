@@ -28,7 +28,4 @@ Use `agent-configs/` as copyable starting points for editor-agent instructions.
 
 ## Maintenance
 
-When prompt contracts change, update both:
-
-- `SPEC.md`
-- affected files in `agent-configs/`
+When prompt contracts change, update affected files in `agent-configs/`.

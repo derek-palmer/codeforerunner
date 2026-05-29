@@ -1,4 +1,4 @@
-"""`forerunner.config.yaml` schema + loader. See SPEC.md §T25."""
+"""`forerunner.config.yaml` schema + loader."""
 
 from __future__ import annotations
 

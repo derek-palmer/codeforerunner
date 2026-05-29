@@ -1,6 +1,6 @@
 # Roadmap
 
-Roadmap order follows `SPEC.md`. Phase statuses below mirror `SPEC.md §P`; if they diverge, treat `SPEC.md` as the source of truth.
+All phases complete. Work items are tracked as GitHub Issues in `derek-palmer/codeforerunner`.
 
 ## P0: Repo Truth Cleanup
 
@@ -74,7 +74,7 @@ Status: complete.
 
 Status: complete.
 
-- Sweep this file and `docs/agent-distribution-design.md` for "future"/"planned" labels that no longer match current `SPEC.md` phase statuses.
+- Sweep this file and `docs/agent-distribution-design.md` for "future"/"planned" labels that no longer match current status.
 - Reword the README reference to `docs/agent-distribution-design.md` so it no longer implies installer work is outstanding.
 
 ## P9: Tool Ergonomics

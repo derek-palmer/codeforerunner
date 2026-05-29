@@ -14,7 +14,7 @@ Prompt-first workflow for manual use today; future wrappers may orchestrate it.
   - `CONTEXT.md`
   - `CONTEXT-MAP.md`
   - relevant `docs/adr/*.md`
-- Key docs describing current state (`README.md`, `SPEC.md`, roadmap docs)
+- Key docs describing current state (`README.md`, `AGENTS.md`, roadmap docs)
 - Optional prior scan result from `prompts/tasks/scan.md`
 
 ## Objectives
