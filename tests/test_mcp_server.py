@@ -453,7 +453,7 @@ def _seed_prompts(path: Path) -> Path:
     (prompts / "tasks").mkdir()
     (prompts / "tasks" / "scan.md").write_text("# Scan\n", encoding="utf-8")
     (prompts / "tasks" / "init-agent-onboarding.md").write_text("# Onboarding\n", encoding="utf-8")
-    (prompts / "tasks" / "check-task.md").write_text("# Check Task\n", encoding="utf-8")
+    (prompts / "tasks" / "check.md").write_text("# Check Task\n", encoding="utf-8")
     return prompts
 
 
@@ -466,7 +466,7 @@ def test_serve_allows_non_exempt_when_scan_artifact_present(tmp_path):
     out = io.StringIO()
     msgs = _rpc(
         {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
-        {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "check-task"}},
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "check"}},
     )
     serve(prompts_root, repo_root=repo_root, stdin=msgs, stdout=out, stderr=io.StringIO())
     out.seek(0)
@@ -483,7 +483,7 @@ def test_serve_blocks_non_exempt_when_scan_artifact_absent(tmp_path):
     out = io.StringIO()
     msgs = _rpc(
         {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
-        {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "check-task"}},
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "check"}},
     )
     serve(prompts_root, repo_root=repo_root, stdin=msgs, stdout=out, stderr=io.StringIO())
     out.seek(0)

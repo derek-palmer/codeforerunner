@@ -11,9 +11,9 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from codeforerunner import __version__ as _pkg_version
-from codeforerunner.bundle import find_prompts_root, resolve_bundle
+from codeforerunner.bundle import find_prompts_root
+from codeforerunner.prompt_session import Denial, PromptSession
 from codeforerunner.tasks import all_tasks as _all_tasks
-from codeforerunner.tasks import scan_exempt_names as _scan_exempt_names
 
 PROTOCOL_VERSION = "2025-03-26"
 SERVER_NAME = "codeforerunner"
@@ -85,11 +85,11 @@ def _handle(prompts_root: Path, msg: dict[str, Any], state: dict[str, Any]) -> d
         name = params.get("name")
         if not isinstance(name, str) or "/" in name or "\\" in name or ".." in name:
             return _err(req_id, -32602, f"invalid tool name: {name!r}")
-        task_path = prompts_root / "tasks" / f"{name}.md"
-        tasks_root = (prompts_root / "tasks").resolve()
-        if not task_path.resolve().is_relative_to(tasks_root) or not task_path.is_file():
-            return _err(req_id, -32602, f"unknown tool: {name!r}")
-        if name not in _scan_exempt_names() and not state.get("scan_called"):
+        session = PromptSession(prompts_root, scan_satisfied=bool(state.get("scan_called")))
+        decision = session.can_run(name)
+        if not decision.allowed:
+            if decision.reason is Denial.UNKNOWN_TASK:
+                return _err(req_id, -32602, f"unknown tool: {name!r}")
             return _err(
                 req_id,
                 -32000,
@@ -98,7 +98,7 @@ def _handle(prompts_root: Path, msg: dict[str, Any], state: dict[str, Any]) -> d
         if name == "scan":
             state["scan_called"] = True
         try:
-            text = resolve_bundle(prompts_root, name)
+            text = session.bundle_for(name)
         except Exception as e:  # pragma: no cover - defensive
             return _err(req_id, -32603, f"internal error: {e}")
         return _ok(
