@@ -9,8 +9,9 @@ from pathlib import Path
 from typing import Sequence
 
 from codeforerunner.bundle import find_prompts_root, resolve_bundle as _resolve_bundle
-
-SCAN_EXEMPT_TASKS = frozenset({"scan", "init-agent-onboarding"})
+from codeforerunner.tasks import get as _get_task
+from codeforerunner.tasks import refresh_tasks as _refresh_tasks
+from codeforerunner.tasks import scan_exempt_names as _scan_exempt_names
 SCAN_DONE_ENV = "FORERUNNER_SCAN_DONE"
 
 
@@ -22,14 +23,15 @@ def _get_bundle(args: argparse.Namespace) -> tuple[str, int]:
         print(f"error: {e}", file=sys.stderr)
         return "", 2
 
-    task_path = prompts_root / "tasks" / f"{args.task}.md"
-    if not task_path.is_file():
-        print(f"error: unknown task '{args.task}' (no {task_path})", file=sys.stderr)
+    try:
+        _get_task(args.task)
+    except KeyError:
+        print(f"error: unknown task '{args.task}'", file=sys.stderr)
         return "", 2
 
     repo_root = Path(args.repo).resolve() if args.repo else Path.cwd()
     if (
-        args.task not in SCAN_EXEMPT_TASKS
+        args.task not in _scan_exempt_names()
         and (repo_root / "forerunner.config.yaml").is_file()
         and not (repo_root / ".forerunner" / "scan.md").is_file()
         and not os.environ.get(SCAN_DONE_ENV)
@@ -119,14 +121,13 @@ def cmd_mcp_server(args: argparse.Namespace) -> int:
 
 def cmd_refresh(args: argparse.Namespace) -> int:
     """Emit scan + check + all doc-task bundles to stdout for a full doc refresh."""
-    tasks = ["scan", "check", "readme", "api-docs", "stack-docs",
-             "diagrams", "flows", "version-audit", "audit"]
-    for i, task in enumerate(tasks):
+    task_names = [t.name for t in _refresh_tasks()]
+    for i, task in enumerate(task_names):
         ns = argparse.Namespace(repo=getattr(args, "repo", None), task=task)
         rc = cmd_doc(ns)
         if rc != 0:
             return rc
-        if i < len(tasks) - 1:
+        if i < len(task_names) - 1:
             sys.stdout.write("\n---\n\n")
     return 0
 

@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Literal
 
+from codeforerunner.tasks import installable_slugs as _installable_slugs
+
 MARKER_BEGIN = "<!-- forerunner:begin managed=codeforerunner.skill -->"
 MARKER_END = "<!-- forerunner:end -->"
 
@@ -21,23 +23,7 @@ EXIT_USAGE = 2
 EXIT_BODY_MISMATCH = 3
 EXIT_UNMANAGED_DEST = 4
 
-# Per-task skill slugs (source: skills/<slug>/SKILL.md → plugins/codeforerunner/skills/<slug>/SKILL.md)
-TASK_SKILL_SLUGS: tuple[str, ...] = (
-    "codeforerunner",
-    "forerunner-scan",
-    "forerunner-readme",
-    "forerunner-api-docs",
-    "forerunner-arch-review",
-    "forerunner-audit",
-    "forerunner-changelog",
-    "forerunner-check",
-    "forerunner-diagrams",
-    "forerunner-flows",
-    "forerunner-init",
-    "forerunner-review",
-    "forerunner-stack-docs",
-    "forerunner-version-audit",
-)
+TASK_SKILL_SLUGS: tuple[str, ...] = _installable_slugs()
 
 
 @dataclass(frozen=True)

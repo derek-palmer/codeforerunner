@@ -50,7 +50,7 @@ forerunner = "codeforerunner.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-codeforerunner = ["py.typed", "prompts/**/*.md"]
+codeforerunner = ["py.typed", "prompts/**/*.md", "tasks.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
