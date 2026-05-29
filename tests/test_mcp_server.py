@@ -245,7 +245,6 @@ from codeforerunner.mcp_server import (
     _description_for,
     _err,
     _handle,
-    _list_tasks,
     _ok,
     _tools,
     main as mcp_main,
@@ -273,19 +272,7 @@ def test_err_shape():
     assert r == {"jsonrpc": "2.0", "id": 2, "error": {"code": -32601, "message": "not found"}}
 
 
-# ── _list_tasks / _description_for / _tools ───────────────────────────────────
-
-def test_list_tasks_empty_when_no_tasks_dir(tmp_path):
-    assert _list_tasks(tmp_path) == []
-
-
-def test_list_tasks_returns_sorted_md_files(tmp_path):
-    (tmp_path / "tasks").mkdir()
-    (tmp_path / "tasks" / "beta.md").write_text("b")
-    (tmp_path / "tasks" / "alpha.md").write_text("a")
-    result = _list_tasks(tmp_path)
-    assert [p.name for p in result] == ["alpha.md", "beta.md"]
-
+# ── _description_for / _tools ─────────────────────────────────────────────────
 
 def test_description_for_returns_first_nonempty_stripped(tmp_path):
     f = tmp_path / "task.md"
@@ -299,14 +286,15 @@ def test_description_for_empty_file_returns_stem(tmp_path):
     assert _description_for(f) == "my-task"
 
 
-def test_tools_returns_list_with_correct_shape(tmp_path):
-    (tmp_path / "tasks").mkdir()
-    (tmp_path / "tasks" / "scan.md").write_text("# Scan\nBody\n")
-    tools = _tools(tmp_path)
-    assert len(tools) == 1
-    assert tools[0]["name"] == "scan"
-    assert tools[0]["description"] == "Scan"
-    assert tools[0]["inputSchema"] == {"type": "object", "properties": {}, "required": []}
+def test_tools_returns_registered_tasks_with_correct_shape():
+    from codeforerunner.tasks import all_tasks
+    tools = _tools(PROMPTS)
+    registered_names = {t.name for t in all_tasks()}
+    tool_names = {t["name"] for t in tools}
+    assert tool_names == registered_names
+    for tool in tools:
+        assert set(tool.keys()) == {"name", "description", "inputSchema"}
+        assert tool["inputSchema"] == {"type": "object", "properties": {}, "required": []}
 
 
 # ── _handle ───────────────────────────────────────────────────────────────────
