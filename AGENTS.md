@@ -15,7 +15,7 @@
 ## Current Sources Of Truth
 
 - `src/codeforerunner/prompts/system/base.md` for base behavior and quality bar (or `forerunner doc scan` for the assembled bundle).
-- `src/codeforerunner/prompts/tasks/scan.md` for the first task in every doc-generation flow (V2 scan-first; MCP `tools/call` enforces this gate; CLI emits a stderr warning when `forerunner.config.yaml` is present and `FORERUNNER_SCAN_DONE` is not set).
+- `src/codeforerunner/prompts/tasks/scan.md` for the first task in every doc-generation flow (V2 scan-first; MCP `tools/call` enforces this gate; CLI blocks non-exempt tasks when `forerunner.config.yaml` is present and neither `.forerunner/scan.md` nor `FORERUNNER_SCAN_DONE=1` is found; `forerunner scan` prints a hint to write `.forerunner/scan.md`).
 - `forerunner.config.yaml.example` documents the schema parsed by `src/codeforerunner/config.py` (provider/model fields, `ignore_patterns`, `tasks.check`, `tasks.version_audit`).
 - `agent/codeforerunner.skill.md` for the canonical skill; do not let `plugins/...` or `skills/...` SKILL.md bodies drift from it.
 
@@ -38,7 +38,7 @@
 - The CLI is intentionally orchestration-only; resolution logic lives in `cmd_doc` and is reused by `cmd_init`, `cmd_scan`, and the MCP server's `resolve_bundle` helper.
 - `forerunner check` rules live in `src/codeforerunner/check.py` (`_RULES`). Adding a rule = appending a `_Rule` dataclass instance; the loader respects `tasks.check.enabled_rules` allowlists and `tasks.check.ignore_paths` globs. Inverse rules (`invert=True`) fire when the trigger file is absent.
 - Version-pin drift rule (`RV1`) flags `codeforerunner==X.Y.Z` pins in docs that differ from `pyproject.toml`; skips `CHANGELOG.md`.
-- MCP state (`scan_called`) is per-process; the gate resets on every new subprocess.
+- MCP state (`scan_called`) is seeded at startup from `.forerunner/scan.md` (relative to cwd / `repo_root`); if the artifact is present the gate is pre-satisfied for the lifetime of that process. Without the artifact, the gate resets on every new subprocess.
 - The installer refuses to overwrite a destination that exists without managed markers (V12) — surface this clearly when an install path aborts.
 - Provider adapters are stdlib-only (no SDK deps); they use `urllib.request` with SSE parsing for Anthropic/OpenAI/Google and NDJSON for Ollama. Adding a provider = new file in `providers/` implementing the `base.py` Protocol.
 

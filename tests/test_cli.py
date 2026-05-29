@@ -164,6 +164,23 @@ def test_doc_without_config_no_warning(tmp_path, capsys, monkeypatch):
     assert "scan-first" not in cap.err
 
 
+def test_scan_gate_respected_via_unresolved_symlink_path(tmp_path, capsys, monkeypatch):
+    """Scan gate must work when --repo points through a symlink (e.g. macOS /tmp → /private/tmp)."""
+    _seed_repo_with_config(tmp_path)
+    (tmp_path / ".forerunner").mkdir()
+    (tmp_path / ".forerunner" / "scan.md").write_text("scan: {}\n", encoding="utf-8")
+    monkeypatch.delenv("FORERUNNER_SCAN_DONE", raising=False)
+    link = tmp_path.parent / (tmp_path.name + "_link")
+    link.symlink_to(tmp_path)
+    try:
+        rc = main(["--repo", str(link), "doc", "readme"])
+        cap = capsys.readouterr()
+        assert rc == 0
+        assert "scan-first" not in cap.err
+    finally:
+        link.unlink()
+
+
 def test_version_flag_prints_package_version(capsys):
     from codeforerunner import __version__
     with pytest.raises(SystemExit) as exc:

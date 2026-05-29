@@ -27,7 +27,7 @@ def _get_bundle(args: argparse.Namespace) -> tuple[str, int]:
         print(f"error: unknown task '{args.task}' (no {task_path})", file=sys.stderr)
         return "", 2
 
-    repo_root = Path(args.repo) if args.repo else Path.cwd()
+    repo_root = Path(args.repo).resolve() if args.repo else Path.cwd()
     if (
         args.task not in SCAN_EXEMPT_TASKS
         and (repo_root / "forerunner.config.yaml").is_file()

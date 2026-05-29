@@ -161,7 +161,7 @@ def main(argv: list[str] | None = None) -> int:
     except FileNotFoundError as e:
         print(f"mcp_server: {e}", file=sys.stderr)
         return 2
-    return serve(prompts_root)
+    return serve(prompts_root, repo_root=Path.cwd().resolve())
 
 
 if __name__ == "__main__":  # pragma: no cover
