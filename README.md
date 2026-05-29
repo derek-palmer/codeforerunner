@@ -211,9 +211,8 @@ prompts/
     └── init-agent-onboarding.md
 ```
 
-## Docs and spec
+## Docs
 
-- `SPEC.md` — canonical phase/task tracker
 - `docs/getting-started.md` — manual prompt use
 - `docs/prompt-guide.md` — how system, partial, and task prompts compose
 - `docs/editor-agent-setup.md` — adapting prompts to local agents

@@ -88,4 +88,4 @@ Invalid YAML or unknown severity levels surface as a `ConfigError` and `forerunn
 
 - Prompt composition: `docs/prompt-guide.md`
 - Editor setup: `docs/editor-agent-setup.md`
-- Phase tracker: `SPEC.md`
+- Issue tracker: `github.com/derek-palmer/codeforerunner/issues`

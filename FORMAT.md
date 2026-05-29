@@ -1,6 +1,6 @@
 # FORMAT.md
 
-Repo spec format = caveman-compressed Markdown. Use for `SPEC.md` and spec-adjacent notes. Do not use for code, error strings, commit messages, PR descriptions, or user-facing prose that needs normal English.
+Repo spec format = caveman-compressed Markdown. Use for spec-adjacent notes and invariant shorthand. Do not use for code, error strings, commit messages, PR descriptions, or user-facing prose that needs normal English.
 
 ## Grammar
 

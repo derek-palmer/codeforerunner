@@ -1,4 +1,4 @@
-"""`forerunner doctor` — single-screen health report. See SPEC.md §T35."""
+"""`forerunner doctor` — single-screen health report."""
 
 from __future__ import annotations
 

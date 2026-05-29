@@ -4,7 +4,7 @@
 
 ## Repo State
 
-- Prompt-first product wrapped by a thin Python CLI, an idempotent skill installer, pre-commit + CI hooks, an MCP server, a typed config loader, a composite GitHub Action, and four provider adapters. `SPEC.md` is the source of truth for phases, invariants (§V), interfaces (§I), and tasks (§T).
+- Prompt-first product wrapped by a thin Python CLI, an idempotent skill installer, pre-commit + CI hooks, an MCP server, a typed config loader, a composite GitHub Action, and four provider adapters. Work items are tracked as GitHub Issues in `derek-palmer/codeforerunner`.
 - Core product = Markdown prompts in `src/codeforerunner/prompts/` (bundled in the pip package; retrieve via `forerunner doc <task>`). Wrappers stay thin (C1); product logic lives in prompts.
 - `src/codeforerunner/` exposes the `forerunner` console script with subcommands `init`, `scan`, `doc`, `check`, `generate`, `doctor`, `mcp-server`, `install`.
 - Agent distribution: canonical skill at `agent/codeforerunner.skill.md`; downstream copies in `plugins/codeforerunner/skills/codeforerunner/SKILL.md` and `skills/codeforerunner/SKILL.md` must preserve post-frontmatter body verbatim (V10).
@@ -14,7 +14,6 @@
 
 ## Current Sources Of Truth
 
-- `SPEC.md` for phase/task/invariant tracking. Status edits are preferred to broad rewrites; flip rows via the spec skill, not freehand.
 - `src/codeforerunner/prompts/system/base.md` for base behavior and quality bar (or `forerunner doc scan` for the assembled bundle).
 - `src/codeforerunner/prompts/tasks/scan.md` for the first task in every doc-generation flow (V2 scan-first; MCP `tools/call` enforces this gate; CLI emits a stderr warning when `forerunner.config.yaml` is present and `FORERUNNER_SCAN_DONE` is not set).
 - `forerunner.config.yaml.example` documents the schema parsed by `src/codeforerunner/config.py` (provider/model fields, `ignore_patterns`, `tasks.check`, `tasks.version_audit`).
@@ -54,10 +53,10 @@
 
 ## Verification Expectations
 
-- Code changes: run `.venv/bin/pytest -q`; confirm green before flipping a §T row to `x`.
+- Code changes: run `.venv/bin/pytest -q`; confirm green before closing the relevant GitHub Issue.
 - Skill source changes: also run `.venv/bin/python scripts/validate_skill_copies.py`.
 - Marketplace manifest changes: also run `.venv/bin/python scripts/validate_codex_marketplace.py`.
-- Doc/prompt-only changes: re-read affected Markdown for consistency with `SPEC.md`; run `forerunner check` (with a temporary `forerunner.config.yaml`) to catch claim-vs-file drift.
+- Doc/prompt-only changes: re-read affected Markdown; run `forerunner check` (with a temporary `forerunner.config.yaml`) to catch claim-vs-file drift.
 
 ## Agent skills
 

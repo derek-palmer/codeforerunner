@@ -1,4 +1,4 @@
-"""Thin CLI orchestration. Product logic lives in prompts/. See SPEC.md §D.cli."""
+"""Thin CLI orchestration. Product logic lives in prompts/."""
 
 from __future__ import annotations
 
