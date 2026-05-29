@@ -1,0 +1,68 @@
+{
+  "$comment": "Release Surface Manifest — single source of truth for which release surfaces exist and their release policy (version source, registry target, auth mode, required validations). See release_surfaces.py for the accessor API.",
+  "surfaces": [
+    {
+      "name": "pypi",
+      "kind": "package_registry",
+      "registry": "https://pypi.org/project/codeforerunner/",
+      "auth_mode": "oidc",
+      "workflow": "publish.yml",
+      "version_source": { "file": "pyproject.toml", "kind": "toml_path", "selector": ["project", "version"] },
+      "validations": ["check_versions", "tag_matches_version", "validate_codex_marketplace", "build_sdist_wheel"]
+    },
+    {
+      "name": "npmjs",
+      "kind": "package_registry",
+      "registry": "https://www.npmjs.com/package/codeforerunner",
+      "auth_mode": "oidc",
+      "workflow": "npm-publish.yml",
+      "version_source": { "file": "package.json", "kind": "json_path", "selector": ["version"] },
+      "validations": ["tag_matches_version", "provenance"]
+    },
+    {
+      "name": "github-packages",
+      "kind": "package_registry",
+      "registry": "https://npm.pkg.github.com",
+      "auth_mode": "github_token",
+      "workflow": "npm-publish.yml",
+      "version_source": { "file": "package.json", "kind": "json_path", "selector": ["version"] },
+      "validations": []
+    },
+    {
+      "name": "docker",
+      "kind": "container_registry",
+      "registry": "ghcr.io/derek-palmer/codeforerunner, heyderekp/codeforerunner",
+      "auth_mode": "github_token",
+      "workflow": "docker-publish.yml",
+      "version_source": { "file": "pyproject.toml", "kind": "toml_path", "selector": ["project", "version"] },
+      "validations": ["check_versions", "tag_matches_version"]
+    },
+    {
+      "name": "codex-marketplace",
+      "kind": "plugin_marketplace",
+      "registry": "plugins/codex/marketplace.json (GitHub release asset)",
+      "auth_mode": "github_token",
+      "workflow": "codex-marketplace-publish.yml",
+      "version_source": { "file": "plugins/codex/marketplace.json", "kind": "json_path", "selector": ["marketplace", "version"] },
+      "validations": ["check_versions", "validate_codex_marketplace", "tag_matches_version"]
+    },
+    {
+      "name": "installer-shim-sh",
+      "kind": "installer_shim",
+      "registry": "install.sh (pins codeforerunner@<version> from npm)",
+      "auth_mode": "none",
+      "workflow": null,
+      "version_source": { "file": "install.sh", "kind": "regex", "selector": "^NPM_PKG=\"codeforerunner@([^\"]+)\"" },
+      "validations": ["check_versions"]
+    },
+    {
+      "name": "installer-shim-ps1",
+      "kind": "installer_shim",
+      "registry": "install.ps1 (pins codeforerunner@<version> from npm)",
+      "auth_mode": "none",
+      "workflow": null,
+      "version_source": { "file": "install.ps1", "kind": "regex", "selector": "^\\$NpmPkg\\s*=\\s*\"codeforerunner@([^\"]+)\"" },
+      "validations": ["check_versions"]
+    }
+  ]
+}
