@@ -20,7 +20,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 KINDS = frozenset(
-    {"package_registry", "container_registry", "plugin_marketplace", "installer_shim"}
+    {
+        "package_registry",
+        "container_registry",
+        "plugin_marketplace",
+        "installer_shim",
+        "badge",
+    }
 )
 AUTH_MODES = frozenset({"oidc", "github_token", "pat", "none"})
 VERSION_SOURCE_KINDS = frozenset({"toml_path", "json_path", "regex"})
