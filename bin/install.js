@@ -25,24 +25,11 @@ const child_process  = require('child_process');
 const REPO     = 'derek-palmer/codeforerunner';
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/main`;
 
-// All skill slugs written during a local install.
-const TASK_SKILL_SLUGS = [
-  'codeforerunner',
-  'forerunner-api-docs',
-  'forerunner-arch-review',
-  'forerunner-audit',
-  'forerunner-changelog',
-  'forerunner-check',
-  'forerunner-diagrams',
-  'forerunner-flows',
-  'forerunner-init',
-  'forerunner-readme',
-  'forerunner-review',
-  'forerunner-scan',
-  'forerunner-stack-docs',
-  'forerunner-version-audit',
-  'forerunner-refresh',
-];
+// Task Registry — single source of truth for installable skill slugs, shared
+// with the Python installer (src/codeforerunner/tasks.py). The slug list is
+// loaded from this file at install time via loadTaskSkillSlugs() rather than
+// duplicated here.
+const TASKS_JSON_REL = path.join('src', 'codeforerunner', 'tasks.json');
 
 // ── Argv ──────────────────────────────────────────────────────────────────
 
@@ -332,14 +319,12 @@ async function promptGlobalOrLocal(c) {
 
 // ── Local install helpers ─────────────────────────────────────────────────
 
-async function fetchSkill(slug, repoRoot) {
-  if (repoRoot) {
-    const p = path.join(repoRoot, 'skills', slug, 'SKILL.md');
-    try { return fs.readFileSync(p, 'utf8'); } catch (_) { return null; }
-  }
+// GET a raw text resource over HTTPS, following one level of redirects.
+// Resolves to the body string, or null on any non-200/error/timeout.
+function fetchRawText(url) {
   return new Promise((resolve) => {
-    const get = (url) => {
-      const req = https.get(url, (res) => {
+    const get = (u) => {
+      const req = https.get(u, (res) => {
         if (res.statusCode === 301 || res.statusCode === 302) {
           get(res.headers.location);
           res.resume();
@@ -353,8 +338,51 @@ async function fetchSkill(slug, repoRoot) {
       req.on('error', () => resolve(null));
       req.setTimeout(10000, () => { req.destroy(new Error('timeout')); });
     };
-    get(`${RAW_BASE}/skills/${slug}/SKILL.md`);
+    get(url);
   });
+}
+
+async function fetchSkill(slug, repoRoot) {
+  if (repoRoot) {
+    const p = path.join(repoRoot, 'skills', slug, 'SKILL.md');
+    try { return fs.readFileSync(p, 'utf8'); } catch (_) { return null; }
+  }
+  return fetchRawText(`${RAW_BASE}/skills/${slug}/SKILL.md`);
+}
+
+// Derive the install slug list from tasks.json, mirroring Python's
+// tasks.installable_slugs(): the canonical skill slug followed by each task's
+// skill_slug in registry order, deduped against the canonical slug.
+function slugsFromTasksJson(text) {
+  const data = JSON.parse(text);
+  const canonical = data.canonical_skill_slug;
+  if (typeof canonical !== 'string' || !canonical) {
+    throw new Error('tasks.json missing canonical_skill_slug');
+  }
+  const slugs = [canonical];
+  for (const t of data.tasks || []) {
+    if (t.skill_slug && t.skill_slug !== canonical) slugs.push(t.skill_slug);
+  }
+  return slugs;
+}
+
+// Load installable skill slugs from the Task Registry. Reads tasks.json from a
+// local checkout when available (local clone or the packaged file beside this
+// script), else fetches it over HTTPS — the same local-or-remote strategy
+// fetchSkill() uses. Returns null if no source could be read or parsed.
+async function loadTaskSkillSlugs(repoRoot) {
+  const localCandidates = [];
+  if (repoRoot) localCandidates.push(path.join(repoRoot, TASKS_JSON_REL));
+  localCandidates.push(path.resolve(__dirname, '..', TASKS_JSON_REL));
+  for (const p of localCandidates) {
+    try { return slugsFromTasksJson(fs.readFileSync(p, 'utf8')); } catch (_) { /* try next */ }
+  }
+  const remoteUrl = `${RAW_BASE}/${TASKS_JSON_REL.split(path.sep).join('/')}`;
+  const text = await fetchRawText(remoteUrl);
+  if (text) {
+    try { return slugsFromTasksJson(text); } catch (_) { /* fall through to null */ }
+  }
+  return null;
 }
 
 async function writeSkillsLocal(opts, results, c) {
@@ -362,6 +390,10 @@ async function writeSkillsLocal(opts, results, c) {
     die('error: --only cannot be used with --local (local install writes all skills)');
   }
   const repoRoot = detectRepoRoot();
+  const taskSkillSlugs = await loadTaskSkillSlugs(repoRoot);
+  if (!taskSkillSlugs || !taskSkillSlugs.length) {
+    die('error: could not load installable skill slugs from tasks.json (Task Registry)');
+  }
   const cwd = process.cwd();
 
   // Claude Code natively recognises .claude/skills/<slug>/SKILL.md.
@@ -373,7 +405,7 @@ async function writeSkillsLocal(opts, results, c) {
   process.stdout.write(c.dim(`  target: ${cwd}\n`));
   if (opts.dryRun) process.stdout.write(c.yellow('  (dry-run — no files written)\n'));
 
-  for (const slug of TASK_SKILL_SLUGS) {
+  for (const slug of taskSkillSlugs) {
     process.stdout.write(`\n${c.bold(`→ ${slug}`)}\n`);
     const content = await fetchSkill(slug, repoRoot);
     if (!content) {
@@ -604,4 +636,9 @@ async function main() {
   if (results.failed.length) process.exit(1);
 }
 
-main().catch(err => { process.stderr.write(err.stack + '\n'); process.exit(2); });
+if (require.main === module) {
+  main().catch(err => { process.stderr.write(err.stack + '\n'); process.exit(2); });
+}
+
+// Exported for tests (tests/install.test.js, tests/test_installer.py) — kept minimal.
+module.exports = { loadTaskSkillSlugs, slugsFromTasksJson };

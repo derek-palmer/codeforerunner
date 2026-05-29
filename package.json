@@ -10,10 +10,14 @@
   "files": [
     "bin/",
     "skills/",
+    "src/codeforerunner/tasks.json",
     "install.sh",
     "install.ps1",
     "skills-lock.json"
   ],
+  "scripts": {
+    "test": "node --test tests/install.test.js"
+  },
   "engines": {
     "node": ">=18"
   },

@@ -290,6 +290,39 @@ def test_task_skill_slugs_include_arch_review():
     assert (REPO / "skills/forerunner-arch-review/SKILL.md").is_file()
 
 
+def test_node_installer_slug_list_matches_registry():
+    """bin/install.js must derive the same slug list as tasks.installable_slugs().
+
+    The Node installer reads tasks.json at install time (no hardcoded list), so
+    this guards against the two installers drifting apart.
+    """
+    import shutil
+    import subprocess
+
+    from codeforerunner.tasks import installable_slugs
+
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node not available")
+
+    install_js = REPO / "bin" / "install.js"
+    script = (
+        "require(process.argv[1])"
+        ".loadTaskSkillSlugs(process.argv[2])"
+        ".then(s => process.stdout.write(JSON.stringify(s)))"
+        ".catch(e => { process.stderr.write(String(e)); process.exit(1); });"
+    )
+    proc = subprocess.run(
+        [node, "-e", script, str(install_js), str(REPO)],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert proc.returncode == 0, proc.stderr
+    node_slugs = json.loads(proc.stdout)
+    assert node_slugs == list(installable_slugs())
+
+
 # ── install_all_skills ────────────────────────────────────────────────────────
 
 def test_install_all_skills_check_only(tmp_path):
