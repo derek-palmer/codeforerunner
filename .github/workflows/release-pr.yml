@@ -20,12 +20,17 @@ jobs:
       - uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
       - name: Install package
         run: python -m pip install -e . pytest build
       - name: Check version consistency
         run: python scripts/check_versions.py
       - name: Validate marketplace manifest
         run: python scripts/validate_codex_marketplace.py
+      - name: Inspect npm package contents
+        run: python scripts/inspect_npm_package.py
       - name: Run tests
         run: pytest -q
       - name: Build sdist + wheel
