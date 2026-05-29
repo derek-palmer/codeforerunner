@@ -156,6 +156,8 @@ def test_release_pr_workflow_requires_release_signal_and_uploads_artifacts():
     assert "actions/upload-artifact" in steps_text
     assert "scripts/check_versions.py" in steps_text
     assert "scripts/validate_codex_marketplace.py" in steps_text
+    # npm artifact contents are validated before any tagged publish.
+    assert "scripts/inspect_npm_package.py" in steps_text
 
 
 def test_forerunner_check_workflow_always_runs():
