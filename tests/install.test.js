@@ -18,7 +18,36 @@ const { spawnSync } = require('node:child_process');
 const REPO_ROOT = path.resolve(__dirname, '..');
 const INSTALL_JS = path.join(REPO_ROOT, 'bin', 'install.js');
 
-const { slugsFromTasksJson, loadTaskSkillSlugs } = require(INSTALL_JS);
+const https = require('node:https');
+
+const { slugsFromTasksJson, loadTaskSkillSlugs, fetchRawText } = require(INSTALL_JS);
+
+// Swap https.get for a fake; returns a restore fn. install.js holds the same
+// cached https module object, so mutating .get here is visible to fetchRawText.
+function stubHttpsGet(handler) {
+  const real = https.get;
+  https.get = handler;
+  return () => { https.get = real; };
+}
+
+// Build a minimal response/request pair good enough for fetchRawText.
+function fakeExchange({ statusCode, location, body }) {
+  return (_url, cb) => {
+    const res = {
+      statusCode,
+      headers: location === undefined ? {} : { location },
+      resume() {},
+      on(ev, fn) {
+        if (ev === 'data' && body != null) process.nextTick(() => fn(body));
+        if (ev === 'end') process.nextTick(fn);
+        return res;
+      },
+    };
+    process.nextTick(() => cb(res));
+    const req = { on() { return req; }, setTimeout() { return req; }, destroy() {} };
+    return req;
+  };
+}
 
 test('slugsFromTasksJson lists the canonical skill slug first', () => {
   const slugs = slugsFromTasksJson(JSON.stringify({
@@ -73,6 +102,53 @@ test('slugsFromTasksJson throws when canonical_skill_slug is missing', () => {
   assert.throws(() => slugsFromTasksJson(JSON.stringify({
     tasks: [{ name: 'scan', skill_slug: 'forerunner-scan' }],
   })));
+});
+
+test('fetchRawText resolves null on a redirect loop instead of recursing forever', async () => {
+  // Every request 301s back to the same URL. Without a cap this overflows the
+  // stack / fans out requests unbounded; with a cap it must resolve null.
+  const restore = stubHttpsGet(fakeExchange({ statusCode: 301, location: 'https://x/loop' }));
+  try {
+    const out = await fetchRawText('https://x/loop');
+    assert.equal(out, null);
+  } finally {
+    restore();
+  }
+});
+
+test('fetchRawText follows a finite redirect chain within the cap and returns the body', async () => {
+  // 3 hops (< cap of 5) then a 200 with a body.
+  let hops = 0;
+  const restore = stubHttpsGet((_url, cb) => {
+    const step = hops++;
+    const res = {
+      statusCode: step < 3 ? 302 : 200,
+      headers: step < 3 ? { location: `https://x/hop${step}` } : {},
+      resume() {},
+      on(ev, fn) {
+        if (ev === 'data' && step >= 3) process.nextTick(() => fn('PAYLOAD'));
+        if (ev === 'end') process.nextTick(fn);
+        return res;
+      },
+    };
+    process.nextTick(() => cb(res));
+    const req = { on() { return req; }, setTimeout() { return req; }, destroy() {} };
+    return req;
+  });
+  try {
+    assert.equal(await fetchRawText('https://x/start'), 'PAYLOAD');
+  } finally {
+    restore();
+  }
+});
+
+test('fetchRawText resolves null on a redirect with no Location header', async () => {
+  const restore = stubHttpsGet(fakeExchange({ statusCode: 302, location: undefined }));
+  try {
+    assert.equal(await fetchRawText('https://x/'), null);
+  } finally {
+    restore();
+  }
 });
 
 test('loadTaskSkillSlugs reads the real tasks.json from a local checkout', async () => {

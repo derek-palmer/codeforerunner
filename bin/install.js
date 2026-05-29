@@ -319,15 +319,20 @@ async function promptGlobalOrLocal(c) {
 
 // ── Local install helpers ─────────────────────────────────────────────────
 
-// GET a raw text resource over HTTPS, following one level of redirects.
-// Resolves to the body string, or null on any non-200/error/timeout.
+// GET a raw text resource over HTTPS, following redirects up to MAX_REDIRECTS.
+// Resolves to the body string, or null on any non-200/error/timeout, on a
+// missing Location header, or when the redirect budget is exhausted (guards
+// against redirect loops / unbounded recursion).
+const MAX_REDIRECTS = 5;
 function fetchRawText(url) {
   return new Promise((resolve) => {
-    const get = (u) => {
+    const get = (u, redirectsLeft) => {
       const req = https.get(u, (res) => {
         if (res.statusCode === 301 || res.statusCode === 302) {
-          get(res.headers.location);
           res.resume();
+          const next = res.headers.location;
+          if (!next || redirectsLeft <= 0) { resolve(null); return; }
+          get(next, redirectsLeft - 1);
           return;
         }
         if (res.statusCode !== 200) { resolve(null); return; }
@@ -338,7 +343,7 @@ function fetchRawText(url) {
       req.on('error', () => resolve(null));
       req.setTimeout(10000, () => { req.destroy(new Error('timeout')); });
     };
-    get(url);
+    get(url, MAX_REDIRECTS);
   });
 }
 
@@ -641,4 +646,4 @@ if (require.main === module) {
 }
 
 // Exported for tests (tests/install.test.js, tests/test_installer.py) — kept minimal.
-module.exports = { loadTaskSkillSlugs, slugsFromTasksJson };
+module.exports = { loadTaskSkillSlugs, slugsFromTasksJson, fetchRawText };
