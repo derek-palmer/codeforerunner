@@ -27,6 +27,7 @@ this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Retired `SPEC.md`; GitHub Issues now own work tracking.
 - `CONTEXT.md` and agent docs: added npm release and GitHub Issues glossary terms.
 - CodeRabbit automatic review disabled.
+- **npmjs publishing is now OIDC trusted publishing** (tokenless). The `NPM_TOKEN` secret referenced in the 0.4.1 notes is no longer used or required; auth comes from the `npm` environment's `id-token: write` permission. (#48)
 
 ## [0.4.4] — 2026-05-26
 
