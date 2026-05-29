@@ -51,6 +51,22 @@ jobs:
           scope: "@derek-palmer"
       - name: Scope package name for GitHub Packages
         run: npm pkg set name="@derek-palmer/codeforerunner"
+      - name: Verify scoped name and tag/version parity
+        # Guard against a failed/partial rename or a tag/version mismatch
+        # shipping a mislabeled scoped package.
+        run: |
+          set -e
+          TAG="${GITHUB_REF#refs/tags/v}"
+          NAME="$(node -e "process.stdout.write(require('./package.json').name)")"
+          VERSION="$(node -e "process.stdout.write(require('./package.json').version)")"
+          if [ "$NAME" != "@derek-palmer/codeforerunner" ]; then
+            echo "scoped name not applied: got '$NAME'" >&2
+            exit 1
+          fi
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "tag ($TAG) does not match package.json version ($VERSION)" >&2
+            exit 1
+          fi
       - name: Publish to GitHub Packages
         run: npm publish --access public
         env:

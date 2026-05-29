@@ -114,6 +114,33 @@ def test_npm_publish_workflow_uses_oidc_trusted_publishing():
     assert "NODE_AUTH_TOKEN" not in publish_only
 
 
+def test_github_packages_publish_job_is_scoped_and_isolated():
+    wf = WORKFLOWS_DIR / "npm-publish.yml"
+    doc = yaml.safe_load(wf.read_text())
+    jobs = doc["jobs"]
+
+    gpr = jobs.get("publish-gpr")
+    assert isinstance(gpr, dict), "missing publish-gpr job"
+    # Runs after npmjs publish, with only packages:write (token auth, not OIDC).
+    assert gpr.get("needs") == "publish"
+    assert gpr.get("permissions", {}).get("packages") == "write"
+    assert "id-token" not in gpr.get("permissions", {})
+
+    gpr_text = yaml.dump(gpr)
+    # Scoped name mutation and GITHUB_TOKEN auth live in this job.
+    assert 'name="@derek-palmer/codeforerunner"' in gpr_text
+    assert "NODE_AUTH_TOKEN" in gpr_text
+    # Before publish, the job verifies the scoped name took effect and the tag
+    # matches the package version, so a failed mutation can't ship mislabeled.
+    assert "@derek-palmer/codeforerunner" in gpr_text
+    assert "GITHUB_REF" in gpr_text
+
+    # The npmjs publish job must not perform the scoped-name mutation — the
+    # rename must not leak into the public npmjs artifact.
+    publish_text = yaml.dump(jobs.get("publish"))
+    assert "@derek-palmer/codeforerunner" not in publish_text
+
+
 def test_docker_publish_workflow_uses_version_tag_and_ghcr():
     wf = WORKFLOWS_DIR / "docker-publish.yml"
     doc = yaml.safe_load(wf.read_text())
