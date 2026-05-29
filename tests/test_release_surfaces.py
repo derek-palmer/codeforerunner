@@ -59,6 +59,18 @@ def test_version_sources_resolve_and_agree_in_this_checkout():
     assert len(set(versions.values())) == 1, f"version drift across surfaces: {versions}"
 
 
+def test_socket_badge_surface_is_registered_and_reads_readme_version():
+    badge = rs.get("socket-badge")
+    assert badge.kind == "badge"
+    assert badge.version_source["file"] == "README.md"
+    # Reads the version segment of the Socket badge URL straight from README,
+    # so a stale badge pin diverging from the canonical version is caught by
+    # the version-parity check above.
+    assert rs.read_surface_version(badge, REPO_ROOT) == rs.read_surface_version(
+        rs.get("pypi"), REPO_ROOT
+    )
+
+
 def test_read_surface_version_detects_drift(tmp_path):
     # Build a fake checkout where pyproject and package.json disagree; the
     # manifest-driven reader must surface two distinct values.

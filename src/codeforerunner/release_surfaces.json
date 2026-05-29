@@ -47,6 +47,15 @@
       "validations": ["check_versions", "validate_codex_marketplace", "tag_matches_version"]
     },
     {
+      "name": "socket-badge",
+      "kind": "badge",
+      "registry": "README.md Socket badge (https://badge.socket.dev/npm/package/codeforerunner/{version}; Socket has no latest endpoint, so the URL is version-pinned and bumped by scripts/bump-version.sh)",
+      "auth_mode": "none",
+      "workflow": null,
+      "version_source": { "file": "README.md", "kind": "regex", "selector": "https://badge\\.socket\\.dev/npm/package/codeforerunner/([^)]+)" },
+      "validations": ["check_versions"]
+    },
+    {
       "name": "installer-shim-sh",
       "kind": "installer_shim",
       "registry": "install.sh (pins codeforerunner@<version> from npm)",
