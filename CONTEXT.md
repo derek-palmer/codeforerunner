@@ -29,7 +29,7 @@ The release path that makes the Node installer package available through npm-com
 _Avoid_: JavaScript release, package upload
 
 **Release Surface Manifest**:
-A catalog of release surfaces, versions, registry targets, authentication modes, and validation expectations for codeforerunner releases. npm Publishing uses it to keep npmjs, GitHub Packages, installer shims, and release PR checks aligned.
+A catalog of release surfaces, versions, registry targets, authentication modes, and validation expectations for codeforerunner releases. npm Publishing uses it to keep npmjs, GitHub Packages, installer shims, Socket badge URL, and release PR checks aligned.
 _Avoid_: Release checklist, publish config
 
 **Package Contents Inspector**:
