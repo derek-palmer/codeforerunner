@@ -118,9 +118,17 @@ def _handle(prompts_root: Path, msg: dict[str, Any], state: dict[str, Any]) -> d
     return _err(req_id, -32601, f"method not found: {method!r}")
 
 
-def serve(prompts_root: Path, stdin: Iterable[str] = sys.stdin, stdout=sys.stdout, stderr=sys.stderr) -> int:
+def serve(
+    prompts_root: Path,
+    repo_root: Path | None = None,
+    stdin: Iterable[str] = sys.stdin,
+    stdout=sys.stdout,
+    stderr=sys.stderr,
+) -> int:
     """Run the JSON-RPC 2.0 MCP server loop over *stdin*/*stdout* until EOF."""
-    state: dict[str, Any] = {"scan_called": False, "initialized": False}
+    root = repo_root if repo_root is not None else Path.cwd()
+    scan_artifact = root / ".forerunner" / "scan.md"
+    state: dict[str, Any] = {"scan_called": scan_artifact.is_file(), "initialized": False}
     for raw in stdin:
         line = raw.strip()
         if not line:
@@ -153,7 +161,7 @@ def main(argv: list[str] | None = None) -> int:
     except FileNotFoundError as e:
         print(f"mcp_server: {e}", file=sys.stderr)
         return 2
-    return serve(prompts_root)
+    return serve(prompts_root, repo_root=Path.cwd().resolve())
 
 
 if __name__ == "__main__":  # pragma: no cover

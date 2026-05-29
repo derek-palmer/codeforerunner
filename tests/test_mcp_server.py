@@ -18,13 +18,13 @@ READ_TIMEOUT = 5.0
 
 
 class _Server:
-    def __init__(self) -> None:
+    def __init__(self, cwd: str | None = None) -> None:
         self.proc = subprocess.Popen(
             [sys.executable, "-m", "codeforerunner.mcp_server"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            cwd=str(REPO),
+            cwd=cwd if cwd is not None else str(REPO),
             text=True,
             bufsize=1,
         )
@@ -204,7 +204,8 @@ def test_tools_call_allowed_after_scan(server: _Server) -> None:
     assert resp["result"]["isError"] is False
 
 
-def test_tools_call_state_resets_per_process() -> None:
+def test_tools_call_blocks_without_scan_artifact_on_restart(tmp_path) -> None:
+    """A fresh server process with no scan artifact must block non-exempt calls."""
     s1 = _Server()
     try:
         s1.request({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
@@ -220,7 +221,7 @@ def test_tools_call_state_resets_per_process() -> None:
     finally:
         s1.close()
 
-    s2 = _Server()
+    s2 = _Server(cwd=str(tmp_path))
     try:
         s2.request({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
         resp = s2.request(
@@ -444,3 +445,61 @@ def test_mcp_main_calls_serve_with_resolved_root(capsys):
         rc = mcp_main()
     assert rc == 0
     mock_serve.assert_called_once()
+    _, kwargs = mock_serve.call_args
+    assert "repo_root" in kwargs
+    assert kwargs["repo_root"] == Path.cwd().resolve()
+
+
+# ── serve re-hydration from scan artifact ────────────────────────────────────
+
+def _rpc(*msgs: dict) -> list[str]:
+    return [json.dumps(m) + "\n" for m in msgs]
+
+
+def _seed_prompts(path: Path) -> Path:
+    """Create a minimal self-contained prompts root with one non-exempt task."""
+    prompts = path / "prompts"
+    (prompts / "system").mkdir(parents=True)
+    (prompts / "system" / "base.md").write_text("# base\n", encoding="utf-8")
+    (prompts / "partials").mkdir()
+    (prompts / "tasks").mkdir()
+    (prompts / "tasks" / "scan.md").write_text("# Scan\n", encoding="utf-8")
+    (prompts / "tasks" / "init-agent-onboarding.md").write_text("# Onboarding\n", encoding="utf-8")
+    (prompts / "tasks" / "check-task.md").write_text("# Check Task\n", encoding="utf-8")
+    return prompts
+
+
+def test_serve_allows_non_exempt_when_scan_artifact_present(tmp_path):
+    prompts_root = _seed_prompts(tmp_path)
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    (repo_root / ".forerunner").mkdir()
+    (repo_root / ".forerunner" / "scan.md").write_text("# scan result\n", encoding="utf-8")
+    out = io.StringIO()
+    msgs = _rpc(
+        {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "check-task"}},
+    )
+    serve(prompts_root, repo_root=repo_root, stdin=msgs, stdout=out, stderr=io.StringIO())
+    out.seek(0)
+    out.readline()  # initialize response
+    resp = json.loads(out.readline())
+    assert "error" not in resp
+    assert resp["result"]["isError"] is False
+
+
+def test_serve_blocks_non_exempt_when_scan_artifact_absent(tmp_path):
+    prompts_root = _seed_prompts(tmp_path)
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    out = io.StringIO()
+    msgs = _rpc(
+        {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "check-task"}},
+    )
+    serve(prompts_root, repo_root=repo_root, stdin=msgs, stdout=out, stderr=io.StringIO())
+    out.seek(0)
+    out.readline()  # initialize response
+    resp = json.loads(out.readline())
+    assert "error" in resp
+    assert resp["error"]["code"] == -32000

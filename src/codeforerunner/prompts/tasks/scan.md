@@ -90,3 +90,5 @@ gaps:
 ```
 
 Wrap output in a fenced yaml block. No prose before or after.
+
+<!-- output: .forerunner/scan.md -->
