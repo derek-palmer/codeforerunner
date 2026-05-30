@@ -12,7 +12,7 @@ from typing import Any, Iterable
 
 from codeforerunner import __version__ as _pkg_version
 from codeforerunner.bundle import find_prompts_root
-from codeforerunner.prompt_session import Denial, PromptSession
+from codeforerunner.prompt_session import OutcomeKind, PromptSession
 from codeforerunner.tasks import all_tasks as _all_tasks
 
 PROTOCOL_VERSION = "2025-03-26"
@@ -86,24 +86,26 @@ def _handle(prompts_root: Path, msg: dict[str, Any], state: dict[str, Any]) -> d
         if not isinstance(name, str) or "/" in name or "\\" in name or ".." in name:
             return _err(req_id, -32602, f"invalid tool name: {name!r}")
         session = PromptSession(prompts_root, scan_satisfied=bool(state.get("scan_called")))
-        decision = session.can_run(name)
-        if not decision.allowed:
-            if decision.reason is Denial.UNKNOWN_TASK:
-                return _err(req_id, -32602, f"unknown tool: {name!r}")
+        try:
+            outcome = session.resolve(name)
+        except Exception as e:  # pragma: no cover - defensive
+            return _err(req_id, -32603, f"internal error: {e}")
+        if outcome.kind is OutcomeKind.UNKNOWN_TASK:
+            return _err(req_id, -32602, f"unknown tool: {name!r}")
+        if outcome.kind is OutcomeKind.SCAN_REQUIRED:
             return _err(
                 req_id,
                 -32000,
                 "scan-first required: call tools/call name=scan before this task (SPEC V2)",
             )
+        if outcome.kind is OutcomeKind.MISSING:
+            return _err(req_id, -32603, f"internal error: {outcome.message}")
+        # ALLOWED — source the per-adapter scan signal (ADR-0001) and return text.
         if name == "scan":
             state["scan_called"] = True
-        try:
-            text = session.bundle_for(name)
-        except Exception as e:  # pragma: no cover - defensive
-            return _err(req_id, -32603, f"internal error: {e}")
         return _ok(
             req_id,
-            {"content": [{"type": "text", "text": text}], "isError": False},
+            {"content": [{"type": "text", "text": outcome.text}], "isError": False},
         )
 
     return _err(req_id, -32601, f"method not found: {method!r}")
