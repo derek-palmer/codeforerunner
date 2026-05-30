@@ -323,6 +323,45 @@ def test_node_installer_slug_list_matches_registry():
     assert node_slugs == list(installable_slugs())
 
 
+# ── plan_skills (inspectable batch planning) ──────────────────────────────────
+
+def test_plan_skills_returns_inspectable_plans_without_writing(tmp_path):
+    from unittest.mock import patch
+
+    slug = "test-skill"
+    src = tmp_path / "plugins" / "codeforerunner" / "skills" / slug / "SKILL.md"
+    src.parent.mkdir(parents=True)
+    src.write_bytes(b"skill body")
+    dest = tmp_path / "dest" / "SKILL.md"
+
+    with patch.object(installer, "TASK_SKILL_SLUGS", (slug,)), \
+         patch.object(installer, "resolve_skill_target",
+                      return_value=installer.Target("claude", dest)):
+        plans = installer.plan_skills(
+            agent="claude", repo_root=tmp_path, slugs=(slug,)
+        )
+
+    assert len(plans) == 1
+    assert plans[0].action == "create"
+    assert plans[0].target.path == dest
+    # Planning must not touch the filesystem.
+    assert not dest.exists()
+
+
+def test_plan_skills_marks_missing_source_as_abort(tmp_path):
+    from unittest.mock import patch
+
+    slug = "test-skill"  # no source written
+    dest = tmp_path / "dest" / "SKILL.md"
+    with patch.object(installer, "resolve_skill_target",
+                      return_value=installer.Target("claude", dest)):
+        plans = installer.plan_skills(
+            agent="claude", repo_root=tmp_path, slugs=(slug,)
+        )
+    assert plans[0].action == "abort"
+    assert plans[0].exit_code != EXIT_OK
+
+
 # ── install_all_skills ────────────────────────────────────────────────────────
 
 def test_install_all_skills_check_only(tmp_path):
