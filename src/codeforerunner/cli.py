@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Sequence
 
 from codeforerunner.bundle import find_prompts_root
-from codeforerunner.prompt_session import Denial, PromptSession
+from codeforerunner.prompt_session import OutcomeKind, PromptSession
 from codeforerunner.tasks import refresh_tasks as _refresh_tasks
 SCAN_DONE_ENV = "FORERUNNER_SCAN_DONE"
 
@@ -23,64 +23,67 @@ def _scan_satisfied(repo_root: Path) -> bool:
     )
 
 
-def _get_bundle(args: argparse.Namespace) -> tuple[str, int]:
-    """Resolve bundle for args.task. Returns (bundle_text, exit_code). exit_code != 0 on error."""
+def _resolve_bundle(repo, task: str) -> tuple[str, int]:
+    """Resolve bundle text for *task* under *repo*. Returns (text, exit_code).
+
+    Encodes the session's closed Outcome into CLI exit codes; the gate/order
+    lives in the Prompt Session, this is just the encoder.
+    """
     try:
-        prompts_root = find_prompts_root(args.repo)
+        prompts_root = find_prompts_root(repo)
     except FileNotFoundError as e:
         print(f"error: {e}", file=sys.stderr)
         return "", 2
 
-    repo_root = Path(args.repo).resolve() if args.repo else Path.cwd()
+    repo_root = Path(repo).resolve() if repo else Path.cwd()
     session = PromptSession(prompts_root, _scan_satisfied(repo_root))
-    decision = session.can_run(args.task)
-    if not decision.allowed:
-        if decision.reason is Denial.UNKNOWN_TASK:
-            print(f"error: unknown task '{args.task}'", file=sys.stderr)
-            return "", 2
+    outcome = session.resolve(task)
+    if outcome.kind is OutcomeKind.ALLOWED:
+        return outcome.text, 0
+    if outcome.kind is OutcomeKind.UNKNOWN_TASK:
+        print(f"error: unknown task '{task}'", file=sys.stderr)
+        return "", 2
+    if outcome.kind is OutcomeKind.SCAN_REQUIRED:
         print(
             f"error: scan-first required — run `forerunner scan` first "
             f"(writes .forerunner/scan.md). Set {SCAN_DONE_ENV}=1 to skip.",
             file=sys.stderr,
         )
         return "", 1
-
-    try:
-        return session.bundle_for(args.task), 0
-    except FileNotFoundError as e:
-        print(f"error: {e}", file=sys.stderr)
-        return "", 2
+    # MISSING
+    print(f"error: {outcome.message}", file=sys.stderr)
+    return "", 2
 
 
-def cmd_doc(args: argparse.Namespace) -> int:
-    """Resolve base + partials + task bundle to stdout."""
-    bundle, rc = _get_bundle(args)
+def _emit_task(repo, task: str) -> int:
+    """Resolve *task* under *repo* and write its bundle to stdout. Returns rc."""
+    bundle, rc = _resolve_bundle(repo, task)
     if rc != 0:
         return rc
     sys.stdout.write(bundle)
     return 0
 
 
-def _doc_for(args: argparse.Namespace, task: str) -> int:
-    """Emit bundle for *task* by delegating to cmd_doc with a synthetic Namespace."""
-    ns = argparse.Namespace(repo=getattr(args, "repo", None), task=task)
-    return cmd_doc(ns)
+def cmd_doc(args: argparse.Namespace) -> int:
+    """Resolve base + partials + task bundle to stdout."""
+    return _emit_task(args.repo, args.task)
 
 
 def cmd_init(args: argparse.Namespace) -> int:
     """Emit onboarding bundle; prepend scan bundle when --full is given."""
+    repo = getattr(args, "repo", None)
     if getattr(args, "full", False):
         sys.stdout.write("<!-- forerunner init --full: section 1/2 (scan) -->\n")
-        rc = _doc_for(args, "scan")
+        rc = _emit_task(repo, "scan")
         if rc != 0:
             return rc
         sys.stdout.write("\n<!-- forerunner init --full: section 2/2 (onboarding) -->\n")
-    return _doc_for(args, "init-agent-onboarding")
+    return _emit_task(repo, "init-agent-onboarding")
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
     """Emit the scan prompt bundle and hint about scan artifact."""
-    rc = _doc_for(args, "scan")
+    rc = _emit_task(getattr(args, "repo", None), "scan")
     if rc == 0:
         print(
             "hint: write the scan result to .forerunner/scan.md to satisfy the "
@@ -123,10 +126,10 @@ def cmd_mcp_server(args: argparse.Namespace) -> int:
 
 def cmd_refresh(args: argparse.Namespace) -> int:
     """Emit scan + check + all doc-task bundles to stdout for a full doc refresh."""
+    repo = getattr(args, "repo", None)
     task_names = [t.name for t in _refresh_tasks()]
     for i, task in enumerate(task_names):
-        ns = argparse.Namespace(repo=getattr(args, "repo", None), task=task)
-        rc = cmd_doc(ns)
+        rc = _emit_task(repo, task)
         if rc != 0:
             return rc
         if i < len(task_names) - 1:
