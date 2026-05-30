@@ -81,37 +81,29 @@ def install_all_skills(
     """Install all per-task skills for the given agent. Returns 0 on full success."""
     out = out or sys.stdout
     err = err or sys.stderr
+
+    try:
+        plans = plan_skills(agent=agent, repo_root=repo_root, slugs=TASK_SKILL_SLUGS)
+    except ValueError as e:
+        print(f"error: {e}", file=err)
+        return EXIT_USAGE
+
     any_error = False
-    for slug in TASK_SKILL_SLUGS:
-        src_path = repo_root / "plugins" / "codeforerunner" / "skills" / slug / "SKILL.md"
-        if not src_path.is_file():
-            print(f"warning: skill source not found: {src_path}", file=err)
+    prefix = "would " if check_only else ""
+    for plan in plans:
+        if plan.action == "abort":  # missing source — warn and continue
+            print(f"warning: {plan.reason}", file=err)
             any_error = True
             continue
-        try:
-            target = resolve_skill_target(agent, slug)
-        except ValueError as e:
-            print(f"error: {e}", file=err)
-            return EXIT_USAGE
-        # For per-task skills use simple copy (no body-parity check against canonical)
-        dest = target.path
-        prefix = "would " if check_only else ""
-        if dest.exists():
-            src_trimmed = src_path.read_bytes().rstrip()
-            dest_trimmed = dest.read_bytes().rstrip()
-            if src_trimmed == dest_trimmed:
-                print(f"skip: {dest} (up-to-date)", file=out)
-                continue
-            action = "update"
-        else:
-            action = "create"
-        print(f"{prefix}{action}: {dest}", file=out)
+        if plan.action == "skip":
+            print(f"skip: {plan.target.path} (up-to-date)", file=out)
+            continue
+        print(f"{prefix}{plan.action}: {plan.target.path}", file=out)
         if not check_only:
-            dest.parent.mkdir(parents=True, exist_ok=True)
             try:
-                dest.write_bytes(src_path.read_bytes())
+                plan.write()
             except OSError as e:
-                print(f"error: failed to write {dest}: {e}", file=err)
+                print(f"error: failed to write {plan.target.path}: {e}", file=err)
                 any_error = True
     return EXIT_OK if not any_error else EXIT_BODY_MISMATCH
 
@@ -185,19 +177,30 @@ def overlay(dest_text: str, source_body: str) -> str:
 
 @dataclass
 class Plan:
-    """Pending install action computed by plan_install or plan_marketplace."""
+    """One pending install action, the inspectable unit of work.
+
+    Carries its own ``exit_code`` so a list of plans is self-describing — a
+    caller can render or aggregate them without re-deriving outcomes. Payload
+    is either ``new_content`` (text; marker-rendered skill or marketplace JSON)
+    or ``new_bytes`` (raw copy for per-task skills, preserving exact bytes).
+    """
 
     action: str  # "create" | "update" | "skip" | "abort"
     reason: str
     target: Target
     new_content: str | None = None
+    new_bytes: bytes | None = None
+    exit_code: int = EXIT_OK
 
     def write(self) -> None:
         """Execute the plan: create or update the destination file."""
         if self.action in ("skip", "abort"):
             return
-        assert self.new_content is not None
         self.target.path.parent.mkdir(parents=True, exist_ok=True)
+        if self.new_bytes is not None:
+            self.target.path.write_bytes(self.new_bytes)
+            return
+        assert self.new_content is not None
         self.target.path.write_text(self.new_content, encoding="utf-8")
 
 
@@ -206,51 +209,47 @@ def plan_install(
     source_path: Path,
     canonical_path: Path,
     target: Target,
-) -> tuple[Plan, int]:
-    """Return (plan, exit_code). exit_code ≠ 0 → abort."""
+) -> Plan:
+    """Plan a canonical-skill install. ``plan.exit_code`` ≠ 0 → abort."""
     src_text = source_path.read_text(encoding="utf-8")
     canonical_text = canonical_path.read_text(encoding="utf-8")
 
     src_body = strip_frontmatter(src_text)
     canon_body = strip_frontmatter(canonical_text)
     if src_body != canon_body:
-        return (
-            Plan(
-                action="abort",
-                reason=(
-                    f"body-parity violation (V10): source body differs from canonical "
-                    f"{canonical_path}"
-                ),
-                target=target,
+        return Plan(
+            action="abort",
+            reason=(
+                f"body-parity violation (V10): source body differs from canonical "
+                f"{canonical_path}"
             ),
-            EXIT_BODY_MISMATCH,
+            target=target,
+            exit_code=EXIT_BODY_MISMATCH,
         )
 
     dest = target.path
     if dest.exists():
         dest_text = dest.read_text(encoding="utf-8")
         if find_markers(dest_text) is None:
-            return (
-                Plan(
-                    action="abort",
-                    reason=(
-                        f"destination exists without managed markers ({dest}); refusing "
-                        "to overwrite user content"
-                    ),
-                    target=target,
+            return Plan(
+                action="abort",
+                reason=(
+                    f"destination exists without managed markers ({dest}); refusing "
+                    "to overwrite user content"
                 ),
-                EXIT_UNMANAGED_DEST,
+                target=target,
+                exit_code=EXIT_UNMANAGED_DEST,
             )
         new_text = overlay(dest_text, src_body)
         if _hash(new_text) == _hash(dest_text):
-            return Plan(action="skip", reason="dest matches source (V12 idempotent)", target=target), EXIT_OK
-        return Plan(action="update", reason="overlay managed region", target=target, new_content=new_text), EXIT_OK
+            return Plan(action="skip", reason="dest matches source (V12 idempotent)", target=target)
+        return Plan(action="update", reason="overlay managed region", target=target, new_content=new_text)
 
     new_text = render(src_text, None, target.name)
-    return Plan(action="create", reason="dest absent", target=target, new_content=new_text), EXIT_OK
+    return Plan(action="create", reason="dest absent", target=target, new_content=new_text)
 
 
-def plan_marketplace(*, source_path: Path, target: Target) -> tuple[Plan, int]:
+def plan_marketplace(*, source_path: Path, target: Target) -> Plan:
     """Idempotent JSON manifest install. Hash-equality on whole file (trimmed)."""
     src_bytes = source_path.read_bytes()
     src_trimmed = src_bytes.rstrip()
@@ -260,25 +259,51 @@ def plan_marketplace(*, source_path: Path, target: Target) -> tuple[Plan, int]:
         dest_bytes = dest.read_bytes()
         dest_trimmed = dest_bytes.rstrip()
         if _hash_bytes(src_trimmed) == _hash_bytes(dest_trimmed):
-            return (
-                Plan(action="skip", reason="dest matches source (V12 idempotent)", target=target),
-                EXIT_OK,
-            )
-        return (
-            Plan(
-                action="abort",
-                reason=(
-                    f"destination exists and differs from source ({dest}); refusing "
-                    "to overwrite user content"
-                ),
-                target=target,
+            return Plan(action="skip", reason="dest matches source (V12 idempotent)", target=target)
+        return Plan(
+            action="abort",
+            reason=(
+                f"destination exists and differs from source ({dest}); refusing "
+                "to overwrite user content"
             ),
-            EXIT_UNMANAGED_DEST,
+            target=target,
+            exit_code=EXIT_UNMANAGED_DEST,
         )
-    return (
-        Plan(action="create", reason="dest absent", target=target, new_content=src_text),
-        EXIT_OK,
-    )
+    return Plan(action="create", reason="dest absent", target=target, new_content=src_text)
+
+
+def plan_skill_copy(*, source_path: Path, target: Target) -> Plan:
+    """Plan a per-task skill copy (raw bytes, no body-parity check).
+
+    Idempotent on trimmed bytes; missing source aborts (exit_code set).
+    """
+    if not source_path.is_file():
+        return Plan(
+            action="abort",
+            reason=f"skill source not found: {source_path}",
+            target=target,
+            exit_code=EXIT_BODY_MISMATCH,
+        )
+    src_bytes = source_path.read_bytes()
+    dest = target.path
+    if dest.exists():
+        if dest.read_bytes().rstrip() == src_bytes.rstrip():
+            return Plan(action="skip", reason="up-to-date", target=target)
+        return Plan(action="update", reason="dest differs", target=target, new_bytes=src_bytes)
+    return Plan(action="create", reason="dest absent", target=target, new_bytes=src_bytes)
+
+
+def plan_skills(*, agent: str, repo_root: Path, slugs) -> list[Plan]:
+    """Plan installs for every per-task skill slug. Inspectable; writes nothing.
+
+    Raises ``ValueError`` if *agent* has no skill destination (usage error).
+    """
+    plans: list[Plan] = []
+    for slug in slugs:
+        target = resolve_skill_target(agent, slug)  # may raise ValueError
+        src_path = repo_root / "plugins" / "codeforerunner" / "skills" / slug / "SKILL.md"
+        plans.append(plan_skill_copy(source_path=src_path, target=target))
+    return plans
 
 
 def install(
@@ -306,15 +331,8 @@ def install(
         if not src_path.is_file():
             print(f"error: marketplace source not found: {src_path}", file=err)
             return EXIT_USAGE
-        plan, code = plan_marketplace(source_path=src_path, target=target)
-        prefix = "would " if check_only else ""
-        stream = err if code != EXIT_OK else out
-        print(f"{prefix}{plan.action}: {target.path} ({plan.reason})", file=stream)
-        if code != EXIT_OK:
-            return code
-        if not check_only:
-            plan.write()
-        return EXIT_OK
+        plan = plan_marketplace(source_path=src_path, target=target)
+        return _emit(plan, check_only=check_only, out=out, err=err)
 
     try:
         target = resolve_target(agent, dest_override)
@@ -331,12 +349,21 @@ def install(
         print(f"error: canonical not found: {canonical}", file=err)
         return EXIT_USAGE
 
-    plan, code = plan_install(source_path=src_path, canonical_path=canonical, target=target)
+    plan = plan_install(source_path=src_path, canonical_path=canonical, target=target)
+    return _emit(plan, check_only=check_only, out=out, err=err)
+
+
+def _emit(plan: Plan, *, check_only: bool, out, err) -> int:
+    """Render one plan (skill/marketplace) and execute it unless check-only.
+
+    Single render/execute path shared by both install kinds: route to err on a
+    non-zero plan, print the dry-run prefix, then write when allowed.
+    """
     prefix = "would " if check_only else ""
-    stream = err if code != EXIT_OK else out
-    print(f"{prefix}{plan.action}: {target.path} ({plan.reason})", file=stream)
-    if code != EXIT_OK:
-        return code
+    stream = err if plan.exit_code != EXIT_OK else out
+    print(f"{prefix}{plan.action}: {plan.target.path} ({plan.reason})", file=stream)
+    if plan.exit_code != EXIT_OK:
+        return plan.exit_code
     if not check_only:
         plan.write()
     return EXIT_OK
