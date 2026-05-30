@@ -12,6 +12,16 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6.0.2
+      - name: Reject iCloud sync-conflict files
+        # iCloud Drive appends " 2", " 3", … to filenames on a sync conflict.
+        # These must never be committed; fail the build if any are tracked.
+        run: |
+          matches="$(git ls-files | grep -E ' [0-9]+(\.[^/]+)?$' || true)"
+          if [ -n "$matches" ]; then
+            echo "::error::iCloud sync-conflict files are tracked in git:"
+            echo "$matches"
+            exit 1
+          fi
       - uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.11"

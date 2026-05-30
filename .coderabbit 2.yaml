@@ -1,6 +1,0 @@
-reviews:
-  auto_review:
-    enabled: false
-
-chat:
-  auto_reply: false

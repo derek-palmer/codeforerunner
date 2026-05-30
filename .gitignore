@@ -216,3 +216,10 @@ Icon?
 .Trashes
 .VolumeIcon.icns
 Thumbs.db
+
+# iCloud Drive sync-conflict copies (e.g. "CONTEXT 2.md", ".coderabbit 2.yaml").
+# iCloud appends " 2", " 3", … to a filename on a sync conflict; never commit them.
+# Patterns cover names with and without an extension. CI also rejects them.
+*.icloud
+* [0-9].*
+* [0-9]
