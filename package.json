@@ -35,7 +35,8 @@
     "cursor",
     "windsurf"
   ],
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "LicenseRef-Codeforerunner-SAL-0.1",
+  "author": "Derek Palmer",
   "repository": {
     "type": "git",
     "url": "https://github.com/derek-palmer/codeforerunner.git"
