@@ -16,23 +16,10 @@ from codeforerunner.distribution import (  # noqa: E402
     CANONICAL_SKILL_REL,
     DISTRIBUTED_SKILL_COPIES_REL,
 )
+from codeforerunner.skill_parity import check_skill_body_parity  # noqa: E402
 
 CANONICAL = CANONICAL_SKILL_REL
 COPIES = list(DISTRIBUTED_SKILL_COPIES_REL)
-
-
-def strip_frontmatter(text: str) -> str:
-    text = text.replace("\r\n", "\n").replace("\r", "\n")
-    lines = text.split("\n")
-    if lines and lines[0] == "---":
-        for index in range(1, len(lines)):
-            if lines[index] == "---":
-                return "\n".join(lines[index + 1 :]).strip()
-    return text.strip()
-
-
-def read_body(path: Path) -> str:
-    return strip_frontmatter((ROOT / path).read_text(encoding="utf-8"))
 
 
 def print_checked_files(*, stream=sys.stdout) -> None:
@@ -42,17 +29,16 @@ def print_checked_files(*, stream=sys.stdout) -> None:
 
 
 def main() -> int:
-    canonical_body = read_body(CANONICAL)
-    failures: list[Path] = []
+    result = check_skill_body_parity(ROOT)
 
-    for copy in COPIES:
-        if read_body(copy) != canonical_body:
-            failures.append(copy)
-
-    if failures:
+    if not result.ok:
         print("V10 violation: distributed skill body drift detected.", file=sys.stderr)
         print_checked_files(stream=sys.stderr)
-        for path in failures:
+        if result.missing_canonical:
+            print(f"missing:   {CANONICAL}", file=sys.stderr)
+        for path in result.missing_copies:
+            print(f"missing:   {path}", file=sys.stderr)
+        for path in result.drifted_copies:
             print(f"mismatch:  {path}", file=sys.stderr)
         return 1
 

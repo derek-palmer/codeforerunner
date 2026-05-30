@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Iterable, Literal
 
 from codeforerunner import distribution as _dist
+from codeforerunner import skill_parity as _parity
 from codeforerunner.tasks import installable_slugs as _installable_slugs
 
 # Distribution artifact identity and markers come from the Distribution
@@ -129,25 +130,13 @@ def resolve_marketplace_target(agent: str, override: Path | None) -> Target:
 
 
 def strip_frontmatter(text: str) -> str:
-    """Body extraction matching scripts/validate_skill_copies.py."""
-    text = text.replace("\r\n", "\n").replace("\r", "\n")
-    lines = text.split("\n")
-    if lines and lines[0] == "---":
-        for i in range(1, len(lines)):
-            if lines[i] == "---":
-                return "\n".join(lines[i + 1 :]).strip()
-    return text.strip()
+    """Body extraction; owned by the Skill Body Parity module."""
+    return _parity.body_of(text)
 
 
 def extract_frontmatter(text: str) -> str:
     """Return frontmatter block (incl. fences) or '' if none."""
-    text = text.replace("\r\n", "\n").replace("\r", "\n")
-    lines = text.split("\n")
-    if lines and lines[0] == "---":
-        for i in range(1, len(lines)):
-            if lines[i] == "---":
-                return "\n".join(lines[: i + 1]) + "\n"
-    return ""
+    return _parity.split_frontmatter(text)[0]
 
 
 def _hash(s: str) -> str:

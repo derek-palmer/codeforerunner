@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Callable
 
 from codeforerunner import distribution as _dist
+from codeforerunner import skill_parity as _parity
 from codeforerunner.config import CONFIG_FILENAME, ConfigError, load_from_repo
 
 # Distribution artifact identity and markers come from the Distribution
@@ -62,25 +63,14 @@ def _load_script_module(repo: Path, relpath: str, module_name: str):
 
 
 def _check_skill_body_parity(repo: Path, run_scripts: bool = False) -> list[Finding]:
-    """Verify that all distributed skill copies match the canonical body."""
-    if not run_scripts:
-        return [
-            Finding(
-                "warn",
-                "skill-body-parity",
-                "skipping script validation (pass --run-scripts to allow executing repo scripts)",
-            )
-        ]
-    try:
-        skill_mod = _load_script_module(
-            repo, "scripts/validate_skill_copies.py", "_forerunner_doctor_skill_copies"
-        )
-        strip_frontmatter: Callable[[str], str] = skill_mod.strip_frontmatter
-    except Exception as exc:  # pragma: no cover - defensive
-        return [Finding("error", "skill-body-parity", f"loader failure: {exc}")]
+    """Verify that all distributed skill copies match the canonical body.
 
-    canonical_path = repo / CANONICAL_REL
-    if not canonical_path.is_file():
+    Body parity is owned by the Skill Body Parity module, which only reads
+    files (no target-repo code is executed), so this runs regardless of
+    ``run_scripts`` — that flag still gates checks that load repo scripts.
+    """
+    result = _parity.check_skill_body_parity(repo)
+    if result.missing_canonical:
         return [
             Finding(
                 "error",
@@ -88,21 +78,12 @@ def _check_skill_body_parity(repo: Path, run_scripts: bool = False) -> list[Find
                 f"canonical skill missing: {CANONICAL_REL}",
             )
         ]
-    canonical_body = strip_frontmatter(canonical_path.read_text(encoding="utf-8"))
 
     findings: list[Finding] = []
-    for rel in SKILL_COPIES_REL:
-        p = repo / rel
-        if not p.is_file():
-            findings.append(
-                Finding("error", "skill-body-parity", f"copy missing: {rel}")
-            )
-            continue
-        body = strip_frontmatter(p.read_text(encoding="utf-8"))
-        if body != canonical_body:
-            findings.append(
-                Finding("error", "skill-body-parity", f"body drift in {rel}")
-            )
+    for rel in result.missing_copies:
+        findings.append(Finding("error", "skill-body-parity", f"copy missing: {rel}"))
+    for rel in result.drifted_copies:
+        findings.append(Finding("error", "skill-body-parity", f"body drift in {rel}"))
     if not findings:
         findings.append(
             Finding(
