@@ -5,6 +5,19 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.6] — 2026-06-01
+
+### Added
+
+- npm package metadata: SPDX-style license declaration, `author` field, and a `SECURITY.md` policy. (`package.json`, `SECURITY.md`)
+
+### Changed
+
+- Installer refactored so the **Install Plan** is the unit of work. (`bin/install.js`)
+- Skill-parity refactored: the canonical↔copies body rule now lives in one module.
+- Prompt-session bundle outcome now owned behind `resolve()`.
+- Purged iCloud sync-conflict files and added a guard to block future ones.
+
 ## [0.4.5] — 2026-05-29
 
 ### Added
