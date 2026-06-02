@@ -151,7 +151,7 @@ const PROVIDERS = [
 
 const IS_WIN = process.platform === 'win32';
 
-function shellEscape(s) { return `'${String(s).replace(/'/g, `'\\''`)}`; }
+function shellEscape(s) { return `'${String(s).replace(/'/g, "'\\''")}'`; }
 
 function expandHome(p) {
   return String(p).replace(/^\$HOME(?=\/|$)/, os.homedir()).replace(/^~(?=\/|$)/, os.homedir());
@@ -317,6 +317,31 @@ async function promptGlobalOrLocal(c) {
   });
 }
 
+// ── Agent selection prompt ────────────────────────────────────────────────
+
+// Returns the subset of `detected` the user wants to install.
+// Skipped when: no TTY, ≤1 agent, or --only/--non-interactive already constrains the set.
+async function promptAgentSelection(detected, c) {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.on('SIGINT', () => { rl.close(); resolve([]); });
+
+    process.stdout.write('\nDetected agents:\n');
+    detected.forEach((p, i) => {
+      process.stdout.write(`  [${i + 1}] ${c.bold(p.label)}\n`);
+    });
+    process.stdout.write('\n');
+    rl.question(`Install which? (${c.dim('all')} / space-separated numbers / none, default: all): `, (answer) => {
+      rl.close();
+      const a = (answer || '').trim().toLowerCase();
+      if (!a || a === 'all') { resolve(detected); return; }
+      if (a === 'none' || a === '0') { resolve([]); return; }
+      const indices = a.split(/\s+/).map(n => parseInt(n, 10) - 1).filter(i => i >= 0 && i < detected.length);
+      resolve([...new Set(indices)].map(i => detected[i]));
+    });
+  });
+}
+
 // ── Local install helpers ─────────────────────────────────────────────────
 
 // GET a raw text resource over HTTPS, following redirects up to MAX_REDIRECTS.
@@ -348,9 +373,13 @@ function fetchRawText(url) {
 }
 
 async function fetchSkill(slug, repoRoot) {
-  if (repoRoot) {
-    const p = path.join(repoRoot, 'skills', slug, 'SKILL.md');
-    try { return fs.readFileSync(p, 'utf8'); } catch (_) { return null; }
+  // Try local sources first: explicit repoRoot, then the package bundled alongside this script.
+  const localRoots = [];
+  if (repoRoot) localRoots.push(repoRoot);
+  localRoots.push(path.resolve(__dirname, '..'));
+  for (const root of localRoots) {
+    const p = path.join(root, 'skills', slug, 'SKILL.md');
+    try { return fs.readFileSync(p, 'utf8'); } catch (_) { /* try next */ }
   }
   return fetchRawText(`${RAW_BASE}/skills/${slug}/SKILL.md`);
 }
@@ -475,12 +504,17 @@ function installGemini(opts, results, c) {
   else results.failed.push({ id: 'gemini', why: 'gemini extensions install failed' });
 }
 
-function installViaSkills(prov, opts, results, c) {
+// Exported for tests — pure, no side-effects.
+function buildSkillsAddArgs(profile, installMode) {
+  const args = ['-y', 'skills', 'add', REPO, '--agent', profile, '--skill', '*', '--yes'];
+  if (installMode === 'global') args.push('-g');
+  return args;
+}
+
+function installViaSkills(prov, opts, results, c, installMode) {
   results.detected++;
   process.stdout.write(`\n${c.bold(`→ ${prov.label}`)}\n`);
-  // --yes --all: skip the upstream skill-selection TUI. Without these, curl|bash
-  // (no TTY on stdin) renders an empty checkbox list and exits 0 with nothing installed.
-  const args = ['-y', 'skills', 'add', REPO, '-a', prov.profile, '--yes', '--all'];
+  const args = buildSkillsAddArgs(prov.profile, installMode);
   const r = runSpawn('npx', args, opts.dryRun, c);
   if ((r.status || 0) === 0) results.installed.push(prov.id);
   else results.failed.push({ id: prov.id, why: `npx skills add (${prov.profile}) failed` });
@@ -498,9 +532,11 @@ Usage:
 Install location:
   --global           Install to global agent dirs, available in all projects (default)
   --local            Install to .claude/skills/ and .agents/skills/ in the current directory
-  --non-interactive  Skip prompt and default to global (useful in CI / curl|bash)
+  --non-interactive  Skip all prompts: default to global, install all detected agents (CI / curl|bash)
 
-If none of the above are given and stdin+stdout are TTYs, an interactive prompt appears.
+If none of the above are given and stdin+stdout are TTYs, two prompts appear:
+  1. global vs local install location
+  2. which detected agents to install to (when more than one is found)
 
 Other flags:
   --all              Install to every detected agent (default mode)
@@ -617,24 +653,31 @@ async function main() {
     return;
   }
 
-  // Global install: existing agent-detection logic.
-  process.stdout.write(c.bold('codeforerunner') + c.dim(' — installing skills into detected agents\n'));
+  // Global install: detect, prompt for selection, then install.
+  // Collect every provider that passes the hard filters.
+  let candidates = [];
+  for (const prov of PROVIDERS) {
+    if (prov.soft && !opts.only.includes(prov.id)) continue;
+    if (opts.only.length && !opts.only.includes(prov.id)) continue;
+    if (!detectMatch(prov.detect)) continue;
+    if (opts.skipSkills && prov.profile) continue;
+    candidates.push(prov);
+  }
+
+  // Interactive agent selection when TTY and no explicit --only / --non-interactive.
+  let selected = candidates;
+  if (candidates.length > 1 && !opts.only.length && !opts.nonInteractive &&
+      process.stdin.isTTY && process.stdout.isTTY) {
+    selected = await promptAgentSelection(candidates, c);
+  }
+
+  process.stdout.write(c.bold('\ncodeforerunner') + c.dim(' — installing skills into detected agents\n'));
   if (opts.dryRun) process.stdout.write(c.yellow('  (dry-run — no files written)\n'));
 
-  for (const prov of PROVIDERS) {
-    // soft providers only install when explicitly requested via --only
-    if (prov.soft && !opts.only.includes(prov.id)) continue;
-    // --only filter
-    if (opts.only.length && !opts.only.includes(prov.id)) continue;
-
-    const detected = detectMatch(prov.detect);
-    if (!detected) continue;
-
-    if (opts.skipSkills && prov.profile) continue;
-
-    if (prov.id === 'claude')  { installClaude(opts, results, c);          continue; }
-    if (prov.id === 'gemini')  { installGemini(opts, results, c);          continue; }
-    if (prov.profile)          { installViaSkills(prov, opts, results, c); continue; }
+  for (const prov of selected) {
+    if (prov.id === 'claude')  { installClaude(opts, results, c);                      continue; }
+    if (prov.id === 'gemini')  { installGemini(opts, results, c);                      continue; }
+    if (prov.profile)          { installViaSkills(prov, opts, results, c, installMode); continue; }
   }
 
   printSummary(results, c, installMode);
@@ -646,4 +689,4 @@ if (require.main === module) {
 }
 
 // Exported for tests (tests/install.test.js, tests/test_installer.py) — kept minimal.
-module.exports = { loadTaskSkillSlugs, slugsFromTasksJson, fetchRawText };
+module.exports = { loadTaskSkillSlugs, slugsFromTasksJson, fetchRawText, shellEscape, buildSkillsAddArgs };
