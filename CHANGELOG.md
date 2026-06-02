@@ -5,6 +5,20 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.7] — 2026-06-02
+
+### Fixed
+
+- **Agent detection silent failures** — `shellEscape` was missing its closing single quote, causing all `command:`-based detections (`claude`, `gemini`, `opencode`, `codex`, etc.) to produce a shell syntax error and return `not found`. Only agents with a `macapp:` fallback (e.g. Cursor) were detected. (`bin/install.js`)
+- **Global install installing locally** — `installViaSkills` never passed `-g` to `npx skills add`, so the global/local choice had no effect for non-Claude/Gemini agents; both modes installed to the current directory. (`bin/install.js`)
+- **Agent profile filter overridden by `--all`** — `npx skills add --all` expands to `--agent '*'`, silently overriding the per-provider `-a <profile>` argument. Replaced with explicit `--agent <profile> --skill '*'`. (`bin/install.js`)
+- **Bundled skills ignored on `npx` installs** — `fetchSkill` fell back to HTTPS even though `skills/` ships in the npm package, because `detectRepoRoot` requires `plugins/` which is not in the published files. Now checks `__dirname/../skills/` before the network. (`bin/install.js`)
+
+### Added
+
+- **Interactive agent selection** — when multiple agents are detected and stdin/stdout are TTYs, the installer prompts users to choose which agents to install to (numbered list, space-separated input, default: all). Skipped when `--only`, `--non-interactive`, or only one agent is detected. (`bin/install.js`)
+- 12 new installer tests: `shellEscape` correctness and shell round-trip, `buildSkillsAddArgs` unit tests for global `-g` flag and agent profile preservation, local install path targeting, `--only` validation, `--non-interactive` non-blocking. (`tests/install.test.js`)
+
 ## [0.4.6] — 2026-06-01
 
 ### Added
