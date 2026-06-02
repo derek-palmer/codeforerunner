@@ -504,14 +504,17 @@ function installGemini(opts, results, c) {
   else results.failed.push({ id: 'gemini', why: 'gemini extensions install failed' });
 }
 
+// Exported for tests — pure, no side-effects.
+function buildSkillsAddArgs(profile, installMode) {
+  const args = ['-y', 'skills', 'add', REPO, '--agent', profile, '--skill', '*', '--yes'];
+  if (installMode === 'global') args.push('-g');
+  return args;
+}
+
 function installViaSkills(prov, opts, results, c, installMode) {
   results.detected++;
   process.stdout.write(`\n${c.bold(`→ ${prov.label}`)}\n`);
-  // --skill '*' --yes: select all skills without the TUI. Use explicit --agent instead of
-  // --all so the profile filter is respected (--all overrides -a with '*').
-  // -g: install globally (user-level) rather than project-level when global mode chosen.
-  const args = ['-y', 'skills', 'add', REPO, '--agent', prov.profile, '--skill', '*', '--yes'];
-  if (installMode === 'global') args.push('-g');
+  const args = buildSkillsAddArgs(prov.profile, installMode);
   const r = runSpawn('npx', args, opts.dryRun, c);
   if ((r.status || 0) === 0) results.installed.push(prov.id);
   else results.failed.push({ id: prov.id, why: `npx skills add (${prov.profile}) failed` });
@@ -686,4 +689,4 @@ if (require.main === module) {
 }
 
 // Exported for tests (tests/install.test.js, tests/test_installer.py) — kept minimal.
-module.exports = { loadTaskSkillSlugs, slugsFromTasksJson, fetchRawText, shellEscape };
+module.exports = { loadTaskSkillSlugs, slugsFromTasksJson, fetchRawText, shellEscape, buildSkillsAddArgs };

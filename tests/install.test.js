@@ -20,7 +20,7 @@ const INSTALL_JS = path.join(REPO_ROOT, 'bin', 'install.js');
 
 const https = require('node:https');
 
-const { slugsFromTasksJson, loadTaskSkillSlugs, fetchRawText, shellEscape } = require(INSTALL_JS);
+const { slugsFromTasksJson, loadTaskSkillSlugs, fetchRawText, shellEscape, buildSkillsAddArgs } = require(INSTALL_JS);
 
 // Swap https.get for a fake; returns a restore fn. install.js holds the same
 // cached https module object, so mutating .get here is visible to fetchRawText.
@@ -187,28 +187,33 @@ test('shellEscape output allows command -v to find an existing binary', () => {
   assert.equal(r.status, 0, 'command -v sh should exit 0 with correct shellEscape');
 });
 
-// ── CLI dry-run: global install ────────────────────────────────────────────
+// ── buildSkillsAddArgs ─────────────────────────────────────────────────────
+// Pure unit tests — no agent detection, no file system, no CLI invocation.
 
-test('global dry-run passes --agent <profile> --skill * to npx skills add (not --all)', () => {
-  // Run with --only cursor since Cursor is always detected (macapp:Cursor on this machine).
-  const r = spawnSync(
-    process.execPath,
-    [INSTALL_JS, '--dry-run', '--global', '--non-interactive', '--no-color', '--only', 'cursor'],
-    { encoding: 'utf8' },
-  );
-  const out = (r.stdout || '') + (r.stderr || '');
-  assert.match(out, /--agent cursor/, 'expected --agent cursor in dry-run output');
-  assert.match(out, /--skill \*/, 'expected --skill * in dry-run output');
-  assert.doesNotMatch(out, /--all/, '--all should not appear (overrides agent filter)');
+test('buildSkillsAddArgs global: includes --agent <profile>, --skill *, and -g', () => {
+  const args = buildSkillsAddArgs('cursor', 'global');
+  assert.ok(args.includes('--agent'), 'expected --agent flag');
+  assert.equal(args[args.indexOf('--agent') + 1], 'cursor', 'expected cursor as agent value');
+  assert.ok(args.includes('--skill'), 'expected --skill flag');
+  assert.equal(args[args.indexOf('--skill') + 1], '*', 'expected * as skill value');
+  assert.ok(args.includes('-g'), 'expected -g for global install');
+  assert.ok(!args.includes('--all'), '--all must not appear (overrides agent filter)');
 });
 
-test('global dry-run includes -g flag for npx skills add', () => {
-  const r = spawnSync(
-    process.execPath,
-    [INSTALL_JS, '--dry-run', '--global', '--non-interactive', '--no-color', '--only', 'cursor'],
-    { encoding: 'utf8' },
-  );
-  assert.match((r.stdout || ''), / -g(\s|$)/, 'expected -g flag in global dry-run for skills add');
+test('buildSkillsAddArgs local: includes --agent <profile> and --skill * but no -g', () => {
+  const args = buildSkillsAddArgs('cursor', 'local');
+  assert.ok(args.includes('--agent'), 'expected --agent flag');
+  assert.equal(args[args.indexOf('--agent') + 1], 'cursor');
+  assert.ok(args.includes('--skill'), 'expected --skill flag');
+  assert.equal(args[args.indexOf('--skill') + 1], '*');
+  assert.ok(!args.includes('-g'), '-g must not appear for local install');
+});
+
+test('buildSkillsAddArgs: profile is preserved per provider (not overridden to *)', () => {
+  for (const profile of ['opencode', 'codex', 'roo', 'amp']) {
+    const args = buildSkillsAddArgs(profile, 'global');
+    assert.equal(args[args.indexOf('--agent') + 1], profile, `expected profile ${profile} in args`);
+  }
 });
 
 test('local dry-run does NOT pass -g to npx skills add', () => {
