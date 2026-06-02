@@ -64,10 +64,11 @@ Slash command availability depends on the agent CLI. Claude Code, Codex, and Gem
 
 | Flag | Effect |
 |------|--------|
-| `./install.sh` | Auto-detect all agents, prompt global vs local, install all skills |
-| `./install.sh --global` | Skip prompt, install to global agent dirs (all projects) |
-| `./install.sh --local` | Skip prompt, install to `.claude/skills/` and `.agents/skills/` in cwd |
-| `./install.sh --only claude` | Claude Code only |
+| `./install.sh` | Auto-detect agents, prompt for global vs local, prompt which agents to install |
+| `./install.sh --global` | Skip location prompt, install to global agent dirs (all projects) |
+| `./install.sh --local` | Skip location prompt, install to `.claude/skills/` and `.agents/skills/` in cwd |
+| `./install.sh --non-interactive` | Skip all prompts, install globally to all detected agents (useful in CI / curl\|bash) |
+| `./install.sh --only claude` | Claude Code only (skips agent selection prompt) |
 | `./install.sh --only codex` | Codex only |
 | `./install.sh --only gemini` | Gemini CLI only |
 | `./install.sh --dry-run` | Preview, write nothing |

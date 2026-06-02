@@ -20,7 +20,7 @@ const INSTALL_JS = path.join(REPO_ROOT, 'bin', 'install.js');
 
 const https = require('node:https');
 
-const { slugsFromTasksJson, loadTaskSkillSlugs, fetchRawText } = require(INSTALL_JS);
+const { slugsFromTasksJson, loadTaskSkillSlugs, fetchRawText, shellEscape } = require(INSTALL_JS);
 
 // Swap https.get for a fake; returns a restore fn. install.js holds the same
 // cached https module object, so mutating .get here is visible to fetchRawText.
@@ -157,6 +157,135 @@ test('loadTaskSkillSlugs reads the real tasks.json from a local checkout', async
   assert.equal(slugs[0], 'codeforerunner');
   assert.ok(slugs.includes('forerunner-scan'));
 });
+
+// ── shellEscape ────────────────────────────────────────────────────────────
+
+test('shellEscape wraps plain string in single quotes', () => {
+  assert.equal(shellEscape('claude'), "'claude'");
+});
+
+test('shellEscape escapes embedded single quotes', () => {
+  // "it's" → 'it'"'"'s'   (end quote, escaped quote, re-open quote)
+  assert.equal(shellEscape("it's"), "'it'\\''s'");
+});
+
+test('shellEscape output is syntactically valid shell (sh -c)', () => {
+  const { spawnSync: spawn } = require('node:child_process');
+  for (const input of ['hello', "with spaces", "single'quote", "double\"quote", "semi;colon"]) {
+    const quoted = shellEscape(input);
+    // printf '%s' <quoted> prints the value without a newline; compare to input.
+    const r = spawn('sh', ['-c', `printf '%s' ${quoted}`], { encoding: 'utf8' });
+    assert.equal(r.status, 0, `sh syntax error for input: ${JSON.stringify(input)}`);
+    assert.equal(r.stdout, input, `round-trip failed for: ${JSON.stringify(input)}`);
+  }
+});
+
+test('shellEscape output allows command -v to find an existing binary', () => {
+  const { spawnSync: spawn } = require('node:child_process');
+  // 'sh' is always present; use it as a known-good detection target.
+  const r = spawn('sh', ['-c', `command -v ${shellEscape('sh')}`], { stdio: 'ignore' });
+  assert.equal(r.status, 0, 'command -v sh should exit 0 with correct shellEscape');
+});
+
+// ── CLI dry-run: global install ────────────────────────────────────────────
+
+test('global dry-run passes --agent <profile> --skill * to npx skills add (not --all)', () => {
+  // Run with --only cursor since Cursor is always detected (macapp:Cursor on this machine).
+  const r = spawnSync(
+    process.execPath,
+    [INSTALL_JS, '--dry-run', '--global', '--non-interactive', '--no-color', '--only', 'cursor'],
+    { encoding: 'utf8' },
+  );
+  const out = (r.stdout || '') + (r.stderr || '');
+  assert.match(out, /--agent cursor/, 'expected --agent cursor in dry-run output');
+  assert.match(out, /--skill \*/, 'expected --skill * in dry-run output');
+  assert.doesNotMatch(out, /--all/, '--all should not appear (overrides agent filter)');
+});
+
+test('global dry-run includes -g flag for npx skills add', () => {
+  const r = spawnSync(
+    process.execPath,
+    [INSTALL_JS, '--dry-run', '--global', '--non-interactive', '--no-color', '--only', 'cursor'],
+    { encoding: 'utf8' },
+  );
+  assert.match((r.stdout || ''), / -g(\s|$)/, 'expected -g flag in global dry-run for skills add');
+});
+
+test('local dry-run does NOT pass -g to npx skills add', () => {
+  // Local mode calls writeSkillsLocal (direct file writes), not installViaSkills.
+  // So -g must never appear in local dry-run output.
+  const r = spawnSync(
+    process.execPath,
+    [INSTALL_JS, '--dry-run', '--local', '--non-interactive', '--no-color'],
+    { encoding: 'utf8', cwd: os.tmpdir() },
+  );
+  assert.doesNotMatch((r.stdout || ''), / -g(\s|$)/, '-g must not appear in local dry-run');
+});
+
+// ── CLI dry-run: local install paths ──────────────────────────────────────
+
+test('local dry-run writes to cwd not home dir', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cfr-test-'));
+  try {
+    const r = spawnSync(
+      process.execPath,
+      [INSTALL_JS, '--dry-run', '--local', '--non-interactive', '--no-color'],
+      { encoding: 'utf8', cwd: tmpDir },
+    );
+    const out = r.stdout || '';
+    assert.ok(out.includes(tmpDir), `expected cwd (${tmpDir}) in local dry-run output`);
+    assert.ok(!out.includes(os.homedir() + path.sep + '.claude'), 'local install must not target home .claude');
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('local dry-run targets .claude/skills/ and .agents/skills/', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cfr-test-'));
+  try {
+    const r = spawnSync(
+      process.execPath,
+      [INSTALL_JS, '--dry-run', '--local', '--non-interactive', '--no-color'],
+      { encoding: 'utf8', cwd: tmpDir },
+    );
+    const out = r.stdout || '';
+    assert.match(out, /\.claude[/\\]skills/, 'expected .claude/skills path in local dry-run');
+    assert.match(out, /\.agents[/\\]skills/, 'expected .agents/skills path in local dry-run');
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+// ── CLI: --only filter ─────────────────────────────────────────────────────
+
+test('--only with unknown agent id exits non-zero with error', () => {
+  const r = spawnSync(
+    process.execPath,
+    [INSTALL_JS, '--only', 'does-not-exist', '--no-color'],
+    { encoding: 'utf8' },
+  );
+  assert.notEqual(r.status, 0);
+  assert.match((r.stderr || ''), /unknown agent/);
+});
+
+// ── CLI: non-interactive defaults ─────────────────────────────────────────
+
+test('--non-interactive with --local does not prompt and exits cleanly', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cfr-test-'));
+  try {
+    const r = spawnSync(
+      process.execPath,
+      [INSTALL_JS, '--dry-run', '--local', '--non-interactive', '--no-color'],
+      { encoding: 'utf8', cwd: tmpDir },
+    );
+    assert.equal(r.status, 0);
+    assert.match(r.stdout || '', /local install/);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+// ── local install exits non-zero with a clear error when the registry is unreadable ──
 
 test('local install exits non-zero with a clear error when the registry is unreadable', () => {
   // Preload stub: poison every tasks.json read path (local file + HTTPS) so
