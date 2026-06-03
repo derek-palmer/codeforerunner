@@ -5,6 +5,12 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.8] — 2026-06-02
+
+### Added
+
+- **`forerunner-gaps` skill** — surfaces STALE/MISSING documentation findings from `.forerunner/check-report.md` and unresolved `gaps:` fields from `.forerunner/scan.yaml`. For doc gaps, routes to `/forerunner-refresh` or specific task skills. For scan gaps, offers quick Q&A fill (patches `scan.yaml` inline) or a full `grill-with-docs` session; falls back to Q&A if `grill-with-docs` is not installed. Registered in the Task Registry (`scan_exempt: true`) and installable via the skill installer. (`skills/forerunner-gaps/SKILL.md`, `src/codeforerunner/prompts/tasks/gaps.md`, `src/codeforerunner/tasks.json`)
+
 ## [0.4.7] — 2026-06-02
 
 ### Fixed
