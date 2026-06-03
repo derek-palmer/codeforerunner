@@ -33,7 +33,7 @@ def test_get_unknown_raises():
 
 
 def test_scan_exempt_names():
-    assert tasks.scan_exempt_names() == {"scan", "init-agent-onboarding"}
+    assert tasks.scan_exempt_names() == {"scan", "init-agent-onboarding", "gaps"}
 
 
 def test_refresh_tasks_ordered():
@@ -73,6 +73,36 @@ def test_cli_rejects_unregistered_task(tmp_path, capsys):
     rc = main(["--repo", str(tmp_path), "doc", "not-a-real-task"])
     assert rc != 0
     assert "unknown task" in capsys.readouterr().err
+
+
+def test_gaps_task_registered():
+    t = tasks.get("gaps")
+    assert t.scan_exempt is True
+    assert t.skill_slug == "forerunner-gaps"
+
+
+def test_gaps_excluded_from_refresh_sequence():
+    names = [t.name for t in tasks.refresh_tasks()]
+    assert "gaps" not in names
+
+
+def test_gaps_installable_slug_present():
+    assert "forerunner-gaps" in tasks.installable_slugs()
+
+
+def test_gaps_skill_files_exist():
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    assert (root / "skills" / "forerunner-gaps" / "SKILL.md").is_file()
+    assert (root / "plugins" / "codeforerunner" / "skills" / "forerunner-gaps" / "SKILL.md").is_file()
+
+
+def test_gaps_skill_copies_in_sync():
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    installed = (root / "skills" / "forerunner-gaps" / "SKILL.md").read_text(encoding="utf-8")
+    plugin = (root / "plugins" / "codeforerunner" / "skills" / "forerunner-gaps" / "SKILL.md").read_text(encoding="utf-8")
+    assert installed == plugin
 
 
 def test_mcp_tools_list_matches_registry():
