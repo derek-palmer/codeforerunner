@@ -25,6 +25,7 @@
     {"name": "refresh",               "scan_exempt": false, "skill_slug": "forerunner-refresh"},
     {"name": "review",                "scan_exempt": false, "skill_slug": "forerunner-review"},
     {"name": "stack-docs",            "scan_exempt": false, "skill_slug": "forerunner-stack-docs"},
-    {"name": "version-audit",         "scan_exempt": false, "skill_slug": "forerunner-version-audit"}
+    {"name": "version-audit",         "scan_exempt": false, "skill_slug": "forerunner-version-audit"},
+    {"name": "gaps",                   "scan_exempt": true,  "skill_slug": "forerunner-gaps"}
   ]
 }

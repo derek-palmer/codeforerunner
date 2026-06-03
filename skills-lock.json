@@ -84,6 +84,12 @@
       "sourceType": "local",
       "skillPath": "skills/forerunner-version-audit/SKILL.md",
       "computedHash": "17d9367e2e3608b9a9fde05730a4199cb1674a1e4529aaf53364c02b76e5149a"
+    },
+    "forerunner-gaps": {
+      "source": "plugins/codeforerunner/skills/forerunner-gaps/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "skills/forerunner-gaps/SKILL.md",
+      "computedHash": "0c314bfa709227b23dc5405418da561d83b3382be5914cab6d502814a08dd860"
     }
   }
 }
