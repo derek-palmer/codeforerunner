@@ -40,6 +40,10 @@ _Avoid_: npm pack script, file list check
 The approval step in an interactive refresh where the agent presents the staleness check report and the user selects which STALE or MISSING docs to regenerate. UNVERIFIABLE docs are reported but never offered. The Refresh Gate is absent from batch refresh and skipped when `auto` is passed.
 _Avoid_: Confirmation prompt, review step, interactive mode
 
+**Docs Index**:
+The README section (`## Documentation`) listing every user-facing doc in `docs/` with a one-line description. The readme task is its sole writer; the check task flags README STALE when a doc is unlinked or an index link is dead. Internal `.forerunner/` artifacts are never indexed.
+_Avoid_: Table of contents, docs section, doc links
+
 **Agent Onboarding**:
 A task that creates or refreshes the instructions and domain vocabulary a coding agent needs before working in a repo. Agent Onboarding may create or update `CONTEXT.md` with conservative glossary terms inferred from stable repo evidence.
 _Avoid_: Init docs, setup docs
@@ -57,6 +61,10 @@ Domain expert: "That means perform Agent Onboarding: update agent instructions a
 Dev: "Add a new prompt task."
 
 Domain expert: "Register it in the Task Registry so wrappers, skills, docs, and refresh policy read the same task identity."
+
+Dev: "The README doesn't link the docs refresh just generated."
+
+Domain expert: "That is a stale Docs Index: check should mark README STALE, and the readme task — running last in refresh — rebuilds the index from what exists in `docs/`."
 
 Dev: "Make refresh ask before it rewrites docs."
 
