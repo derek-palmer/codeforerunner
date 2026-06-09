@@ -5,6 +5,12 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.9] — 2026-06-09
+
+### Added
+
+- **Refresh Gate** — the `/forerunner-refresh` skill form now presents the staleness check report and asks once (multi-select, all options pre-selected) which `STALE`/`MISSING` docs to regenerate, instead of rewriting everything unprompted. `UNVERIFIABLE` docs are reported but never offered. Pass `auto` (or run in a harness that can't ask) to skip the gate and update the full stale set. The batch prompt form stays non-interactive for CI/AFK use. Summary output gains a "declined" category. Glossary term added to `CONTEXT.md`. (#102, `skills/forerunner-refresh/SKILL.md`, `src/codeforerunner/prompts/tasks/refresh.md`)
+
 ## [0.4.8] — 2026-06-02
 
 ### Added
