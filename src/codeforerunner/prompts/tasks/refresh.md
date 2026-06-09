@@ -2,7 +2,7 @@
 
 Runs a full documentation refresh cycle: scan, check staleness, then generate or update every stale or missing doc in one pass.
 
-This prompt is the batch form (all bundles concatenated). When running via the `/forerunner-refresh` skill, the agent calls `forerunner doc <task>` for each step individually so it can process each result before moving to the next.
+This prompt is the batch form (all bundles concatenated). When running via the `/forerunner-refresh` skill, the agent calls `forerunner doc <task>` for each step individually so it can process each result before moving to the next, and applies the Refresh Gate — asking the user which stale or missing docs to regenerate — between check and generate. The batch form has no gate.
 
 ## Steps (execute in order)
 
