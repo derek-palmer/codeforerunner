@@ -4,14 +4,14 @@
     "id": "codeforerunner",
     "name": "codeforerunner",
     "description": "Model-agnostic repo documentation prompts as an installable Codex plugin.",
-    "version": "0.4.9",
+    "version": "0.4.10",
     "homepage": "https://github.com/derek-palmer/codeforerunner"
   },
   "plugins": [
     {
       "id": "codeforerunner",
       "name": "codeforerunner",
-      "version": "0.4.9",
+      "version": "0.4.10",
       "description": "Prompt-first repository documentation skill.",
       "source": {
         "kind": "git",

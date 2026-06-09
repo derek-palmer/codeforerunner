@@ -5,6 +5,12 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.10] — 2026-06-09
+
+### Added
+
+- **Docs Index** — glossary term in `CONTEXT.md` defining the `## Documentation` README section that links every user-facing doc in `docs/` with one-line descriptions. The readme task is its sole writer; the check task flags README STALE on unlinked docs or dead index links; `.forerunner/` artifacts are never indexed. Groundwork for the README docs-index feature (#105). (#106, `CONTEXT.md`)
+
 ## [0.4.9] — 2026-06-09
 
 ### Added
