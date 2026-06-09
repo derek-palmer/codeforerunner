@@ -36,6 +36,10 @@ _Avoid_: Release checklist, publish config
 A release validation module that checks the packed npm artifact before publish, including required files, executable entrypoints, skill payloads, lock metadata, and shim pins. It treats the package artifact as the test surface.
 _Avoid_: npm pack script, file list check
 
+**Refresh Gate**:
+The approval step in an interactive refresh where the agent presents the staleness check report and the user selects which STALE or MISSING docs to regenerate. UNVERIFIABLE docs are reported but never offered. The Refresh Gate is absent from batch refresh and skipped when `auto` is passed.
+_Avoid_: Confirmation prompt, review step, interactive mode
+
 **Agent Onboarding**:
 A task that creates or refreshes the instructions and domain vocabulary a coding agent needs before working in a repo. Agent Onboarding may create or update `CONTEXT.md` with conservative glossary terms inferred from stable repo evidence.
 _Avoid_: Init docs, setup docs
@@ -53,6 +57,10 @@ Domain expert: "That means perform Agent Onboarding: update agent instructions a
 Dev: "Add a new prompt task."
 
 Domain expert: "Register it in the Task Registry so wrappers, skills, docs, and refresh policy read the same task identity."
+
+Dev: "Make refresh ask before it rewrites docs."
+
+Domain expert: "That is the Refresh Gate: after the staleness check, offer the STALE and MISSING docs for selection; batch refresh and `auto` runs bypass it."
 
 Dev: "Why does scan-first logic exist in both CLI and MCP?"
 
