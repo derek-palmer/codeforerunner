@@ -5,6 +5,12 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **GitHub Action always failed on argument parsing** — `action.yml` invoked `forerunner check --repo <path>`, but `--repo` is a top-level flag, so argparse exited 2 before any drift check ran. With `fail-on-drift: "true"` the job failed 100% of the time and reported it as documentation drift; with `"false"` the trailing `|| true` swallowed exit 2 and the job went green having checked nothing. Both branches now invoke `forerunner --repo <path> check`. Regression test parses the action's argv with the real CLI parser, so an argparse failure (exit 2) is distinguishable from drift (exit 1). (#108, `action.yml`, `tests/test_action_yml.py`)
+
 ## [0.4.10] — 2026-06-09
 
 ### Added

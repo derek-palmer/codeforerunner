@@ -44,7 +44,7 @@ runs:
       shell: bash
       run: |
         if [ "${{ inputs.fail-on-drift }}" = "true" ]; then
-          forerunner check --repo "${{ inputs.repo }}"
+          forerunner --repo "${{ inputs.repo }}" check
         else
-          forerunner check --repo "${{ inputs.repo }}" || true
+          forerunner --repo "${{ inputs.repo }}" check || true
         fi
