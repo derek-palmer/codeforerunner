@@ -4,7 +4,7 @@ requires-python = ">=3.11"
 
 [[package]]
 name = "codeforerunner"
-version = "0.4.10"
+version = "0.4.11"
 source = { editable = "." }
 dependencies = [
     { name = "pyyaml" },

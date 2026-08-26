@@ -13,9 +13,9 @@ param([Parameter(ValueFromRemainingArguments=$true)][string[]]$Args)
 $ErrorActionPreference = "Stop"
 
 # Security: pinned to a specific version so one-liners don't execute unreviewed code.
-$NpmPkg  = "codeforerunner@0.4.10"
+$NpmPkg  = "codeforerunner@0.4.11"
 $Repo    = "derek-palmer/codeforerunner"
-$RepoTag = "v0.4.10"
+$RepoTag = "v0.4.11"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $LocalJs = Join-Path $ScriptDir "bin\install.js"
 
