@@ -43,8 +43,13 @@ runs:
     - name: Run forerunner check
       shell: bash
       run: |
-        if [ "${{ inputs.fail-on-drift }}" = "true" ]; then
-          forerunner --repo "${{ inputs.repo }}" check
-        else
-          forerunner --repo "${{ inputs.repo }}" check || true
+        # `--repo` must precede the subcommand: it is a top-level flag (#108).
+        rc=0
+        forerunner --repo "${{ inputs.repo }}" check || rc=$?
+        # Exit 1 means drift was found; anything else means the check failed to
+        # run (e.g. 2 = bad args or invalid config) and must never be swallowed.
+        if [ "$rc" -eq 1 ] && [ "${{ inputs.fail-on-drift }}" != "true" ]; then
+          echo "::warning::documentation drift detected (fail-on-drift=false)"
+          rc=0
         fi
+        exit "$rc"

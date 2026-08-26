@@ -165,7 +165,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--version", action="version", version=f"forerunner {_version}")
     sub = p.add_subparsers(dest="cmd", required=True, metavar="<cmd>")
 
-    s_init = sub.add_parser("init", help="resolve init-agent-onboarding prompt bundle to stdout")
+    # Every subcommand also accepts `--repo` so `forerunner <cmd> --repo X` and
+    # `forerunner --repo X <cmd>` are interchangeable (#108). SUPPRESS keeps the
+    # top-level value when the flag is only given before the subcommand.
+    repo_parent = argparse.ArgumentParser(add_help=False)
+    repo_parent.add_argument("--repo", default=argparse.SUPPRESS, help="path to repo root")
+
+    s_init = sub.add_parser("init", parents=[repo_parent], help="resolve init-agent-onboarding prompt bundle to stdout")
     init_scope = s_init.add_mutually_exclusive_group()
     init_scope.add_argument(
         "--full",
@@ -179,14 +185,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     s_init.set_defaults(func=cmd_init)
 
-    s_scan = sub.add_parser("scan", help="resolve scan prompt bundle to stdout")
+    s_scan = sub.add_parser("scan", parents=[repo_parent], help="resolve scan prompt bundle to stdout")
     s_scan.set_defaults(func=cmd_scan)
 
-    s_doc = sub.add_parser("doc", help="resolve prompt bundle for <task> to stdout")
+    s_doc = sub.add_parser("doc", parents=[repo_parent], help="resolve prompt bundle for <task> to stdout")
     s_doc.add_argument("task", help="task name (basename without .md) under prompts/tasks/")
     s_doc.set_defaults(func=cmd_doc)
 
-    s_check = sub.add_parser("check", help="run drift-detection rules against tracked docs")
+    s_check = sub.add_parser("check", parents=[repo_parent], help="run drift-detection rules against tracked docs")
     s_check.set_defaults(func=cmd_check)
 
     s_mcp = sub.add_parser("mcp-server", help="serve prompt bundles as MCP tools over stdio")
@@ -197,7 +203,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     s_mcp.set_defaults(func=cmd_mcp_server)
 
-    s_doctor = sub.add_parser("doctor", help="health report: skill parity + marketplace + installed dests")
+    s_doctor = sub.add_parser("doctor", parents=[repo_parent], help="health report: skill parity + marketplace + installed dests")
     s_doctor.add_argument(
         "--fix",
         action="store_true",
@@ -212,11 +218,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     s_doctor.set_defaults(func=cmd_doctor)
 
-    s_refresh = sub.add_parser("refresh", help="output all doc-refresh bundles in sequence (scan + check + all tasks)")
+    s_refresh = sub.add_parser("refresh", parents=[repo_parent], help="output all doc-refresh bundles in sequence (scan + check + all tasks)")
     s_refresh.set_defaults(func=cmd_refresh)
 
     from codeforerunner import installer
-    installer.add_subparser(sub)
+    installer.add_subparser(sub, parents=[repo_parent])
 
     return p
 
