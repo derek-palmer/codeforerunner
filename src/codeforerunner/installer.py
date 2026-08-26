@@ -8,7 +8,7 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Literal
+from typing import Iterable, Literal, Sequence
 
 from codeforerunner import distribution as _dist
 from codeforerunner import skill_parity as _parity
@@ -369,9 +369,19 @@ def _emit(plan: Plan, *, check_only: bool, out, err) -> int:
     return EXIT_OK
 
 
-def add_subparser(sub: argparse._SubParsersAction) -> None:
-    """Register the `forerunner install` subcommand onto *sub*."""
-    p = sub.add_parser("install", help="install skill(s) into agent-specific directories (D.installer)")
+def add_subparser(
+    sub: argparse._SubParsersAction,
+    parents: Sequence[argparse.ArgumentParser] = (),
+) -> None:
+    """Register the `forerunner install` subcommand onto *sub*.
+
+    *parents* carries shared flags (e.g. `--repo`) from the top-level parser.
+    """
+    p = sub.add_parser(
+        "install",
+        parents=list(parents),
+        help="install skill(s) into agent-specific directories (D.installer)",
+    )
     p.add_argument("agent", choices=["codex", "claude", "generic"], nargs="?",
                    help="target agent (omit with --all to install to all detected agents)")
     p.add_argument("--all", action="store_true",

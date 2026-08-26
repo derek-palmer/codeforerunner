@@ -5,6 +5,17 @@ All notable changes to `codeforerunner` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`--repo` accepted on every subcommand** — `forerunner check --repo <path>` now works, as do the equivalent forms for `init`, `scan`, `doc`, `doctor`, `refresh` and `install`. Previously only `mcp-server` redefined `--repo` as its own flag, and every other subcommand required the top-level position; the asymmetry is what the action's broken invocation grew out of. When given on both sides the subcommand's value wins. (#108, `src/codeforerunner/cli.py`, `src/codeforerunner/installer.py`)
+- **Composite action smoke job** — `ci.yml` runs the local action against `tests/fixtures/drifting-repo`, once ungated (must pass) and once gated (must fail). Neither step can read the CLI's exit code, but the pair pins it: a failure to run (exit 2) fails the ungated step too, so only exit 1 satisfies both. (#108, `.github/workflows/ci.yml`, `tests/fixtures/drifting-repo/`)
+
+### Fixed
+
+- **GitHub Action always failed on argument parsing** — `action.yml` invoked `forerunner check --repo <path>`, but `--repo` is a top-level flag, so argparse exited 2 before any drift check ran. With `fail-on-drift: "true"` the job failed 100% of the time and reported it as documentation drift; with `"false"` the trailing `|| true` swallowed exit 2 and the job went green having checked nothing. The step now invokes `forerunner --repo <path> check` once and branches on its exit code: only exit 1 (drift found) is downgraded to a warning under `fail-on-drift: false`; every other non-zero code still fails the job. (#108, `action.yml`, `tests/test_action_yml.py`)
+
 ## [0.4.10] — 2026-06-09
 
 ### Added

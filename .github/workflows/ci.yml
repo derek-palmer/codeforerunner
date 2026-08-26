@@ -35,3 +35,35 @@ jobs:
       - name: Run tests
         # Node must be on PATH first: the slug-parity test shells out to it.
         run: pytest -q
+
+  # Smoke-tests the composite action's own wiring (#108). The action installs the
+  # released CLI from PyPI, so this exercises action.yml against a real forerunner.
+  # Neither step can read the CLI's exit code, but the pair pins it: a failure to
+  # run (exit 2) fails the ungated step too, so only exit 1 satisfies both.
+  action-smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: Drift is ignored when fail-on-drift is false
+        uses: ./
+        with:
+          repo: tests/fixtures/drifting-repo
+          fail-on-drift: "false"
+
+      - name: Drift fails the job when fail-on-drift is true
+        id: gated
+        continue-on-error: true
+        uses: ./
+        with:
+          repo: tests/fixtures/drifting-repo
+          fail-on-drift: "true"
+
+      - name: Assert the gated run failed
+        run: |
+          if [ "${{ steps.gated.outcome }}" != "failure" ]; then
+            echo "::error::expected the gated action run to fail on the drifting fixture, got '${{ steps.gated.outcome }}'"
+            exit 1
+          fi

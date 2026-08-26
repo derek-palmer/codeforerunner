@@ -1,0 +1,8 @@
+# Fixture repo for the action smoke test: exactly one rule, guaranteed to fire.
+# RI1 is an inverse rule — it fires because README.md documents `forerunner check`
+# while this fixture has no src/codeforerunner/cli.py.
+tasks:
+  check:
+    enabled_rules:
+      - RI1-missing-cli
+    ignore_paths: []

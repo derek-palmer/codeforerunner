@@ -8,7 +8,7 @@ from unittest.mock import patch
 import codeforerunner
 import pytest
 
-from codeforerunner.cli import main
+from codeforerunner.cli import build_parser, main
 
 REPO = Path(__file__).resolve().parents[1]
 # Prompts are bundled inside the package; use the installed path.
@@ -300,3 +300,41 @@ def test_cmd_mcp_server_success_path(capsys):
     capsys.readouterr()
     assert rc == 0
     mock_serve.assert_called_once()
+
+
+# --- `--repo` accepted on both sides of the subcommand (#108) ---------------
+
+_REPO_SUBCOMMANDS = ["init", "scan", "doc", "check", "mcp-server", "doctor", "refresh", "install"]
+
+
+@pytest.mark.parametrize("cmd", _REPO_SUBCOMMANDS)
+def test_repo_flag_accepted_after_subcommand(cmd, tmp_path):
+    """`forerunner <cmd> --repo X` parses, mirroring `forerunner --repo X <cmd>`."""
+    argv = [cmd, "--repo", str(tmp_path)]
+    if cmd == "doc":
+        argv.append("readme")
+    args = build_parser().parse_args(argv)
+    assert args.cmd == cmd
+    assert args.repo == str(tmp_path)
+
+
+@pytest.mark.parametrize("cmd", _REPO_SUBCOMMANDS)
+def test_repo_flag_before_subcommand_survives(cmd, tmp_path):
+    argv = ["--repo", str(tmp_path), cmd]
+    if cmd == "doc":
+        argv.append("readme")
+    args = build_parser().parse_args(argv)
+    assert args.repo == str(tmp_path)
+
+
+def test_repo_flag_after_subcommand_wins(tmp_path):
+    """Later flag wins: the subparser parses after the top-level parser."""
+    args = build_parser().parse_args(["--repo", "/before", "check", "--repo", "/after"])
+    assert args.repo == "/after"
+
+
+def test_repo_defaults_to_none_when_absent():
+    """`main()` backfills `args.repo` so handlers can assume the attribute."""
+    with patch("codeforerunner.cli.cmd_check", return_value=0) as mock:
+        assert main(["check"]) == 0
+    assert mock.call_args[0][0].repo is None
