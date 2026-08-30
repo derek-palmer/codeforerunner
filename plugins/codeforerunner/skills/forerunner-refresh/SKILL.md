@@ -21,14 +21,14 @@ Run each step in order, processing the result before moving to the next:
    - `UNVERIFIABLE` docs appear in the report but are never offered for regeneration — note them as gaps.
    - Skip the gate entirely when the user passed `auto` as an argument, or when the harness has no way to ask (headless/AFK run): proceed with the full stale set and say so in the summary.
 4. **For each approved doc** — run the corresponding task in this order, passing the scan result:
-   - `forerunner doc readme`
    - `forerunner doc api-docs`
    - `forerunner doc stack-docs`
    - `forerunner doc diagrams`
    - `forerunner doc flows`
    - `forerunner doc version-audit`
    - `forerunner doc audit`
-   - Run order follows this sequence regardless of selection order. Skip any task whose check status is `CURRENT` or that the user declined at the gate.
+   - `forerunner doc readme`
+   - Run order follows this sequence regardless of selection order. Skip any task whose check status is `CURRENT` or that the user declined at the gate — **except `readme`**: run it if it was approved/stale/missing *or* if any other task above ran, so the Docs Index reflects docs generated earlier in this same pass. Skip `readme` only when it was `CURRENT` and nothing else ran.
 
 `changelog` and `review` are on-demand tasks — exclude from automated refresh and never offer them at the gate.
 

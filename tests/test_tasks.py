@@ -39,8 +39,8 @@ def test_scan_exempt_names():
 def test_refresh_tasks_ordered():
     result = tasks.refresh_tasks()
     names = [t.name for t in result]
-    assert names == ["scan", "check", "readme", "api-docs", "stack-docs",
-                     "diagrams", "flows", "version-audit", "audit"]
+    assert names == ["scan", "check", "api-docs", "stack-docs",
+                     "diagrams", "flows", "version-audit", "audit", "readme"]
 
 
 def test_refresh_tasks_excludes_arch_review():
