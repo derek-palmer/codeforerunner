@@ -230,8 +230,8 @@ def test_check_invalid_config_exits_two(tmp_path, capsys):
 
 def test_refresh_emits_all_task_bundles(tmp_path, capsys):
     """forerunner refresh outputs scan + check + all doc task bundles separated by ---."""
-    task_names = ["scan", "check", "readme", "api-docs", "stack-docs",
-                  "diagrams", "flows", "version-audit", "audit"]
+    task_names = ["scan", "check", "api-docs", "stack-docs",
+                  "diagrams", "flows", "version-audit", "audit", "readme"]
     tasks_dir = tmp_path / "prompts" / "tasks"
     system_dir = tmp_path / "prompts" / "system"
     system_dir.mkdir(parents=True)
