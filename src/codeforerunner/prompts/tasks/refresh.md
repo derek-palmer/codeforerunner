@@ -9,7 +9,7 @@ This prompt is the batch form (all bundles concatenated). When running via the `
 1. **Scan** — Execute the scan task bundle. Capture the YAML output. All downstream tasks depend on it.
 2. **Check** — Execute the check task bundle using the scan result. Identify every doc with `STALE` or `MISSING` status.
 3. **Generate / update** — For each stale or missing doc, run the corresponding task bundle in this order:
-   `readme` → `api-docs` → `stack-docs` → `diagrams` → `flows` → `version-audit` → `audit`
+   `api-docs` → `stack-docs` → `diagrams` → `flows` → `version-audit` → `audit` → `readme`
    Skip any task whose check status is `CURRENT`.
    Note: `changelog` and `review` are on-demand tasks excluded from automated refresh.
 

@@ -3,13 +3,13 @@
   "refresh_sequence": [
     "scan",
     "check",
-    "readme",
     "api-docs",
     "stack-docs",
     "diagrams",
     "flows",
     "version-audit",
-    "audit"
+    "audit",
+    "readme"
   ],
   "tasks": [
     {"name": "scan",                  "scan_exempt": true,  "skill_slug": "forerunner-scan"},
